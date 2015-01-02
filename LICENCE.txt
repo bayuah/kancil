@@ -1,0 +1,28 @@
+/*
+ * "THE COFFEE-WARE" (Revision 1991)
+ *
+ * Rabu, 26 November 2014, 07:05:50 UTC+7
+ * <b@yuah.web.id> menika nulis perangkat lunak KANCIL.
+ * Sedawanipun sampéyan tinemu tulisan punika ing distribusi karya punika,
+ * sampéyan saget lakoni apa waé marang karya punika. Menawi sampéyan kalih
+ * kula tinemu, uga sampéyan krasa menawi karya punika becik kanggé sampéyan,
+ * sampéyan saget bayari kula sagelas kopi kanggé upah marang Bayu Aditya
+ * Herlambang. Menawi sapeyan bingung menawi punika sami kaliyan "THE
+ * BEER-WARE LICENSE", amargi BEER menika haram kanggé kula.
+ *
+ * Rabu, 26 November 2014, 07:05:50 UTC+7
+ * <b@yuah.web.id> menulis perangkat lunak KANCIL. Selama
+ * kamu menemui catatan ini bersama dengan distribusi karya ini, kamu dapat
+ * melakukan apapun terhadap karya ini. Bila kita bertemu suatu hari, dan kamu
+ * merasa karya ini berharga, kamu bisa membelikan aku secangkir kopi sebagai
+ * imbalan kepada Bayu Aditya Herlambang. Bila bertanya mengapa ini seperti
+ * "THE BEER-WARE LICENSE", sebab BEER adalah haram bagi kami.
+ *
+ * Wednesday, 26 November 2014, 07:05:50 UTC+7
+ * <b@yuah.web.id> wrote KANCIL software. As long as you
+ * retain this notice along with the distribution of this stuff, you can do
+ * whatever you want with this stuff. If we meet some day, and you think this
+ * stuff is worth it, you can buy me a cup of coffee in return Bayu Aditya
+ * Herlambang. If you ask why it's like "THE BEER-WARE LICENSE", because BEER
+ * is haram for us.
+ */

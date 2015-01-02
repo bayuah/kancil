@@ -1,0 +1,26 @@
+#!/bin/bash
+
+bahasa=(id en)
+
+FILES=./*.c
+for f in $FILES
+do
+	echo "Memproses berkas $f..."
+	# cat $f
+	xgettext -d "kancil" -o "./locale/kancil.pot" -k_ -s "$f"
+done
+
+for bhs in ${bahasa[@]}
+do
+	
+	dir="locale/${bhs}/LC_MESSAGES"
+	mkdir -p $dir
+	
+	if [ -e "$dir/kancil.po" ]
+	then
+		echo "Memproses bahasa $bhs..."
+		msgfmt $dir/kancil.po -o $dir/kancil.mo
+	fi
+done
+
+echo "Selesai."
