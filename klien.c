@@ -31,7 +31,7 @@ int main(int argc, char *argv[]){
 	};
 	
 	// Berbagi memori.
-	int berbagi_ukuran = 1024 * 1024 * 256; //256 mb
+	int berbagi_ukuran = 1024 * 1024 * 128; //128 mb
 	int shm_berkas = -1; 
 	int berbagi_panji = MAP_SHARED;
 	#ifdef SHM
@@ -55,23 +55,17 @@ int main(int argc, char *argv[]){
 	
 	// Berkas.
 	struct KIRIMBERKAS *kirim_mmap;
-	kirim_mmap = mmap(NULL, berbagi_ukuran, 
+	// Dibagi dua, agar keren.
+	kirim_mmap = mmap(NULL, berbagi_ukuran/2-1024, 
 		PROT_WRITE | PROT_READ, berbagi_panji, 
 		shm_berkas, 0 );
 	
 	// Alamat inang.
-	// struct DAFTAR_ALAMAT *alamat_mmap;
-	// alamat_mmap = mmap(NULL, berbagi_ukuran, 
-		// PROT_WRITE | PROT_READ, berbagi_panji, 
-		// shm_berkas, 0 );
-	
-	// Inisiasi isi.
-	// memset(kirim_mmap->alamat->nama_inang, 0, INET6_ADDRSTRLEN+1);
-	kirim_mmap->alamat=malloc(sizeof (struct DAFTAR_ALAMAT));
-	kirim_mmap->alamat->awal=kirim_mmap->alamat;
-	kirim_mmap->alamat->identifikasi=0;
-	kirim_mmap->alamat->info=NULL;
-	kirim_mmap->alamat->lanjut=NULL;
+	struct INFOALAMAT *alamat_mmap;
+	// Dibagi dua, agar keren.
+	alamat_mmap = mmap(NULL, berbagi_ukuran/2-1024, 
+		PROT_WRITE | PROT_READ, berbagi_panji, 
+		shm_berkas, 0 );
 	
 	// Aturan umum.
 	aturan.show_error=true;
@@ -162,6 +156,7 @@ int main(int argc, char *argv[]){
 					anak_kirim(
 						pberkas,
 						kirim_mmap,
+						alamat_mmap,
 						ukuberkas_panjang
 					);
 					
@@ -186,7 +181,7 @@ int main(int argc, char *argv[]){
 								// kirim_mmap->do_kirim=false;
 								exit(status);
 							}else{
-								DEBUG1(_("Proses cabang selesai."), 0);
+								DEBUG3(_("Proses cabang selesai."), 0);
 							};
 						} else if (WIFSIGNALED(status)) {
 							if(status){
@@ -205,7 +200,7 @@ int main(int argc, char *argv[]){
 								DEBUG1(_("Proses cabang terhenti."), 0);
 							};
 						} else if (WIFCONTINUED(status)) {
-							DEBUG1(_("Proses cabang sedang berlangsung."), 0);
+							DEBUG3(_("Proses cabang sedang berlangsung."), 0);
 						}
 					} while (!WIFEXITED(status) && !WIFSIGNALED(status));
 				};

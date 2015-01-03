@@ -11,6 +11,7 @@
 void anak_kirim(
 	FILE *pberkas,
 	struct KIRIMBERKAS *kirim,
+	struct INFOALAMAT *infoalamat,
 	int ukuberkas_panjang
 ){
 	char *pesan="";
@@ -27,6 +28,8 @@ void anak_kirim(
 	
 	// Pengepala Pecahan.
 	bool identifikasi_awal=true;
+	unsigned int identifikasi=kirim->identifikasi;
+	unsigned int identifikasi_sebelumnya=kirim->identifikasi_sebelumnya;
 	int paritas=0;
 	int panji=0;
 	int status_gerbang=0;
@@ -54,7 +57,7 @@ void anak_kirim(
 	};
 	
 	// Apakah pertama.
-	if(kirim->identifikasi==0){
+	if(identifikasi==0){
 		// Panji.
 		panji=START_FLAG;
 		
@@ -68,7 +71,7 @@ void anak_kirim(
 			kirim->ukuran_berkas
 			);
 	// Apakah hampir akhir.
-	}else if(kirim->identifikasi==MAX_CHUNK_ID){
+	}else if(identifikasi==MAX_CHUNK_ID){
 		// Panji.
 		panji=STOP_FLAG;
 		
@@ -77,7 +80,7 @@ void anak_kirim(
 		panji=INTRANSFER_FLAG;
 		
 		// Menggeser penunjuk berkas.
-		penunjuk_berkas=kirim->kelompok_kirim*(kirim->identifikasi-1)*CHUNK_MESSAGE_SIZE;
+		penunjuk_berkas=kirim->kelompok_kirim*(identifikasi-1)*CHUNK_MESSAGE_SIZE;
 		fseek(pberkas, penunjuk_berkas, SEEK_SET);
 		
 		// Baca berkas untuk pesan.
@@ -85,11 +88,12 @@ void anak_kirim(
 		
 		// Menambah bita terkirim.
 		if(identifikasi_awal ||
-			kirim->identifikasi!=kirim->identifikasi_sebelumnya){
+			identifikasi!=identifikasi_sebelumnya){
 			// Menambah.
 			identifikasi_awal=false;
 			kirim->ukuran_kirim+=(double)panjang_pesan;
-			kirim->identifikasi_sebelumnya=kirim->identifikasi;
+			identifikasi_sebelumnya=identifikasi;
+			kirim->identifikasi_sebelumnya=identifikasi;
 		};
 		
 		// Bila telah selesai.
@@ -122,7 +126,7 @@ void anak_kirim(
 	// Bangun pesan.
 	pecahan=buat_pesan(
 		pecahan,
-		kirim->identifikasi,
+		identifikasi,
 		&paritas,
 		pesan);
 	
@@ -130,7 +134,7 @@ void anak_kirim(
 	DEBUG2(_("Panji %1$s."), arti_panji(panji));
 	pecahan=buat_pengepala(
 		pecahan,
-		kirim->identifikasi,
+		identifikasi,
 		panji,
 		paritas,
 		status_gerbang,
@@ -141,11 +145,11 @@ void anak_kirim(
 	if(kirim->kelompok_kirim>1){
 		DEBUG1(
 			_("Mengirim pesan %1$i kelompok %2$i ."),
-			kirim->identifikasi, kirim->kelompok_kirim);
+			identifikasi, kirim->kelompok_kirim);
 	}else{
 		DEBUG1(
 			_("Mengirim pesan %1$i."),
-			kirim->identifikasi);
+			identifikasi);
 	};
 	
 	// Kirim.
@@ -153,7 +157,7 @@ void anak_kirim(
 		pecahan,
 		hostname,
 		portno,
-		kirim
+		infoalamat
 		);
 	
 	// Mendapatkan pengepala.
@@ -209,7 +213,7 @@ void anak_kirim(
 		
 		// Mengirim ulang.
 		NOTICE(_("Percobaan ke-%1$i. Mengulangi pengiriman pecahan %2$i."),kirim->coba, r_identifikasi);
-		kirim->identifikasi=r_identifikasi;
+		identifikasi=r_identifikasi;
 		
 		// exit(EXIT_FAILURE);
 		
@@ -229,12 +233,14 @@ void anak_kirim(
 		// Bila belum selesai.
 		if(kirim->ukuran_kirim<=kirim->ukuran_berkas){
 			// Menambahkan.
-			kirim->identifikasi++;
+			identifikasi++;
+			kirim->identifikasi=identifikasi;
+			
 			// Bila lebih dari spesifikasi,
 			// mengulangi dari NOL.
-			if(kirim->identifikasi>MAX_CHUNK_ID){
+			if(identifikasi>MAX_CHUNK_ID){
 				// Pesan.
-				WARN(_("Telah melebihi maksimal identifikasi %1$i."), MAX_CHUNK_ID);
+				WARN(_("Nilai %1$i telah melebihi maksimal identifikasi %1$i."), identifikasi, MAX_CHUNK_ID);
 				
 				// Perkembangan.
 				tampil_info_progres_berkas(
@@ -246,7 +252,7 @@ void anak_kirim(
 				// Pesan.
 				NOTICE(_("Menunggu %1$i detik untuk melanjutkan."), urut_tunggu);
 				sleep(urut_tunggu);
-				kirim->identifikasi=0;
+				identifikasi=0;
 				kirim->kelompok_kirim++;
 			};
 		}else{
@@ -274,6 +280,6 @@ void anak_kirim(
 		kirim->urut_kali=0;
 	};
 	
-	// if(kirim->identifikasi>3)
+	// if(identifikasi>3)
 		// kirim->do_kirim=false;
 }

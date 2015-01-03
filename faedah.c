@@ -22,6 +22,7 @@
 	#endif
 #endif
 
+// Standar.
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,7 +31,10 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-// Posix
+// Soket.
+// #include <sys/socket.h>
+
+// Posix.
 #define _POSIX_SOURCE
 #include <sys/types.h>
 #include <signal.h>

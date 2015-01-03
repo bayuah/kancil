@@ -38,13 +38,32 @@ struct GLOBAL_KANCIL {
 	#define INET6_ADDRSTRLEN 46
 #endif
 
-struct DAFTAR_ALAMAT{
-	int identifikasi;
-	char nama_inang[INET6_ADDRSTRLEN+1];
-	struct addrinfo *info;
-	struct DAFTAR_ALAMAT *awal;
-	struct DAFTAR_ALAMAT *lanjut;
-} DAFTAR_ALAMAT;
+// Memastikan alamat
+// dapat tersimpan
+// di memori bagi pakai.
+// Maksimal 10 inang
+// dan 5 alamat.
+#ifndef INFOALAMAT_MAX_ID
+	#define INFOALAMAT_MAX_ID 10
+#endif
+#ifndef INFOALAMAT_MAX_IP
+	#define INFOALAMAT_MAX_IP 5
+#endif
+#ifndef INFOALAMAT_MAX_STR
+	#define INFOALAMAT_MAX_STR INET6_ADDRSTRLEN+1
+#endif
+
+struct INFOALAMAT{
+	char inang           [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_STR];
+	int ipcount          [INFOALAMAT_MAX_ID];
+	int ai_family        [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
+	int ai_socktype      [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
+	int ai_protocol      [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
+	unsigned int ai_addrlen [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
+	char ai_canonname    [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP][INFOALAMAT_MAX_STR];
+	unsigned short sockaddr_sa_family [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
+	char sockaddr_sa_data             [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP][14];
+} INFOALAMAT;
 
 // Kirim.
 struct KIRIMBERKAS{
@@ -59,7 +78,35 @@ struct KIRIMBERKAS{
 	char *portno;
 	char *berkas;
 	int coba;
-	struct DAFTAR_ALAMAT *alamat;
+
+	char inang           [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_STR];
+	int ipcount          [INFOALAMAT_MAX_ID];
+	int ai_family        [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
+	int ai_socktype      [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
+	int ai_protocol      [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
+	unsigned int ai_addrlen [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
+	char ai_canonname    [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP][INFOALAMAT_MAX_STR];
+	unsigned short sockaddr_sa_family [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
+	char sockaddr_sa_data             [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP][14];
 } KIRIMBERKAS;
+
+// Berkas.
+#ifndef CHUNK_MESSAGE_SIZE
+	#define CHUNK_MESSAGE_SIZE 1020
+#endif
+#ifndef MAX_CHUNK_ID
+	#define MAX_CHUNK_ID 65025 // 16-bit.
+#endif
+struct BERKAS{
+	char identifikasi[64];
+	char nama[64];
+	double ofset;
+	double ukuran;
+	double diterima;
+	pid_t pid_tulis;
+	bool sedang_sibuk;
+	bool terima_berkas;
+	char data_pesan[MAX_CHUNK_ID][CHUNK_MESSAGE_SIZE+1];
+} BERKAS;
 
 #endif /* _KANCIL_STRUKTUR_H_ */

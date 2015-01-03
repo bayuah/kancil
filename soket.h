@@ -15,7 +15,7 @@ char *kirimdata(
 	char* pesan,
 	char* hostname,
 	char* portno,
-	struct KIRIMBERKAS *kirim
+	struct INFOALAMAT *alamat
 );
 
 // Variabel global.

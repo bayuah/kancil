@@ -55,7 +55,7 @@ int main(/*int argc, char *argv[]*/){
 		exit(EXIT_FAILURE_MEMORY);
 	};
 	
-	BERKAS *berkas_mmap;
+	struct BERKAS *berkas_mmap;
 	berkas_mmap = mmap(NULL, berbagi_ukuran, 
 		PROT_WRITE | PROT_READ, berbagi_panji, 
 		shm_berkas, 0 );
@@ -128,19 +128,22 @@ int main(/*int argc, char *argv[]*/){
 		connection++;
 		
 		// Mendapatkan klien.
-		// INFO(
-			// _("Menerima klien: %1$s:%2$i."),
-			// inet_ntop(20, cli_addr.sin_addr),
-			// (int) ntohs(cli_addr.sin_port)
-			// );
-		char clntName[INET6_ADDRSTRLEN];
-		char portName[6]; 
+		// Lebih cepat dari pada getnameinfo();
+		INFO(
+			_("Menerima klien: %1$s:%2$i."),
+			inet_ntoa(cli_addr.sin_addr),
+			(int) ntohs(cli_addr.sin_port)
+			);
+		// char clntName[INET6_ADDRSTRLEN];
+		// char portName[6]; 
 		
-		if (getnameinfo((struct sockaddr *) &cli_addr, clilen, clntName,sizeof(clntName),portName,sizeof(portName),0) == 0) {
-			INFO(_("Menerima klien: %1$s:%2$i."), clntName, portName);
-		} else {
-			WARN(_("Alamat klien tidak dikenal."), 0);
-		}
+		// DEBUG3(_("Mendapatkan sambungan."));
+		// DEBUG3(_("Mencari alamat klien."));
+		// if (getnameinfo((struct sockaddr *) &cli_addr, clilen, clntName,sizeof(clntName),portName,sizeof(portName),0) == 0) {
+			// INFO(_("Menerima klien: %1$s:%2$i."), clntName, portName);
+		// } else {
+			// WARN(_("Alamat klien tidak dikenal."), 0);
+		// };
 		
 		if (newsockfd < 0){
 			FAIL(_("Kegagalan '%1$s': %2$s (%3$i)."), "accept", strerror(errno), errno);

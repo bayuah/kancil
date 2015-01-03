@@ -25,6 +25,7 @@ void signal_callback_handler(int signum);
 void anak_kirim(
 	FILE *pberkas,
 	struct KIRIMBERKAS *kirim,
+	struct INFOALAMAT *info_alamat,
 	int ukuberkas_panjang
 );
 
