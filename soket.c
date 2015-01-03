@@ -9,6 +9,8 @@
 #include "kancil.h"
 #include "faedah.h"
 
+#define _POSIX_C_SOURCE 200112L 
+
 // Variabel global apakah sudah dimuat.
 // #ifndef _KANCIL_PESAN_
 	// char *PENYANGGA; 
@@ -164,7 +166,7 @@ char *kirimdata(
 		// Mencoba di tembolok.
 		// Mencari dari alamat_tmp.
 		serv_addrinfo_result=NULL;
-		/*
+		
 		bool lanjut_tembolok=false;
 		do{
 			DEBUG4(_("Mencoba identifikasi tembolok '%1$i'."), alamat_tmp->identifikasi);
@@ -189,7 +191,7 @@ char *kirimdata(
 					lanjut_tembolok=false;
 				};
 			};
-		}while(lanjut_tembolok);*/
+		}while(lanjut_tembolok);
 		
 		// Bila hasil kosong.
 		if(serv_addrinfo_result==NULL){

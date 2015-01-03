@@ -128,11 +128,19 @@ int main(/*int argc, char *argv[]*/){
 		connection++;
 		
 		// Mendapatkan klien.
-		INFO(
-			_("Menerima klien: %1$s:%2$i."),
-			inet_ntop(cli_addr.sin_addr),
-			(int) ntohs(cli_addr.sin_port)
-			);
+		// INFO(
+			// _("Menerima klien: %1$s:%2$i."),
+			// inet_ntop(20, cli_addr.sin_addr),
+			// (int) ntohs(cli_addr.sin_port)
+			// );
+		char clntName[INET6_ADDRSTRLEN];
+		char portName[6]; 
+		
+		if (getnameinfo((struct sockaddr *) &cli_addr, clilen, clntName,sizeof(clntName),portName,sizeof(portName),0) == 0) {
+			printf("Client = %s/%s\n",clntName,portName);
+		} else {
+			printf("Unable to get address\n");
+		}
 		
 		if (newsockfd < 0){
 			FAIL(_("Kegagalan '%1$s': %2$s (%3$i)."), "accept", strerror(errno), errno);

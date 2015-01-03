@@ -1,5 +1,5 @@
 CC = cc
-CCLIBS = -lcrypto -lrt -DSHM
+CCLIBS = -lcrypto -lrt -DSHM  -D_POSIX_C_SOURCE=200112L 
 
 ifeq ($(OS),Windows_NT)
 	CCLIBS += -lintl
@@ -137,7 +137,7 @@ pesan.o:pesan.c
 
 soket.o:soket.c
 	@echo "Build $@..."
-	@$(CCF) -c soket.c -o soket.o $(CCLIBS) -D_POSIX_C_SOURCE=200112L 
+	@$(CCF) -c soket.c -o soket.o $(CCLIBS)
 
 tampilan.o:tampilan.c
 	@echo "Build $@..."
