@@ -35,6 +35,9 @@ int main(int argc, char *argv[]){
 	int shm_berkas = -1; 
 	int berbagi_panji = MAP_SHARED;
 	#ifdef SHM
+		// Hapus lama.
+		shm_unlink("/BERKASFL-KLIEN.memory");
+		
 		// Buka berbagi memori.
 		shm_berkas = shm_open("/BERKASFL-KLIEN.memory", 
 		  O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
@@ -67,15 +70,30 @@ int main(int argc, char *argv[]){
 		PROT_WRITE | PROT_READ, berbagi_panji, 
 		shm_berkas, 0 );
 	
+	// Inisiasi isi.
+	int mxid=INFOALAMAT_MAX_ID;
+	int mxip=INFOALAMAT_MAX_IP;
+	int mxst=INFOALAMAT_MAX_STR;
+	memset(alamat_mmap->inang, 0, sizeof(alamat_mmap->inang[0][0]) * mxid * mxst);
+	memset(alamat_mmap->ipcount, 0, sizeof(alamat_mmap->ipcount[0]) * mxid);
+	memset(alamat_mmap->ai_family, 0, sizeof(alamat_mmap->ai_family[0][0]) * mxid * mxip);
+	memset(alamat_mmap->ai_socktype, 0, sizeof(alamat_mmap->ai_socktype[0][0]) * mxid * mxip);
+	memset(alamat_mmap->ai_protocol, 0, sizeof(alamat_mmap->ai_protocol[0][0]) * mxid * mxip);
+	memset(alamat_mmap->ai_addrlen, 0, sizeof(alamat_mmap->ai_addrlen[0][0]) * mxid * mxip);
+	memset(alamat_mmap->ai_canonname, 0, sizeof(alamat_mmap->ai_canonname[0][0]) * mxid * mxip * mxst);
+	memset(alamat_mmap->sockaddr_sa_family, 0, sizeof(alamat_mmap->sockaddr_sa_family[0][0]) * mxid * mxip);
+	memset(alamat_mmap->sockaddr_sa_data, 0, sizeof(alamat_mmap->sockaddr_sa_data[0][0][0]) * mxid * mxip * 14);
+	
 	// Aturan umum.
 	aturan.show_error=true;
 	aturan.show_warning=true;
 	aturan.show_notice=true;
 	aturan.show_info=true;
 	aturan.show_debug1=true;
-	aturan.show_debug2=true;
-	aturan.show_debug3=true;
-	aturan.show_debug4=true;
+	aturan.show_debug2=false;
+	aturan.show_debug3=false;
+	aturan.show_debug4=false;
+	aturan.show_debug5=false;
 	aturan.tempdir="tmp";
 	aturan.tries=20;
 	aturan.waitretry=30;
@@ -152,6 +170,7 @@ int main(int argc, char *argv[]){
 				};
 				
 				if (pid == 0){
+					
 					// Panggil anak.
 					anak_kirim(
 						pberkas,
@@ -205,7 +224,6 @@ int main(int argc, char *argv[]){
 					} while (!WIFEXITED(status) && !WIFSIGNALED(status));
 				};
 			};
-			
 			// Perkembangan.
 			tampil_info_progres_berkas(
 				PROGRES_KIRIM, berkas,

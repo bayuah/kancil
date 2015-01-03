@@ -78,16 +78,6 @@ struct KIRIMBERKAS{
 	char *portno;
 	char *berkas;
 	int coba;
-
-	char inang           [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_STR];
-	int ipcount          [INFOALAMAT_MAX_ID];
-	int ai_family        [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
-	int ai_socktype      [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
-	int ai_protocol      [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
-	unsigned int ai_addrlen [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
-	char ai_canonname    [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP][INFOALAMAT_MAX_STR];
-	unsigned short sockaddr_sa_family [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
-	char sockaddr_sa_data             [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP][14];
 } KIRIMBERKAS;
 
 // Berkas.

@@ -25,6 +25,7 @@ void anak_kirim(
 	int urut_maksimal=aturan.maxqueue;
 	int urut_tunggu=aturan.waitqueue;
 	bool urut_jangan_tunggu=true;
+	unsigned int kelompok_kirim=kirim->kelompok_kirim;
 	
 	// Pengepala Pecahan.
 	bool identifikasi_awal=true;
@@ -80,7 +81,7 @@ void anak_kirim(
 		panji=INTRANSFER_FLAG;
 		
 		// Menggeser penunjuk berkas.
-		penunjuk_berkas=kirim->kelompok_kirim*(identifikasi-1)*CHUNK_MESSAGE_SIZE;
+		penunjuk_berkas=kelompok_kirim*(identifikasi-1)*CHUNK_MESSAGE_SIZE;
 		fseek(pberkas, penunjuk_berkas, SEEK_SET);
 		
 		// Baca berkas untuk pesan.
@@ -142,10 +143,10 @@ void anak_kirim(
 	);
 	
 	// Pesan.
-	if(kirim->kelompok_kirim>1){
+	if(kelompok_kirim>1){
 		DEBUG1(
 			_("Mengirim pesan %1$i kelompok %2$i ."),
-			identifikasi, kirim->kelompok_kirim);
+			identifikasi, kelompok_kirim);
 	}else{
 		DEBUG1(
 			_("Mengirim pesan %1$i."),
@@ -255,13 +256,17 @@ void anak_kirim(
 				sleep(urut_tunggu);
 				identifikasi=0;
 				kirim->identifikasi=identifikasi;
-				kirim->kelompok_kirim++;
+				kelompok_kirim++;
+				kirim->kelompok_kirim=kelompok_kirim;
 			};
 		}else{
 			kirim->do_kirim=false;
 		};
 		kirim->coba=1;
 	};
+	
+	// Memastikan nilai kelompok benar.
+	kirim->kelompok_kirim=kelompok_kirim;
 	
 	// Bila lebih dari maksimal kali kirim,
 	// menunggu sebanyak waktu untuk mengirim ulang.

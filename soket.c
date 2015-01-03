@@ -166,7 +166,7 @@ char *kirimdata(
 			DEBUG4(_("Mencoba tembolok identifikasi '%1$i'."), i);
 			if(!strlen(alamat->inang[i])){
 				// Tidak ditemukan.
-				DEBUG4(_("Tidak ditemukan alamat."), 0);
+				DEBUG4(_("Alamat tidak ditemukan."), 0);
 				
 				// Lanjut.
 				continue;
@@ -239,11 +239,11 @@ char *kirimdata(
 						// free(tmp_sockaddr);
 					};
 					// Memindahkan hasil.
-					DEBUG4(_("Menyalin hasil."), 0);
+					DEBUG4(_("Menyalin hasil tembolok."), 0);
 					serv_addrinfo_result=tmp_addrinfo_utm;
 					
 					// Keluar.
-					DEBUG4(_("Berhenti mencari."), 0);
+					DEBUG4(_("Berhenti mencari alamat tembolok."), 0);
 					break;
 				};
 			};
@@ -304,7 +304,7 @@ char *kirimdata(
 			
 			// Perulangan.
 			bool ulang=false;
-			bool jangan_ulang=false;
+			bool jangan_tanya_alamat=false;
 			int coba=1;
 			int id=0;
 			// for(i=0; i<INFOALAMAT_MAX_ID; i++)
@@ -313,20 +313,32 @@ char *kirimdata(
 				DEBUG4(_("Mencoba memasukkan ke tembolok identifikasi '%1$i'."), id);
 				
 				// Bila alamat tidak kosong.
-				if(!jangan_ulang && strlen(alamat->inang[id])){
+				if(!jangan_tanya_alamat && strlen(alamat->inang[id])){
+					coba++;
 					
 					// Ditemukan alamat.
 					DEBUG4(_("Ditemukan alamat '%1$s'."), alamat->inang[id]);
 					
-					coba++;
-					if(coba>INFOALAMAT_MAX_ID){
+					// Memeriksa apakah alamat benar-benar ada
+					// dengan memeriksa apakah ada isi.
+					if(alamat->ipcount[id]<=0){
+						// Masih kosong.
+						DEBUG4(_("Jumlah IP adalah nol."), 0);
+						DEBUG4(_("Kemungkinan alamat masih kosong."), 0);
+						DEBUG4(_("Tetap melanjutkan."), 0);
+						
+						// Muat ulang.
+						coba=0;
+						jangan_tanya_alamat=true;
+						ulang=true;
+					}else if(coba>INFOALAMAT_MAX_ID){
 						// Pesan.
 						DEBUG4(_("Telah mencoba sebanyak %1$i kali."), coba);
 						DEBUG4(_("Tetap melanjutkan."), 0);
 						
 						// Muat ulang.
 						id=0;coba=0;
-						jangan_ulang=true;
+						jangan_tanya_alamat=true;
 						ulang=true;
 					}else{
 						// Pesan.
@@ -391,9 +403,8 @@ char *kirimdata(
 					// munmap(alamat, sizeof *alamat);
 					
 					// Berhenti.
-					jangan_ulang=true;
+					jangan_tanya_alamat=true;
 					ulang=false;
-					// id=0;
 				};
 			}while(ulang);
 		};
