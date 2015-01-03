@@ -240,7 +240,8 @@ void anak_kirim(
 			// mengulangi dari NOL.
 			if(identifikasi>MAX_CHUNK_ID){
 				// Pesan.
-				WARN(_("Nilai %1$i telah melebihi maksimal identifikasi %1$i."), identifikasi, MAX_CHUNK_ID);
+				WARN(_("Telah melebihi maksimal identifikasi %1$i."), MAX_CHUNK_ID);
+				DEBUG1(_("Nilai identifikasi adalah %1$i."), identifikasi);
 				
 				// Perkembangan.
 				tampil_info_progres_berkas(
@@ -253,6 +254,7 @@ void anak_kirim(
 				NOTICE(_("Menunggu %1$i detik untuk melanjutkan."), urut_tunggu);
 				sleep(urut_tunggu);
 				identifikasi=0;
+				kirim->identifikasi=identifikasi;
 				kirim->kelompok_kirim++;
 			};
 		}else{
