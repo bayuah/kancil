@@ -137,51 +137,7 @@
 	#define INVALID_FLAG 0
 #endif
 
-// Variabel global.
-struct GLOBAL_KANCIL {
-	bool show_error;
-	bool show_warning;
-	bool show_notice;
-	bool show_info;
-	bool show_debug1;
-	bool show_debug2;
-	bool show_debug3;
-	bool show_debug4;
-	bool show_debug5;
-	int tries;
-	int waitretry;
-	int maxqueue;
-	int waitqueue;
-	bool nowaitqueue;
-	char* tempdir;
-} GLOBAL_KANCIL;
-#define kancil GLOBAL_KANCIL
-#define aturan GLOBAL_KANCIL
-
-struct DAFTAR_ALAMAT{
-	int identifikasi;
-	char nama_inang[INET6_ADDRSTRLEN+1];
-	struct addrinfo *info;
-	struct DAFTAR_ALAMAT *awal;
-	struct DAFTAR_ALAMAT *lanjut;
-} DAFTAR_ALAMAT;
-
-struct KIRIMBERKAS{
-	unsigned int identifikasi;
-	unsigned int identifikasi_sebelumnya;
-	unsigned int kelompok_kirim;
-	int urut_kali;
-	double ukuran_berkas;
-	double ukuran_kirim;
-	bool do_kirim;
-	char *hostname;
-	char *portno;
-	char *berkas;
-	int coba;
-	struct DAFTAR_ALAMAT *alamat;
-} KIRIMBERKAS;
-
-// Global.
-struct KIRIMBERKAS *GLOBAL_kirim;
+// Ambil struktur.
+#include "struktur.h"
 
 #endif /* _KANCIL_H_ */

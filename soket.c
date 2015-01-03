@@ -166,7 +166,6 @@ char *kirimdata(
 		// Mencoba di tembolok.
 		// Mencari dari alamat_tmp.
 		serv_addrinfo_result=NULL;
-		
 		bool lanjut_tembolok=false;
 		do{
 			DEBUG4(_("Mencoba identifikasi tembolok '%1$i'."), alamat_tmp->identifikasi);

@@ -44,29 +44,8 @@
 	#define _(String) gettext (String) // Makro.
 #endif
 
-
-#ifndef _KANCIL_H_
-	// Variabel global.
-	struct GLOBAL_KANCIL {
-		bool show_error;
-		bool show_warning;
-		bool show_notice;
-		bool show_info;
-		bool show_debug1;
-		bool show_debug2;
-		bool show_debug3;
-		bool show_debug4;
-		bool show_debug5;
-		int tries;
-		int waitretry;
-		int maxqueue;
-		int waitqueue;
-		bool nowaitqueue;
-		char* tempdir;
-	} GLOBAL_KANCIL;
-	#define kancil GLOBAL_KANCIL
-	#define aturan GLOBAL_KANCIL
-#endif
+// Ambil struktur.
+#include "struktur.h"
 
 // Fungsi lokal.
 char *remove_ext (char* str, char dot, char sep);

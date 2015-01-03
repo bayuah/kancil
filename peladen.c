@@ -137,9 +137,9 @@ int main(/*int argc, char *argv[]*/){
 		char portName[6]; 
 		
 		if (getnameinfo((struct sockaddr *) &cli_addr, clilen, clntName,sizeof(clntName),portName,sizeof(portName),0) == 0) {
-			printf("Client = %s/%s\n",clntName,portName);
+			INFO(_("Menerima klien: %1$s:%2$i."), clntName, portName);
 		} else {
-			printf("Unable to get address\n");
+			WARN(_("Alamat klien tidak dikenal."), 0);
 		}
 		
 		if (newsockfd < 0){
