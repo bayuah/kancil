@@ -6,6 +6,7 @@
  * Lisensi: lihat LICENCE.txt
  */
 #include "lingkungan.h"
+#include "return.h"
 
 #ifdef __x86_64___
 	#define __USE_LARGEFILE64
@@ -84,5 +85,27 @@ void tampil_info_progres_berkas(
 	// Membersihkan.
 	free(ukuberkas_ukuran);
 	free(ukuberkas_dikirim);
+}
+
+/*
+ * kancil_signal_code()
+ * Menampilan sinyal kancil.
+ * Bila sinyal tidak diketahui, mencoba memanggil sinyal unix.
+ * @param (int) sinyal
+ * @hasil (cahr*) NULL bila tidak ditemukan.
+ */
+char *kancil_signal_code(int sinyal){
+	switch(sinyal){
+	case EXIT_SUCCESS: return "EXIT_SUCCESS"; break;
+	case EXIT_FAILURE: return "EXIT_FAILURE"; break;
+	case EXIT_FAILURE_ARGS: return "EXIT_FAILURE_ARGS"; break;
+	case EXIT_FAILURE_IO: return "EXIT_FAILURE_IO"; break;
+	case EXIT_FAILURE_MEMORY: return "EXIT_FAILURE_MEMORY"; break;
+	case EXIT_FAILURE_SOCKET: return "EXIT_FAILURE_SOCKET"; break;
+	case EXIT_FAILURE_MESSAGES: return "EXIT_FAILURE_MESSAGES"; break;
+	case EXIT_FAILURE_FORK: return "EXIT_FAILURE_FORK"; break;
+	case EXIT_FAILURE_CHUNK: return "EXIT_FAILURE_CHUNK"; break;
+	default: return unix_signal_code(sinyal); break;
+	};
 }
  

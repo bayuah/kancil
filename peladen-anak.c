@@ -158,10 +158,11 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 			cek_paritas=check_parity(pesan, 0, CHUNK_MESSAGE_SIZE);
 			if(cek_paritas!=paritas){
 				status_peladen=0;
-				DEBUG1(_("Paritas TIDAK SAMA (klien:%1$i-Peladen:%2$i)"), paritas, cek_paritas);
+				DEBUG1(_("Paritas TIDAK SAMA."), 0);
+				DEBUG1(_("Paritas Klien adalah %1$i tetapi ditemukan %2$i."), paritas, cek_paritas);
 			}else{
 				status_peladen=1;
-				DEBUG1(_("Paritas sama (%1$i)"), paritas);
+				DEBUG2(_("Paritas sama (%1$i)"), paritas);
 				
 				// Memeriksa apakah panji adalah Mulai.
 				if(panji==START_FLAG){
@@ -204,7 +205,7 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 						char *ukuberkas;
 						ukuberkas=malloc(sizeof(char*)*ukuberkas_panjang);
 						ukuberkas=readable_fs(berkas->ukuran, ukuberkas);
-						NOTICE(
+						INFO(
 							_("Menerima berkas '%1$s': %2$s (%3$.0lf bita)."),
 							berkas->nama,
 							ukuberkas, berkas->ukuran
@@ -216,45 +217,78 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 					free(berkas_nama);
 					free(berkas_ukuran);
 				}else if(panji==INTRANSFER_FLAG){
-					// Menambahkan yang terkirim.
-					berkas->diterima=0
-						+((double)(berkas->diterima))
-						+((double)diterima)
-						-((double)CHUNK_HEADER_SIZE);
 					
-					// Mendapat informasi.
-					double br_diterima=(berkas->diterima)+berkas->ofset;
-					double br_ukuran=berkas->ukuran;
-					float persen_selesai=(float)br_diterima/(float)br_ukuran*100;
-					
-					// Mempersiapkan tampilan ukuran.
-					char *ukuberkas_diterima;
-					ukuberkas_diterima=malloc(sizeof(char*)*ukuberkas_panjang);
-					ukuberkas_diterima=readable_fs(br_diterima, ukuberkas_diterima);
-					
-					char *ukuberkas_ukuran;
-					ukuberkas_ukuran=malloc(sizeof(char*)*ukuberkas_panjang);
-					ukuberkas_ukuran=readable_fs(br_ukuran, ukuberkas_ukuran);
-					
-					// Pesan.
-					NOTICE(
-						_("Menerima berkas '%1$s' (%2$.2f%%)."),
-							berkas->nama, persen_selesai
-						);
-					DEBUG1(
-						_("Menerima %1$s/%2$s (%3$.0lf/%4$.0lf bita)."),
-							ukuberkas_diterima, ukuberkas_ukuran,
-							br_diterima, br_ukuran
-						);
-					
-					// Membersihkan.
-					free(ukuberkas_diterima);
-					free(ukuberkas_ukuran);
-					
-					// printf("Pesan:\n");
-					// print_char(pesan, CHUNK_MESSAGE_SIZE);
-					// printf("\n");
-				
+					// Memeriksa apakah berkas telah diketahui.
+					if(!strlen(berkas->nama) || berkas->ukuran <=0){
+						// Kesalahan.
+						WARN(_("Nama dan ukuran berkas tidak diketahui."), 0);
+						NOTICE(_("Meminta Klien mengulang pengiriman."), 0);
+						
+						// Meminta mengulang ke identifikasi 0.
+						identifikasi=0;
+						panji=START_FLAG;
+						status_peladen=0;
+						
+					}else if(!strlen(berkas->nama)){
+						// Kesalahan.
+						WARN(_("Nama berkas tidak diketahui."), 0);
+						NOTICE(_("Meminta Klien mengulang pengiriman."), 0);
+						
+						// Meminta mengulang ke identifikasi 0.
+						identifikasi=0;
+						panji=START_FLAG;
+						status_peladen=0;
+						
+					}else if(berkas->ukuran <=0){
+						// Kesalahan.
+						WARN(_("Ukuran berkas tidak diketahui."), 0);
+						NOTICE(_("Meminta Klien mengulang pengiriman."), 0);
+						
+						// Meminta mengulang ke identifikasi 0.
+						identifikasi=0;
+						
+					}else{
+						// Tidak ada masalah.
+						
+						// Menambahkan yang terkirim.
+						berkas->diterima=0
+							+((double)(berkas->diterima))
+							+((double)diterima)
+							-((double)CHUNK_HEADER_SIZE);
+						
+						// Mendapat informasi.
+						double br_diterima=(berkas->diterima)+berkas->ofset;
+						double br_ukuran=berkas->ukuran;
+						float persen_selesai=(float)br_diterima/(float)br_ukuran*100;
+						
+						// Mempersiapkan tampilan ukuran.
+						char *ukuberkas_diterima;
+						ukuberkas_diterima=malloc(sizeof(char*)*ukuberkas_panjang);
+						ukuberkas_diterima=readable_fs(br_diterima, ukuberkas_diterima);
+						
+						char *ukuberkas_ukuran;
+						ukuberkas_ukuran=malloc(sizeof(char*)*ukuberkas_panjang);
+						ukuberkas_ukuran=readable_fs(br_ukuran, ukuberkas_ukuran);
+						
+						// Pesan.
+						INFO(
+							_("Menerima berkas '%1$s' (%2$.2f%%)."),
+								berkas->nama, persen_selesai
+							);
+						DEBUG1(
+							_("Menerima %1$s/%2$s (%3$.0lf/%4$.0lf bita)."),
+								ukuberkas_diterima, ukuberkas_ukuran,
+								br_diterima, br_ukuran
+							);
+						
+						// Membersihkan.
+						free(ukuberkas_diterima);
+						free(ukuberkas_ukuran);
+						
+						// printf("Pesan:\n");
+						// print_char(pesan, CHUNK_MESSAGE_SIZE);
+						// printf("\n");
+					};
 				// Bila berhenti.
 				}else if(panji==STOP_FLAG){
 					NOTICE(_("Mendapatkan sinyal akhir kelompok pecahan."), 0);

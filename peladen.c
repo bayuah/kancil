@@ -153,7 +153,7 @@ int main(/*int argc, char *argv[]*/){
 		if(connection>=max_connection){
 			for (i = 1; i < max_connection; ++i) {
 				
-				DEBUG1(_("Menunggu proses %1$i (%2$i)."), i, pids[i]);
+				DEBUG2(_("Menunggu proses %1$i (%2$i)."), i, pids[i]);
 				while (-1 == waitpid(pids[i], &pid_status, WNOHANG)){
 					sleep(1);
 					killpid(pids[i], SIGKILL);
@@ -208,8 +208,6 @@ int main(/*int argc, char *argv[]*/){
 	return 0;
 }
 
-
-
 /*
  * Menutup.
  */
@@ -225,10 +223,16 @@ void stop_listening(int sock){
  * Menangangi sinyal balasan.
  */
 void signal_callback_handler(int signum){
-	printf("\nCaught signal %i.\n",signum);
+	printf("\r\n");
+	NOTICE(_("Menangkap sinyal %1$s (%2$i)."), kancil_signal_code(signum), signum);
+	
+	// Menutup.
+	stop_listening(sockid);
 	
 	// Bila modus DEVEL.
 	#if defined (COMPILE_MODE_DEVEL) && defined (EXECINFO_COMPATIBLE)
+		NOTICE(_("Pelacakan mundur:"), 0);
+		
 		void *array[10];
 		size_t size;
 		
@@ -239,13 +243,9 @@ void signal_callback_handler(int signum){
 		backtrace_symbols_fd(array, size, STDERR_FILENO);
 	#endif
 	
-	// Menutup.
-	stop_listening(sockid);
-	
 	// Mematikan.
 	exit(signum);
 }
-
 /*
  * Informasi kancil.
  */

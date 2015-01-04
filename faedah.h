@@ -28,6 +28,7 @@ off_t fsize(const char *filename);
 bool file_exist (char *filename);
 char *readable_fs(double size, char *penyanga);
 int killpid(pid_t pid, int sig);
+char *unix_signal_code(int signal);
 // int cari_karakter(
 	// char* jarum, char* jerami,
 	// size_t awal, size_t akhir

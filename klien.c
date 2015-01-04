@@ -32,6 +32,7 @@ int main(int argc, char *argv[]){
 	
 	// Berbagi memori.
 	int berbagi_ukuran = 1024 * 1024 * 128; //128 mb
+	int persen_ukuran=0;
 	int shm_berkas = -1; 
 	int berbagi_panji = MAP_SHARED;
 	#ifdef SHM
@@ -58,15 +59,19 @@ int main(int argc, char *argv[]){
 	
 	// Berkas.
 	struct KIRIMBERKAS *kirim_mmap;
-	// Dibagi dua, agar keren.
-	kirim_mmap = mmap(NULL, berbagi_ukuran/2-1024, 
+	// Persen ukuran.
+	persen_ukuran=45;
+	kirim_mmap = mmap(NULL,
+		(((float)(float)persen_ukuran/(float)100)*berbagi_ukuran)-1024, 
 		PROT_WRITE | PROT_READ, berbagi_panji, 
 		shm_berkas, 0 );
 	
 	// Alamat inang.
 	struct INFOALAMAT *alamat_mmap;
-	// Dibagi dua, agar keren.
-	alamat_mmap = mmap(NULL, berbagi_ukuran/2-1024, 
+	// Persen ukuran.
+	persen_ukuran=45;
+	alamat_mmap = mmap(NULL,
+		(((float)(float)persen_ukuran/(float)100)*berbagi_ukuran)-1024, 
 		PROT_WRITE | PROT_READ, berbagi_panji, 
 		shm_berkas, 0 );
 	
@@ -90,10 +95,10 @@ int main(int argc, char *argv[]){
 	aturan.show_notice=true;
 	aturan.show_info=true;
 	aturan.show_debug1=true;
-	aturan.show_debug2=false;
-	aturan.show_debug3=false;
-	aturan.show_debug4=false;
-	aturan.show_debug5=false;
+	aturan.show_debug2=true;
+	aturan.show_debug3=true;
+	aturan.show_debug4=true;
+	aturan.show_debug5=true;
 	aturan.tempdir="tmp";
 	aturan.tries=20;
 	aturan.waitretry=30;
@@ -194,31 +199,61 @@ int main(int argc, char *argv[]){
 						};
 						
 						// Status anak.
-						if (WIFEXITED(status)) {
-							if(status){
-								DEBUG1(_("Proses cabang selesai. Status pengawas: %1$i."), WEXITSTATUS(status));
-								// kirim_mmap->do_kirim=false;
-								exit(status);
-							}else{
-								DEBUG3(_("Proses cabang selesai."), 0);
-							};
-						} else if (WIFSIGNALED(status)) {
-							if(status){
-								DEBUG1(_("Proses cabang terbunuh sinyal %1$i."), WTERMSIG(status));
-								// kirim_mmap->do_kirim=false;
-								exit(status);
-							}else{
-								DEBUG1(_("Proses cabang terbunuh."), 0);
-							};
-						} else if (WIFSTOPPED(status)) {
-							if(status){
-								DEBUG1(_("Proses cabang dihentikan sinyal %1$i."), WSTOPSIG(status));
-								// kirim_mmap->do_kirim=false;
-								exit(status);
-							}else{
-								DEBUG1(_("Proses cabang terhenti."), 0);
-							};
-						} else if (WIFCONTINUED(status)) {
+						if(WCOREDUMP(status)){
+							
+							// Terjadi kesalahan.
+							FAIL(
+								_("Kesalahan memori di proses cabang: %1$s (%2$i)."),
+								kancil_signal_code(EXIT_FAILURE_MEMORY),
+								EXIT_FAILURE_MEMORY
+								);
+							
+							// Berhenti.
+							exit(EXIT_FAILURE_MEMORY);
+						}else if (WIFSTOPPED(status)) {
+							WARN(
+								_("Proses cabang dihentikan sinyal %1$s (%2$i)."),
+								kancil_signal_code(WIFSTOPPED(status)),
+								WIFSTOPPED(status)
+								);
+							
+							// Berhenti.
+							// kirim_mmap->do_kirim=false;
+							exit(WIFSTOPPED(status));
+						}else if(WIFSIGNALED(status)) {
+							
+							// Anak terbunuh sinyal.
+							WARN(
+								_("Proses cabang terbunuh sinyal %1$s (%2$i)."),
+								kancil_signal_code(WIFSIGNALED(status)),
+								status
+							);
+							
+							// Mengulangi.
+							NOTICE(_("Mengulangi proses cabang."), 0);
+							break;
+							
+							// kirim_mmap->do_kirim=false;
+							// exit(WIFSIGNALED(status));
+						}else if(WEXITSTATUS(status)) {
+							
+							// Terjadi kesalahan.
+							FAIL(
+								_("Proses cabang berhenti dengan status: %1$s (%2$i)."),
+								kancil_signal_code(WEXITSTATUS(status)),
+								WEXITSTATUS(status)
+								);
+							
+							// Berhenti.
+							// kirim_mmap->do_kirim=false;
+							exit(WEXITSTATUS(status));
+						}else if(WIFEXITED(status)) {
+							
+							// Berhenti dengan normal.
+							DEBUG3(_("Proses cabang selesai."), 0);
+						}else if(WIFCONTINUED(status)) {
+							
+							// MAsih berjalan.
 							DEBUG3(_("Proses cabang sedang berlangsung."), 0);
 						}
 					} while (!WIFEXITED(status) && !WIFSIGNALED(status));
@@ -274,10 +309,13 @@ void info_kancil(){
  * Menangangi sinyal balasan.
  */
 void signal_callback_handler(int signum){
-	printf("\nCaught signal %i.\n",signum);
+	printf("\r\n");
+	NOTICE(_("Menangkap sinyal %1$s (%2$i)."), kancil_signal_code(signum), signum);
 	
 	// Bila modus DEVEL.
 	#if defined (COMPILE_MODE_DEVEL) && defined (EXECINFO_COMPATIBLE)
+		NOTICE(_("Pelacakan mundur:"), 0);
+		
 		void *array[10];
 		size_t size;
 		

@@ -478,6 +478,45 @@ int killpid(pid_t pid, int sig){
 }
 
 /*
+ * unix_signal_code()
+ * Mengubah kode sinyal unix dari angka.
+ * @param (int) sinyal
+ * @hasil (cahr*) NULL bila tidak ditemukan.
+ */
+char *unix_signal_code(int sinyal){
+	switch(sinyal){
+		case 1: return "SIGHUP"; break;
+		case 2: return "SIGINT"; break;
+		case 3: return "SIGQUIT"; break;
+		case 4: return "SIGILL"; break;
+		case 5: return "SIGTRAP"; break;
+		case 6: return "SIGABRT"; break;
+		case 8: return "SIGFPE"; break;
+		case 9: return "SIGKILL"; break;
+		case 10: return "SIGBUS"; break;
+		case 11: return "SIGSEGV"; break;
+		case 13: return "SIGSYS"; break;
+		case 14: return "SIGALRM"; break;
+		case 15: return "SIGTERM"; break;
+		case 16: return "SIGUSR1"; break;
+		case 17: return "SIGUSR2"; break;
+		case 18: return "SIGCHLD"; break;
+		case 20: return "SIGTSTP"; break;
+		case 21: return "SIGURG"; break;
+		case 22: return "SIGPOLL"; break;
+		case 23: return "SIGSTOP"; break;
+		case 25: return "SIGCONT"; break;
+		case 26: return "SIGTTIN"; break;
+		case 27: return "SIGTTOU"; break;
+		case 28: return "SIGVTALRM"; break;
+		case 29: return "SIGPROF"; break;
+		case 30: return "SIGXCPU"; break;
+		case 31: return "SIGXFSZ"; break;
+		default: return "UNKNOW"; break;
+	};
+}
+
+/*
  * cari_karakter()
  * Mencari karakter dalam string.
  * @param (char*) jarum, tercari;

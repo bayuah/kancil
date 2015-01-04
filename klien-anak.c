@@ -26,6 +26,7 @@ void anak_kirim(
 	int urut_tunggu=aturan.waitqueue;
 	bool urut_jangan_tunggu=true;
 	unsigned int kelompok_kirim=kirim->kelompok_kirim;
+	char *berkas=kirim->berkas;
 	
 	// Pengepala Pecahan.
 	bool identifikasi_awal=true;
@@ -61,6 +62,13 @@ void anak_kirim(
 	if(identifikasi==0){
 		// Panji.
 		panji=START_FLAG;
+		
+		// Memastikan nama berkas ada.
+		if(!strlen(berkas)){
+			// Kesalahan.
+			FAIL(_("Gagal memperoleh nama berkas."), 0);
+			exit(EXIT_FAILURE_MEMORY);
+		};
 		
 		// Pecahan pertama adalah
 		// pecahan dengan informasi berkas.
@@ -210,13 +218,19 @@ void anak_kirim(
 			NOTICE(_("Panji Taksah ditemukan."), 0);
 			NOTICE(_("Menunggu %1$i detik untuk mengirim ulang."), ulang_tunggu);
 			sleep(ulang_tunggu);
+		}else if(r_panji==START_FLAG){
+			// Tunggu berkas
+			// adalah seperempat ulang tunggu.
+			int tunggu=ulang_tunggu/2;
+			NOTICE(_("Meminta pengiriman ulang informasi berkas."), 0);
+			NOTICE(_("Menunggu %1$i detik untuk mengirim ulang."), tunggu);
+			sleep(tunggu);
 		};
 		
 		// Mengirim ulang.
 		NOTICE(_("Percobaan ke-%1$i. Mengulangi pengiriman pecahan %2$i."),kirim->coba, r_identifikasi);
 		identifikasi=r_identifikasi;
-		
-		// exit(EXIT_FAILURE);
+		kirim->identifikasi=identifikasi;
 		
 		// Menambah
 		// percobaan pengiriman.
@@ -251,22 +265,26 @@ void anak_kirim(
 					ukuberkas_panjang
 				);
 				
-				// Pesan.
-				NOTICE(_("Menunggu %1$i detik untuk melanjutkan."), urut_tunggu);
-				sleep(urut_tunggu);
-				identifikasi=0;
-				kirim->identifikasi=identifikasi;
+				// Menambah kelompok.
 				kelompok_kirim++;
 				kirim->kelompok_kirim=kelompok_kirim;
+				
+				// Pesan.
+				NOTICE(_("Menunggu %1$i detik untuk melanjutkan."), urut_tunggu);
+				DEBUG1(_("Kelompok pecahan selanjutnya adalah '%1$i'."), kelompok_kirim);
+				
+				// Tunggu.
+				sleep(urut_tunggu);
+				
+				// Mengulangi identifikasi.
+				identifikasi=0;
+				kirim->identifikasi=identifikasi;
 			};
 		}else{
 			kirim->do_kirim=false;
 		};
 		kirim->coba=1;
 	};
-	
-	// Memastikan nilai kelompok benar.
-	kirim->kelompok_kirim=kelompok_kirim;
 	
 	// Bila lebih dari maksimal kali kirim,
 	// menunggu sebanyak waktu untuk mengirim ulang.
@@ -286,6 +304,12 @@ void anak_kirim(
 		sleep(urut_tunggu);
 		kirim->urut_kali=0;
 	};
+	
+	// Memastikan nilai kelompok benar.
+	kirim->kelompok_kirim=kelompok_kirim;
+	
+	// Mengembalikan data.
+	kirim->berkas=berkas;
 	
 	// if(identifikasi>3)
 		// kirim->do_kirim=false;

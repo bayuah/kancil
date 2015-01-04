@@ -77,7 +77,7 @@ char *kirimdata(
 	struct INFOALAMAT *alamat
 ){
 	// Pengaturan.
-	int     tunggu_detik=30;
+	int     tunggu_detik=5;
 	int tunggu_milidetik=0;
 	
 	// Pengaturan.
@@ -103,8 +103,8 @@ char *kirimdata(
 	// Perilaku.
 	bool ulangi=false;
 	int kali_ulang=1;
-	int ulang_maksimal=20;
-	int ulang_tunggu=30;
+	int ulang_maksimal=3;
+	int ulang_tunggu=3;
 	int status=0;
 	int len;
 	int i, j;
@@ -248,59 +248,25 @@ char *kirimdata(
 				};
 			};
 		};
-		/*
-		bool lanjut_tembolok=false;
-		do{
-			DEBUG4(_("Mencoba tembolok identifikasi '%1$i'."), alamat->identifikasi);
-			DEBUG4(_("Ditemukan alamat '%1$s'."), alamat->nama_inang);
-			if(strcmp(hostname, alamat_tmp->nama_inang)==0){
-				// Ditemukan.
-				DEBUG4(_("Berhasil di identifikasi tembolok '%1$i'."), alamat_tmp->identifikasi);
-				DEBUG3(_("Menemukan informasi alamat '%1$s' di tembolok."), hostname);
-				
-				// Memasukkan.
-				serv_addrinfo_result=alamat_tmp->info;
-			}else{
-				if(alamat_tmp->lanjut!=NULL){
-					// Melanjutkan.
-					DEBUG4(_("Melanjutkan ke identifikasi selanjutnya."), 0);
-					alamat_tmp=alamat_tmp->lanjut;
-					lanjut_tembolok=true;
-				}else{
-					// Berhenti.
-					DEBUG4(_("Gagal di identifikasi tembolok '%1$i'."), alamat_tmp->identifikasi);
-					DEBUG3(_("Tidak menemukan informasi alamat '%1$s' di tembolok."), hostname);
-					lanjut_tembolok=false;
-				};
-			};
-		}while(lanjut_tembolok);*/
 		
 		// Bila hasil kosong.
 		if(serv_addrinfo_result==NULL){
 			
 			// Mencari di jaringan.
-			DEBUG3(_("Mulai mencari informasi alamat '%1$s' di jaringan."), hostname);
+			DEBUG3(_("Mulai mencari informasi alamat inang '%1$s' di jaringan."), hostname);
 			status = getaddrinfo(hostname, portno, &set, &serv_addrinfo_result);
 			if (status != 0) {
 			   // fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
-				FAIL(_("Gagal mendapatkan alamat '%1$s': %2$s (%3$i)."), hostname, gai_strerror(status), status);
-				exit(EXIT_FAILURE_SOCKET);
+				WARN(_("Gagal mendapatkan alamat '%1$s': %2$s (%3$i)."), hostname, gai_strerror(status), status);
+				ulangi=true;
+				continue;
 			}else{
 				// Pesan.
-				DEBUG3(_("Menemukan informasi alamat '%1$s' di jaringan."), hostname);
+				DEBUG3(_("Menemukan informasi alamat inang '%1$s' di jaringan."), hostname);
 			};
 			
 			// Memasukkan ke tembolok.
-			// Memeriksa posisi penunjuk.
-			DEBUG3(_("Mulai memasukkan informasi alamat '%1$s' ke tembolok."), hostname);
-			
-			// Inisiasi.
-			// struct addrinfo *tmp_addrinfo_utm;
-			// struct addrinfo *tmp_addrinfo;
-			
-			// Membangun struktur.
-			// struct addrinfo *tmp_addrinfo_utm;
-			// struct addrinfo *tmp_addrinfo;
+			DEBUG3(_("Mulai memasukkan informasi alamat inang '%1$s' ke tembolok."), hostname);
 			
 			// Perulangan.
 			bool ulang=false;
@@ -517,6 +483,7 @@ char *kirimdata(
 			DEBUG3(_("Mulai menghubungi '%1$s' (%2$s)."), hostname, ipstr);
 			if (connect(sockfd, serv_addrinfo->ai_addr, serv_addrinfo->ai_addrlen) != -1){
 				// Berhasil.
+				DEBUG3(_("Berhasil menghubungi alamat '%1$s'."), ipstr);
 				break;
 			}else{
 				// Pesan.

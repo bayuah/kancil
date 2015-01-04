@@ -14,4 +14,5 @@ void tampil_info_progres_berkas(
 	double sekarang, double tujuan,
 	int ukuberkas_panjang
 	);
+char *kancil_signal_code(int sinyal);
 #endif
