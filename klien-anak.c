@@ -169,6 +169,17 @@ void anak_kirim(
 		infoalamat
 		);
 	
+	if(pecahan == NULL){
+		// Pesan kesalahan.
+		FAIL(_("Kegagalan  %1$s."), _("Soket"));
+		
+		// Alokasi ulang memori.
+		// pecahan=malloc((sizeof pecahan) * MAX_CHUNK_SIZE );
+		
+		// Keluar.
+		exit(EXIT_FAILURE_SOCKET);
+	};
+	
 	// Mendapatkan pengepala.
 	// Respons.
 	int r_versi;
@@ -204,7 +215,7 @@ void anak_kirim(
 		if(kirim->coba>maksimal_coba){
 			FAIL(_("Telah melakukan percobaan sebanyak %1$i kali. Berhenti."), maksimal_coba);
 			exit(EXIT_FAILURE);
-		}else if(!r_status_peladen && !r_status_peladen){
+		}else if(!r_status_gerbang && !r_status_peladen){
 			WARN(_("Gagal mengirim ke %1$s dan %2$s."),_("Gerbang"),_("Peladen"));
 		}else if(!r_status_peladen){
 			WARN(_("Gagal mengirim ke %1$s."),_("Peladen"));
@@ -225,6 +236,9 @@ void anak_kirim(
 			NOTICE(_("Meminta pengiriman ulang informasi berkas."), 0);
 			NOTICE(_("Menunggu %1$i detik untuk mengirim ulang."), tunggu);
 			sleep(tunggu);
+			
+			// Mengatur ulang ukuran berkas terkirim.
+			kirim->ukuran_kirim=0;
 		};
 		
 		// Mengirim ulang.
@@ -309,7 +323,7 @@ void anak_kirim(
 	kirim->kelompok_kirim=kelompok_kirim;
 	
 	// Mengembalikan data.
-	kirim->berkas=berkas;
+	// kirim->berkas=berkas;
 	
 	// if(identifikasi>3)
 		// kirim->do_kirim=false;

@@ -407,7 +407,11 @@ void insert_string(char **target, size_t target_length,
  * @hasil: (char) hasil.
  */
 char *basename (const char *filename){
-	char *p = strrchr (filename, '/');
+	#ifdef DIR_SEPARATOR
+		char *p = strrchr (filename, DIR_SEPARATOR);
+	#else
+		char *p = strrchr (filename, '/');
+	#endif
 	return p ? p + 1 : (char *) filename;
 }
 

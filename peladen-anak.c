@@ -149,7 +149,7 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 			// Mendapatkan pesan.
 			pesan=ambil_pesan(penyangga);
 			
-			// Keterangan (TES).
+			// Keterangan.
 			DEBUG2(_("Versi: %1$i."),versi);
 			DEBUG2(_("Panji: %1$s."),arti_panji(panji));
 			DEBUG2(_("Identifikasi: %1$i."),identifikasi);

@@ -66,6 +66,9 @@ struct INFOALAMAT{
 } INFOALAMAT;
 
 // Kirim.
+#ifndef KIRIMBERKAS_STR
+	#define KIRIMBERKAS_MAX_STR 64
+#endif
 struct KIRIMBERKAS{
 	unsigned int identifikasi;
 	unsigned int identifikasi_sebelumnya;
@@ -74,9 +77,9 @@ struct KIRIMBERKAS{
 	double ukuran_berkas;
 	double ukuran_kirim;
 	bool do_kirim;
-	char *hostname;
-	char *portno;
-	char *berkas;
+	char hostname[KIRIMBERKAS_MAX_STR];
+	char portno[KIRIMBERKAS_MAX_STR];
+	char berkas[KIRIMBERKAS_MAX_STR];
 	int coba;
 } KIRIMBERKAS;
 

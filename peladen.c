@@ -9,8 +9,9 @@
 #include "peladen.h"
 
 int main(/*int argc, char *argv[]*/){
-	// Mengugaskan penangan sinyal.
+	// Menugaskan penangan sinyal.
 	signal(SIGINT, signal_callback_handler);
+	int status;
 	
 	// Lokalisasi.
 	setlocale(LC_ALL,"");
@@ -38,11 +39,17 @@ int main(/*int argc, char *argv[]*/){
 	int berbagi_panji = MAP_SHARED;
 	#ifdef SHM
 		// Buka berbagi memori.
-		shm_berkas = shm_open("/BERKASFL-PELADEN.memory", 
+		shm_berkas = shm_open(SHM_FILE, 
 		  O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
 
 		// Ubah ukuran berbagi memori.
-		ftruncate(shm_berkas, berbagi_ukuran);
+		status=ftruncate(shm_berkas, berbagi_ukuran);
+		
+		// Bila gagal mengubah ukuran.
+		if(status){
+			FAIL(_("Gagal membuat berkas memori: %1$s (%2$i)."), strerror(errno), errno);
+			exit(EXIT_FAILURE_MEMORY);
+		};
 	#else
 		//shm_berkas = -1;
 		shm_berkas = creat("/dev/zero", S_IRUSR | S_IWUSR);
@@ -205,7 +212,7 @@ int main(/*int argc, char *argv[]*/){
 	// Menutup.
 	// stop_listening(newsockfd);
 	
-	return 0;
+	exit(EXIT_SUCCESS);
 }
 
 /*
@@ -228,6 +235,9 @@ void signal_callback_handler(int signum){
 	
 	// Menutup.
 	stop_listening(sockid);
+	
+	// Membersihkan berkas memori.
+	free_shm();
 	
 	// Bila modus DEVEL.
 	#if defined (COMPILE_MODE_DEVEL) && defined (EXECINFO_COMPATIBLE)
@@ -274,4 +284,26 @@ void info_kancil(){
 	printf("\n");
 	
 	free(BUILT_VERSION);
+}
+
+/*
+ * free_shm().
+ * Membersihkan berkas memori.
+ */
+void free_shm(){
+	#if defined(SHM_FILE) && defined (SHM)
+		int status;
+		
+		// Pesan.
+		DEBUG3(_("Membersihkan berkas memori '%1$s'."), SHM_FILE);
+		
+		// Membersihkan.
+		status=shm_unlink(SHM_FILE);
+		
+		// Status.
+		if(status){
+			FAIL(_("Gagal membuat berkas memori: %1$s (%2$i)."), strerror(errno), errno);
+			exit(EXIT_FAILURE_MEMORY);
+		};
+	#endif
 }

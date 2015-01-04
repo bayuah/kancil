@@ -39,7 +39,7 @@ else
 endif
 
 # Architecture
-# ARCH = $(shell getconf LONG_BIT)
+ARCH = $(shell getconf LONG_BIT)
 # ARCH_32=-D_FILE_OFFSET_BITS=32
 # ARCH_64=-D_FILE_OFFSET_BITS=64
 
@@ -82,7 +82,7 @@ VERSION=$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)
 BUILT_TIME=$(shell date +'%s')
 
 # Start.
-all: information peladen klien clean
+all: information peladen gerbang klien clean
 .PHONY: information built-info clean distclean-all
 
 information:
@@ -103,33 +103,47 @@ endif
 	@echo "Built with flags:"
 	@echo $(CCFLAGS) $(CCLIBS)
 
-peladen:information built-peladen built-info
-	@mkdir -p $(BUILT_BAKDIR)
-	@echo "Create backup to $(BUILT_BAKDIR)/peladen-$(BUILT_TIME)-$(VERSION)-$(BUILT_PELADEN)-$(mode).bak."
-	@cp -p peladen $(BUILT_BAKDIR)/peladen-$(BUILT_TIME)-$(VERSION)-$(BUILT_PELADEN)-$(mode).bak
-
 klien:information built-klien built-info
 	@mkdir -p $(BUILT_BAKDIR)
 	@echo "Create backup to $(BUILT_BAKDIR)/klien-$(BUILT_TIME)-$(VERSION)-$(BUILT_KLIEN)-$(mode).bak."
 	@cp -p klien $(BUILT_BAKDIR)/klien-$(BUILT_TIME)-$(VERSION)-$(BUILT_KLIEN)-$(mode).bak
+
+gerbang:information built-gerbang built-info
+	@mkdir -p $(BUILT_BAKDIR)
+	@echo "Create backup to $(BUILT_BAKDIR)/gerbang-$(BUILT_TIME)-$(VERSION)-$(BUILT_KLIEN)-$(mode).bak."
+	@cp -p gerbang $(BUILT_BAKDIR)/gerbang-$(BUILT_TIME)-$(VERSION)-$(BUILT_KLIEN)-$(mode).bak
+
+peladen:information built-peladen built-info
+	@mkdir -p $(BUILT_BAKDIR)
+	@echo "Create backup to $(BUILT_BAKDIR)/peladen-$(BUILT_TIME)-$(VERSION)-$(BUILT_PELADEN)-$(mode).bak."
+	@cp -p peladen $(BUILT_BAKDIR)/peladen-$(BUILT_TIME)-$(VERSION)-$(BUILT_PELADEN)-$(mode).bak
 
 built-klien:klien.c $(UTILITY_OBJ) klien-anak.o
 	@echo "Build klien with built number $(BUILT_KLIEN)..."
 	@ld -r $(UTILITY_OBJ) klien-anak.o -o klien.o
 	@$(CCF) $(VERSIONING) -D__BUILT_NUMBER=$(BUILT_KLIEN) klien.o klien.c -o klien $(CCLIBS)
 
+built-gerbang:gerbang.c $(UTILITY_OBJ) gerbang-anak.o
+	@echo "Build gerbang with built number $(BUILT_GERBANG)..."
+	@ld -r $(UTILITY_OBJ) gerbang-anak.o -o gerbang.o
+	@$(CCF) $(VERSIONING) -D__BUILT_NUMBER=$(BUILT_GERBANG) gerbang.o gerbang.c -o gerbang $(CCLIBS)
+
 built-peladen:peladen.c $(UTILITY_OBJ) peladen-anak.o
 	@echo "Build peladen with built number $(BUILT_PELADEN)..."
 	@ld -r $(UTILITY_OBJ) peladen-anak.o -o peladen.o
 	@$(CCF) $(VERSIONING) -D__BUILT_NUMBER=$(BUILT_PELADEN) peladen.o peladen.c -o peladen $(CCLIBS)
 
-peladen-anak.o:peladen-anak.c
-	@echo "Build $@..."
-	@$(CCF) -c peladen-anak.c -o peladen-anak.o $(CCLIBS)
-
 klien-anak.o:klien-anak.c
 	@echo "Build $@..."
 	@$(CCF) -c klien-anak.c -o klien-anak.o $(CCLIBS)
+
+gerbang-anak.o:gerbang-anak.c
+	@echo "Build $@..."
+	@$(CCF) -c gerbang-anak.c -o gerbang-anak.o $(CCLIBS)
+
+peladen-anak.o:peladen-anak.c
+	@echo "Build $@..."
+	@$(CCF) -c peladen-anak.c -o peladen-anak.o $(CCLIBS)
 
 pesan.o:pesan.c
 	@echo "Build $@..."
@@ -154,22 +168,29 @@ ifeq ($(MAKECMDGOALS), klien)
 	@echo "VERSION_MINOR=$(VERSION_MINOR)"  >> $(BUILT_INFO)
 	@echo "VERSION_PATCH=$(VERSION_PATCH)"  >> $(BUILT_INFO)
 	@echo "BUILT_KLIEN=$$(( $(BUILT_KLIEN) + 1))" >> $(BUILT_INFO)
-	@echo "BUILT_PELADEN=$(BUILT_PELADEN)" >> $(BUILT_INFO)
 	@echo "BUILT_GERBANG=$(BUILT_GERBANG)" >> $(BUILT_INFO)
+	@echo "BUILT_PELADEN=$(BUILT_PELADEN)" >> $(BUILT_INFO)
+else ifeq ($(MAKECMDGOALS), gerbang)
+	@echo "VERSION_MAJOR=$(VERSION_MAJOR)"  > $(BUILT_INFO)
+	@echo "VERSION_MINOR=$(VERSION_MINOR)"  > $(BUILT_INFO)
+	@echo "VERSION_PATCH=$(VERSION_PATCH)"  > $(BUILT_INFO)
+	@echo "BUILT_KLIEN=$(BUILT_KLIEN)" >> $(BUILT_INFO)
+	@echo "BUILT_GERBANG=$$(( $(BUILT_GERBANG) + 1))" >> $(BUILT_INFO)
+	@echo "BUILT_PELADEN=$(BUILT_PELADEN)" >> $(BUILT_INFO)
 else ifeq ($(MAKECMDGOALS), peladen)
 	@echo "VERSION_MAJOR=$(VERSION_MAJOR)"  > $(BUILT_INFO)
 	@echo "VERSION_MINOR=$(VERSION_MINOR)"  > $(BUILT_INFO)
 	@echo "VERSION_PATCH=$(VERSION_PATCH)"  > $(BUILT_INFO)
 	@echo "BUILT_KLIEN=$(BUILT_KLIEN)" >> $(BUILT_INFO)
-	@echo "BUILT_PELADEN=$$(( $(BUILT_PELADEN) + 1))" >> $(BUILT_INFO)
 	@echo "BUILT_GERBANG=$(BUILT_GERBANG)" >> $(BUILT_INFO)
+	@echo "BUILT_PELADEN=$$(( $(BUILT_PELADEN) + 1))" >> $(BUILT_INFO)
 else
 	@echo "VERSION_MAJOR=$(VERSION_MAJOR)"  > $(BUILT_INFO)
 	@echo "VERSION_MINOR=$(VERSION_MINOR)"  >> $(BUILT_INFO)
 	@echo "VERSION_PATCH=$(VERSION_PATCH)"  >> $(BUILT_INFO)
 	@echo "BUILT_KLIEN=$$(( $(BUILT_KLIEN) + 1))" >> $(BUILT_INFO)
 	@echo "BUILT_PELADEN=$$(( $(BUILT_PELADEN) + 1))" >> $(BUILT_INFO)
-	@echo "BUILT_GERBANG=$(BUILT_GERBANG)" >> $(BUILT_INFO)
+	@echo "BUILT_GERBANG=$$(( $(BUILT_GERBANG) + 1))" >> $(BUILT_INFO)
 endif
 	
 clean:

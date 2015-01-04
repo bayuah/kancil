@@ -9,7 +9,7 @@
 #include "klien.h"
 
 int main(int argc, char *argv[]){
-	// Mengugaskan penangan sinyal.
+	// Menugaskan penangan sinyal.
 	signal(SIGINT, signal_callback_handler);
 	int ukuberkas_panjang=12;
 	int status;
@@ -30,21 +30,41 @@ int main(int argc, char *argv[]){
 		exit(EXIT_FAILURE_ARGS);
 	};
 	
+	// Aturan umum.
+	aturan.show_error=true;
+	aturan.show_warning=true;
+	aturan.show_notice=true;
+	aturan.show_info=true;
+	aturan.show_debug1=false;
+	aturan.show_debug2=false;
+	aturan.show_debug3=false;
+	aturan.show_debug4=false;
+	aturan.show_debug5=false;
+	aturan.tempdir="tmp";
+	aturan.tries=20;
+	aturan.waitretry=30;
+	aturan.maxqueue=15000;
+	aturan.waitqueue=30;
+	aturan.nowaitqueue=true;
+	
 	// Berbagi memori.
 	int berbagi_ukuran = 1024 * 1024 * 128; //128 mb
 	int persen_ukuran=0;
 	int shm_berkas = -1; 
 	int berbagi_panji = MAP_SHARED;
 	#ifdef SHM
-		// Hapus lama.
-		shm_unlink("/BERKASFL-KLIEN.memory");
-		
 		// Buka berbagi memori.
-		shm_berkas = shm_open("/BERKASFL-KLIEN.memory", 
+		shm_berkas = shm_open(SHM_FILE, 
 		  O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
 
 		// Ubah ukuran berbagi memori.
-		ftruncate(shm_berkas, berbagi_ukuran);
+		status=ftruncate(shm_berkas, berbagi_ukuran);
+		
+		// Bila gagal mengubah ukuran.
+		if(status){
+			FAIL(_("Gagal membuat berkas memori: %1$s (%2$i)."), strerror(errno), errno);
+			exit(EXIT_FAILURE_MEMORY);
+		};
 	#else
 		//shm_berkas = -1;
 		shm_berkas = creat("/dev/zero", S_IRUSR | S_IWUSR);
@@ -89,23 +109,6 @@ int main(int argc, char *argv[]){
 	memset(alamat_mmap->sockaddr_sa_family, 0, sizeof(alamat_mmap->sockaddr_sa_family[0][0]) * mxid * mxip);
 	memset(alamat_mmap->sockaddr_sa_data, 0, sizeof(alamat_mmap->sockaddr_sa_data[0][0][0]) * mxid * mxip * 14);
 	
-	// Aturan umum.
-	aturan.show_error=true;
-	aturan.show_warning=true;
-	aturan.show_notice=true;
-	aturan.show_info=true;
-	aturan.show_debug1=true;
-	aturan.show_debug2=true;
-	aturan.show_debug3=true;
-	aturan.show_debug4=true;
-	aturan.show_debug5=true;
-	aturan.tempdir="tmp";
-	aturan.tries=20;
-	aturan.waitretry=30;
-	aturan.maxqueue=15000;
-	aturan.waitqueue=30;
-	aturan.nowaitqueue=true;
-	
 	// Berkas.
 	berkas = argv[3];
 	
@@ -147,9 +150,9 @@ int main(int argc, char *argv[]){
 			// kirim_mmap->ukuran_berkas;
 			kirim_mmap->ukuran_kirim=0;
 			kirim_mmap->do_kirim=true;
-			kirim_mmap->hostname=argv[1];
-			kirim_mmap->portno=argv[2];
-			kirim_mmap->berkas=berkas;
+			strncpy(kirim_mmap->hostname, argv[1], KIRIMBERKAS_MAX_STR);
+			strncpy(kirim_mmap->portno, argv[2], KIRIMBERKAS_MAX_STR);
+			strncpy(kirim_mmap->berkas, berkas, KIRIMBERKAS_MAX_STR);
 			kirim_mmap->coba=1;
 			
 			// Mulai.
@@ -271,6 +274,9 @@ int main(int argc, char *argv[]){
 		};
 	};
 	
+	// Membersihkan berkas memori.
+	free_shm();
+	
 	exit(EXIT_SUCCESS);
 }
 
@@ -312,6 +318,9 @@ void signal_callback_handler(int signum){
 	printf("\r\n");
 	NOTICE(_("Menangkap sinyal %1$s (%2$i)."), kancil_signal_code(signum), signum);
 	
+	// Membersihkan berkas memori.
+	free_shm();
+	
 	// Bila modus DEVEL.
 	#if defined (COMPILE_MODE_DEVEL) && defined (EXECINFO_COMPATIBLE)
 		NOTICE(_("Pelacakan mundur:"), 0);
@@ -328,4 +337,26 @@ void signal_callback_handler(int signum){
 	
 	// Mematikan.
 	exit(signum);
+}
+
+/*
+ * free_shm().
+ * Membersihkan berkas memori.
+ */
+void free_shm(){
+	#if defined(SHM_FILE) && defined (SHM)
+		int status;
+		
+		// Pesan.
+		DEBUG3(_("Membersihkan berkas memori '%1$s'."), SHM_FILE);
+		
+		// Membersihkan.
+		status=shm_unlink(SHM_FILE);
+		
+		// Status.
+		if(status){
+			FAIL(_("Gagal membuat berkas memori: %1$s (%2$i)."), strerror(errno), errno);
+			exit(EXIT_FAILURE_MEMORY);
+		};
+	#endif
 }

@@ -103,8 +103,8 @@ char *kirimdata(
 	// Perilaku.
 	bool ulangi=false;
 	int kali_ulang=1;
-	int ulang_maksimal=3;
-	int ulang_tunggu=3;
+	int ulang_maksimal=aturan.tries;
+	int ulang_tunggu=aturan.waitretry;;
 	int status=0;
 	int len;
 	int i, j;
@@ -134,8 +134,8 @@ char *kirimdata(
 				ulangi=false;
 			}else{
 				// Pesan.
-				FAIL(_("Telah melakukan percobaan sebanyak %1$i kali."), ulang_maksimal);
-				exit(EXIT_FAILURE_SOCKET);
+				FAIL(_("Telah melakukan percobaan sebanyak %1$i kali. Berhenti"), ulang_maksimal);
+				return NULL;
 			};
 		};
 		
@@ -152,7 +152,7 @@ char *kirimdata(
 		
 		// Menemukan alamat.
 		// Alokasi memori.
-		memset(&set, 0, sizeof(struct addrinfo)+1);
+		memset(&set, 0, sizeof(struct addrinfo));
 		set.ai_family = AF_UNSPEC; // IPV4 dan IPV6
 		set.ai_socktype = SOCK_STREAM; // Aliran. Komunikasi dua arah.
 		set.ai_protocol = 0; // Semua porta.
@@ -413,7 +413,7 @@ char *kirimdata(
 			}else{
 				// Kesalahan.
 				FAIL(_("Keluarga alamat inang '%1$s' (%2$i) tidak diketahui."), hostname, serv_addrinfo->ai_family);
-				exit(EXIT_FAILURE_SOCKET);
+				return NULL;
 			};
 			
 			// Menemukan alamat.
@@ -449,7 +449,7 @@ char *kirimdata(
 			if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR,
 				&reuse_addr, sizeof(int)) < 0 ){
 				FAIL(_("Gagal menggunakan ulang alamat: %2$s (%3$i)."), strerror(errno), errno);
-				exit(EXIT_FAILURE_SOCKET);
+				return NULL;
 			}else{
 				// Pesan.
 				DEBUG3(_("Berhasil menggunakan ulang alamat."), 0);
@@ -461,7 +461,7 @@ char *kirimdata(
 			if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,
 				(struct timeval *)&waktu_tunggu, sizeof(struct timeval)) < 0 ){
 				FAIL(_("Gagal mengatur batas waktu penerimaan: %1$s (%2$i)."), strerror(errno), errno);
-				exit(EXIT_FAILURE_SOCKET);
+				return NULL;
 			}else{
 				// Pesan.
 				DEBUG3(_("Berhasil mengatur batas waktu penerimaan."), 0);
@@ -473,7 +473,7 @@ char *kirimdata(
 			if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO,
 				(struct timeval *)&waktu_tunggu, sizeof(struct timeval)) < 0 ){
 				FAIL(_("Gagal mengatur batas waktu pengiriman: %1$s (%2$i)."), strerror(errno), errno);
-				exit(EXIT_FAILURE_SOCKET);
+				return NULL;
 			}else{
 				// Pesan.
 				DEBUG3(_("Berhasil mengatur batas waktu pengiriman."), 0);
@@ -514,7 +514,7 @@ char *kirimdata(
 		DEBUG3(_("Mulai menulis soket ke '%1$s' (%2$s)."), hostname, ipstr);
 		if (!sendall(sockfd, pesan, &len)){
 			FAIL(_("Kesalahan dalam menulis ke soket: %1$s (%2$i)."),strerror(errno), errno);
-			exit(EXIT_FAILURE_SOCKET);
+			return NULL;
 		}else{
 			// Pesan.
 			DEBUG3(_("Berhasil menulis soket ke '%1$s' (%2$s)."), hostname, ipstr);
@@ -533,7 +533,7 @@ char *kirimdata(
 				continue;
 			}else{
 				FAIL(_("Kesalahan dalam membaca soket: %1$s (%2$i)."),strerror(errno), errno);
-				exit(EXIT_FAILURE_SOCKET);
+				return NULL;
 			};
 		}else{
 			rturn=respons;

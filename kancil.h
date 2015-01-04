@@ -48,6 +48,10 @@
 #include <sys/stat.h> /* Untuk konstan mode */
 #include <fcntl.h>    /* Untuk konstan O_* */
 
+#if defined(PROGCODE) && defined (SHM)
+	#define SHM_FILE "/SHM_" PROGCODE ".memory"
+#endif
+
 // Soket.
 #include <sys/socket.h>
 #include <netinet/in.h>

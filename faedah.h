@@ -47,6 +47,8 @@ void _test(const char * file, const int line, const char *msg);
 	throw_error(3, __FILE__, __LINE__, msg, __VA_ARGS__);
 #define INFO(msg, ...) \
 	throw_error(4, __FILE__, __LINE__, msg, __VA_ARGS__);
+#define DEBUG(msg, ...) \
+	throw_error(5, __FILE__, __LINE__, msg, __VA_ARGS__);
 #define DEBUG1(msg, ...) \
 	throw_error(5, __FILE__, __LINE__, msg, __VA_ARGS__);
 #define DEBUG2(msg, ...) \
