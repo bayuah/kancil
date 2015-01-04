@@ -6,10 +6,12 @@
  * Lisensi: lihat LICENCE.txt
  */
 
+#ifndef _POSIX_C_SOURCE
+	#define _POSIX_C_SOURCE 200112L
+#endif
+
 #include "kancil.h"
 #include "faedah.h"
-
-#define _POSIX_C_SOURCE 200112L 
 
 /*
  * getaddrfamily()
@@ -51,7 +53,7 @@ int getaddrfamily(const char *addr){
 bool sendall(int s, char *buf, int *len){
 	int selesai = 0;        // Bita terkirim.
 	int kurang = *len; // Bita tersisa.
-	int n;
+	int n=0;
 
 	while(selesai < *len) {
 		n = send(s, buf+selesai, kurang, 0);
@@ -87,7 +89,7 @@ char *kirimdata(
 	waktu_tunggu.tv_usec = tunggu_milidetik;
 	
 	// Soket.
-	int sockfd;
+	int sockfd=0;
 	// struct hostent *server;
 	struct addrinfo set;
 	// struct sockaddr_in *serv_sin;
@@ -188,6 +190,12 @@ char *kirimdata(
 					// Membangun struktur.
 					struct addrinfo *tmp_addrinfo_utm;
 					struct addrinfo *tmp_addrinfo;
+					
+					// Inisiasi.
+					tmp_addrinfo_utm=malloc(sizeof (struct addrinfo *));
+					tmp_addrinfo=malloc(sizeof (struct tmp_addrinfo *));
+					
+					// Perulangan.
 					for(j=0;j<alamat->ipcount[i];j++){
 						DEBUG4(_("Memasukkan %1$s dari tembolok identifikasi '%2$i'."), _("Informasi Jaringan"), i);
 						tmp_addrinfo=malloc(sizeof(struct addrinfo)+1);

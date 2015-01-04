@@ -1,5 +1,5 @@
 CC = cc
-CCLIBS = -lcrypto -lrt -DSHM  -D_POSIX_C_SOURCE=200112L 
+CCLIBS = -lcrypto -lrt
 
 ifeq ($(OS),Windows_NT)
 	CCLIBS += -lintl
@@ -17,15 +17,15 @@ UTILITY_OBJ=faedah.o tampilan.o soket.o pesan.o
 # Compiler flags.
 CFLAGS =-std=c99
 CCFLAGS_DEVEL = -O0 $(CFLAGS) -ggdb3 -Wall -pedantic -W -Wextra -DCOMPILE_MODE_DEVEL
-CCFLAGS_BUILD_INTERNAL = -O2 $(CFLAGS) -g -Wall -DCOMPILE_MODE_BUILD_INTERNAL
+CCFLAGS_PREVIEW = -O2 $(CFLAGS) -g -Wall -DCOMPILE_MODE_PREVIEW
 #CCFLAGS_BUILD= -O2 $((CFLAGS)) -g -Wall
-CCFLAGS_BUILD = -O2 $(CFLAGS) -DCOMPILE_MODE_BUILD
+CCFLAGS_STABLE= -O2 $(CFLAGS) -DCOMPILE_MODE_STABLE
 
 # Compiler mode selector.
-ifeq ($(mode), built)
-	CCFLAGS_0 = $(CCFLAGS_BUILD)
-else ifeq ($(mode), internal)
-	CCFLAGS_0 = $(CCFLAGS_BUILD_INTERNAL)
+ifeq ($(mode), stable)
+	CCFLAGS_0 = $(CCFLAGS_STABLE)
+else ifeq ($(mode), preview)
+	CCFLAGS_0 = $(CCFLAGS_PREVIEW)
 else
 	mode = devel
 	CCFLAGS_0 = $(CCFLAGS_DEVEL)
@@ -86,16 +86,16 @@ all: information peladen gerbang klien clean
 .PHONY: information built-info clean distclean-all
 
 information:
-ifneq ($(mode),built)
-ifneq ($(mode),internal)
+ifneq ($(mode),stable)
+ifneq ($(mode),preview)
 ifneq ($(mode),devel)
 	@echo "Invalid build mode." 
-	@echo "Please use 'make mode=built' or 'make mode=internal' or 'make mode=devel'"
+	@echo "Please use 'make mode=stable' or 'make mode=preview' or 'make mode=devel'"
 	@exit 1
 endif
 endif
 endif
-	@echo "Build Kancil on "$(ARCH)"-bit "$(mode)" mode"
+	@echo "Build Kancil on "$(ARCH)"-bit "$(mode)"-mode"
 	@echo "...................................."
 ifeq ($(nofork), yes)
 	@echo "Add setting: nofork"

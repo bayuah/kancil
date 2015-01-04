@@ -48,6 +48,10 @@
 #include <sys/stat.h> /* Untuk konstan mode */
 #include <fcntl.h>    /* Untuk konstan O_* */
 
+// Variabel memori bersama
+#ifdef _SYS_MMAN_H
+	#define SHM
+#endif
 #if defined(PROGCODE) && defined (SHM)
 	#define SHM_FILE "/SHM_" PROGCODE ".memory"
 #endif
@@ -77,10 +81,10 @@
 #pragma GCC diagnostic ignored "-Wformat"
 
 // Mendapatkan versi kompilasi.
-#ifdef COMPILE_MODE_BUILD
-	#define COMPILE_MODE "built"
-#elif COMPILE_MODE_BUILD_INTERNAL
-	#define COMPILE_MODE "built-internal"
+#ifdef COMPILE_MODE_STABLE
+	#define COMPILE_MODE "stable"
+#elif COMPILE_MODE_PREVIEW
+	#define COMPILE_MODE "preview"
 #elif COMPILE_MODE_DEVEL
 	#define COMPILE_MODE "devel"
 #else
