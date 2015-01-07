@@ -15,6 +15,7 @@
 #define _BSD_SOURCE
 #define _LARGEFILE_SOURCE
 #define _LARGEFILE64_SOURCE
+#define _POSIX_SOURCE
 
 // Standar.
 #include <stdio.h>
@@ -35,12 +36,12 @@
 #endif
 
 // Posix
-#define _POSIX_SOURCE
 #include <sys/types.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <time.h>
+
 // #include <netdb.h>
 
 // Posix komunikasi antar cabang.

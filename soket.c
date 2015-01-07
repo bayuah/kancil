@@ -13,6 +13,26 @@
 #include "kancil.h"
 #include "faedah.h"
 
+// Ekstra.
+#include <errno.h>
+
+// Soket.
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+
+// Lokalisasi
+#include <libintl.h>
+#include <locale.h>
+#define _(String) gettext (String) // Makro.
+
+// Soket.
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+
 /*
  * getaddrfamily()
  * Menentukan keluarga alamat IP

@@ -7,7 +7,6 @@
  */
 
 #include "peladen.h"
- 
 /*
  * anak_tulis()
  * Proses yang menangani penulisan berkas.
@@ -70,11 +69,11 @@ void anak_tulis(struct BERKAS *berkas){
 		+3
 		);
 	strcpy(berkas_lajur,aturan.tempdir);
-	strcat(berkas_lajur,(char*)DIR_SEPARATOR);
+	// strcat(berkas_lajur,(char*)DIR_SEPARATOR);
 	// strcpy(berkas_lajur,berkas->nama);
 	
 	TEST(berkas_lajur);
-	// sleep(60);
+	sleep(60);
 	// Membuka berkas.
 	
 	
@@ -94,7 +93,8 @@ void anak_tulis(struct BERKAS *berkas){
  */
 void anak_sambungan (int sock, struct BERKAS *berkas){
 	int n, status;
-	pid_t pid, result_waitpid;
+	pid_t pid;
+	// pid_t result_waitpid;
 	int diterima = 0;
 	int ukuberkas_panjang=12;
 	char *penyangga;
@@ -324,11 +324,43 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 		}else{
 			WARN(_("Sambungan klien ditunda."), 0);
 			if(berkas->pid_tulis){
+				
+				// bool tunggupid=false;
+				// do{
+					if(kill(berkas->pid_tulis, 0) == 0){
+						DEBUG1(_("Proses cabang sedang berlangsung."), 0);
+						berkas->sedang_sibuk=true;
+						
+						// Pesan.
+						NOTICE(_("Menunggu penulisan berkas '%1$s' selama %2$i detik."),
+							berkas->nama, detik_tunggu_penulisan);
+						// Menunggu TIGA detik.
+						// Periksa kembali
+						// apakah masih sibuk.
+						sleep(3);
+						if(!berkas->sedang_sibuk){
+							berkas->sedang_sibuk=false;
+							// tunggupid=true;
+							// break;
+						};
+					}else if(errno==ESRCH){
+						WARN(_("Kegagalan proses cabang (%1$i): %2$s (%3$i)."), berkas->pid_tulis, strerror(errno), errno);
+						berkas->sedang_sibuk=false;
+						// tunggupid=false;
+					}else{
+						WARN(_("Kegagalan proses cabang (%1$i): %2$s (%3$i)."), berkas->pid_tulis, strerror(errno), errno);
+						berkas->sedang_sibuk=false;
+						// tunggupid=false;
+					};
+				// }while(tunggupid);
+				
+				
+				/*
 				do {
 					result_waitpid  = waitpid(berkas->pid_tulis, &status, WUNTRACED | WCONTINUED);
 					if (result_waitpid  == -1) {
 						// Pesan.
-						WARN(_("Kegagalan proses cabang: %1$s (%2$i)."), strerror(errno), errno);
+						WARN(_("Kegagalan proses cabang (%1$i): %2$s (%3$i)."), berkas->pid_tulis, strerror(errno), errno);
 						
 						// Pesan.
 						NOTICE(_("Menunggu penulisan berkas '%1$s' selama %2$i detik."),
@@ -359,7 +391,7 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 						berkas->sedang_sibuk=true;
 					}
 				} while (!WIFEXITED(status) && !WIFSIGNALED(status));
-				
+				*/
 				// Selesai.
 			}else{
 				// PID tidak ditemukan.

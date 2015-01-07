@@ -102,4 +102,9 @@ struct BERKAS{
 	char data_pesan[MAX_CHUNK_ID][CHUNK_MESSAGE_SIZE+1];
 } BERKAS;
 
+struct RSA_KANCIL{
+	char kunci_privat[2048];
+	char kunci_publik[2048];
+	int bantalan;
+}RSA_KANCIL;
 #endif /* _KANCIL_STRUKTUR_H_ */

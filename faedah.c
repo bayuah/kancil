@@ -11,9 +11,9 @@
 // Memastikan dapat
 // membaca berkas ukuran besar.
 #define __USE_LARGEFILE64
+#define _BSD_SOURCE
 #define _LARGEFILE_SOURCE
 #define _LARGEFILE64_SOURCE
-#define _FILE_OFFSET_BITS 64
 
 // Bila stat64 tidak ada.
 #ifndef stat64

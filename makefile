@@ -16,7 +16,7 @@ UTILITY_OBJ=faedah.o tampilan.o soket.o pesan.o
 
 # Compiler flags.
 CFLAGS =-std=c99
-CCFLAGS_DEVEL = -O0 $(CFLAGS) -ggdb3 -Wall -pedantic -W -Wextra -DCOMPILE_MODE_DEVEL
+CCFLAGS_DEVEL = -O0 $(CFLAGS) -ggdb3 -Wall -pedantic -W -Wextra -Werror -DCOMPILE_MODE_DEVEL
 CCFLAGS_PREVIEW = -O2 $(CFLAGS) -g -Wall -DCOMPILE_MODE_PREVIEW
 #CCFLAGS_BUILD= -O2 $((CFLAGS)) -g -Wall
 CCFLAGS_STABLE= -O2 $(CFLAGS) -DCOMPILE_MODE_STABLE
