@@ -37,5 +37,11 @@
 #ifndef EXIT_FAILURE_FORK
 	#define EXIT_FAILURE_FORK 46
 #endif
+#ifndef EXIT_FAILURE_CRYPT
+	#define EXIT_FAILURE_CRYPT 47
+#endif
+#ifndef EXIT_TEST
+	#define EXIT_TEST 222
+#endif
 
 #endif /* _KANCIL_RETURN_H_ */

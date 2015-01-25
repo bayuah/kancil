@@ -33,14 +33,15 @@ int main(int argc, char *argv[]){
 	aturan.waitretry=1;
 	aturan.maxqueue=15000;
 	aturan.waitqueue=30;
+	aturan.rsa_datasize=204;
 	aturan.nowaitqueue=true;
 	
 	// Informasi Kancil.
 	info_kancil();
 	
 	// Mendapatkan argumen.
-	if (argc < 3) {
-		printf(_("Gunakan %s <inang> <porta>.\n"), argv[0]);
+	if (argc < 4) {
+		printf(_("Gunakan %s <porta> <inang> <porta>.\n"), argv[0]);
 		exit(EXIT_FAILURE_ARGS);
 	};
 	
@@ -121,7 +122,7 @@ int main(int argc, char *argv[]){
 	
 	// Membangun struktur soket.
 	memset((char *) &serv_addr, 0, sizeof(serv_addr));
-	portno = 5001;
+	portno = atoi(argv[1]);
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(portno);
@@ -166,8 +167,8 @@ int main(int argc, char *argv[]){
 	// kirim_mmap->ukuran_berkas;
 	kirim_mmap->ukuran_kirim=0;
 	kirim_mmap->do_kirim=true;
-	strncpy(kirim_mmap->hostname, argv[1], KIRIMBERKAS_MAX_STR);
-	strncpy(kirim_mmap->portno, argv[2], KIRIMBERKAS_MAX_STR);
+	strncpy(kirim_mmap->hostname, argv[2], KIRIMBERKAS_MAX_STR);
+	strncpy(kirim_mmap->portno, argv[3], KIRIMBERKAS_MAX_STR);
 	// strncpy(kirim_mmap->berkas, berkas, KIRIMBERKAS_MAX_STR);
 	kirim_mmap->coba=1;
 	
@@ -334,8 +335,8 @@ void free_shm(){
 		status=shm_unlink(SHM_FILE);
 		
 		// Status.
-		if(status){
-			FAIL(_("Gagal membuat berkas memori: %1$s (%2$i)."), strerror(errno), errno);
+		if(status && errno!=2){
+			FAIL(_("Gagal membersihkan berkas memori: %1$s (%2$i)."), strerror(errno), errno);
 			exit(EXIT_FAILURE_MEMORY);
 		};
 	#endif

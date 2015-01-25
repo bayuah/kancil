@@ -72,7 +72,7 @@ void anak_tulis(struct BERKAS *berkas){
 	// strcat(berkas_lajur,(char*)DIR_SEPARATOR);
 	// strcpy(berkas_lajur,berkas->nama);
 	
-	TEST(berkas_lajur);
+	TEST(berkas_lajur,0 );
 	sleep(60);
 	// Membuka berkas.
 	
@@ -98,8 +98,8 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 	int diterima = 0;
 	int ukuberkas_panjang=12;
 	char *penyangga;
-	penyangga=malloc((sizeof penyangga) * MAX_CHUNK_SIZE );
-	set_null(&penyangga, MAX_CHUNK_SIZE);
+	penyangga=malloc((sizeof penyangga) * MAX_CHUNK_SIZE *2);
+	memset(penyangga, 0, MAX_CHUNK_SIZE);
 	
 	// Pengepala.
 	int versi;
@@ -112,6 +112,7 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 	// Pesan.
 	char *pesan;
 	pesan=malloc((sizeof pesan) * CHUNK_MESSAGE_SIZE);
+	memset(pesan, 0, CHUNK_MESSAGE_SIZE);
 	
 	// Perilaku.
 	int detik_tunggu_penulisan=10;
@@ -128,12 +129,36 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 			while(diterima < MAX_CHUNK_SIZE){
 				n = recv(sock, penyangga+diterima, diterima-MAX_CHUNK_SIZE, 0);
 				if (n < 0){
-					FAIL(_("GALAT! Gagal membaca soket"), 0);
+					FAIL(_("Gagal membaca soket"), 0);
 					exit(EXIT_FAILURE);
 				};
 				diterima+=n;
 			};
-				
+			
+			// Pesan mentah.
+			DEBUG4(_("Panjang diterima: %1$i."), diterima);
+			DEBUG5(_("Pesan mentah diterima"), penyangga, 0, diterima);
+			
+			// Memecahkan pesan.
+			unsigned char *pesan_deco=(unsigned char*)penyangga;
+			unsigned char *tujuan_deco;
+			tujuan_deco=malloc((sizeof tujuan_deco)*MAX_CHUNK_SIZE);
+			diterima=rsa_decrypt(
+				pesan_deco,
+				diterima,
+				default_rsa_privatekey(),
+				tujuan_deco,
+				RSA_PKCS1_OAEP_PADDING
+			);
+			
+			// Pesan mentah.
+			DEBUG4(_("Panjang terpecahkan: %1$i."), diterima);
+			DEBUG5(_("Pesan mentah diterima terpecahkan"), tujuan_deco, 0, diterima);
+			
+			print_unsigned_array(tujuan_deco, 20);
+			// Penugasan.
+			penyangga=(char*)tujuan_deco;
+			
 			// Membaca pesan.
 			// Mendapatkan pengepala.
 			ambil_pengepala(
@@ -337,12 +362,12 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 						// Menunggu TIGA detik.
 						// Periksa kembali
 						// apakah masih sibuk.
-						sleep(3);
-						if(!berkas->sedang_sibuk){
-							berkas->sedang_sibuk=false;
+						sleep(detik_tunggu_penulisan);
+						// if(!berkas->sedang_sibuk){
+							// berkas->sedang_sibuk=false;
 							// tunggupid=true;
 							// break;
-						};
+						// };
 					}else if(errno==ESRCH){
 						WARN(_("Kegagalan proses cabang (%1$i): %2$s (%3$i)."), berkas->pid_tulis, strerror(errno), errno);
 						berkas->sedang_sibuk=false;
@@ -440,16 +465,48 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 	penyangga=buat_pengepala(
 		penyangga, identifikasi, panji, cek_paritas,
 		1, status_peladen);
-		
+	
+	DEBUG5(_("Pesan mentah dikirim"), penyangga, 0, CHUNK_HEADER_SIZE);
+	
+	// Penyandian.
+	unsigned char *pesan_ency=(unsigned char*)penyangga;
+	unsigned char *tujuan_ency;
+	tujuan_ency=malloc((sizeof tujuan_ency)*CHUNK_HEADER_SIZE);
+	int panjang_pecahan;
+	panjang_pecahan=rsa_encrypt(
+		pesan_ency,
+		MAX_CHUNK_SIZE,
+		default_rsa_pubkey(),
+		tujuan_ency,
+		RSA_PKCS1_OAEP_PADDING
+	);
+	/*
+	// Pemecah sandi.
+	// unsigned char *pesan_deco=(unsigned char*)tujuan_ency;
+	unsigned char *tujuan_deco;
+	tujuan_deco=malloc((sizeof tujuan_deco)*MAX_CHUNK_SIZE);
+	int panjang_pecahan2=rsa_decrypt(
+		tujuan_ency,
+		panjang_pecahan,
+		default_rsa_privatekey(),
+		tujuan_deco,
+		RSA_PKCS1_OAEP_PADDING
+	);
+	DEBUG5(_("TES-------------"), tujuan_deco, 0, panjang_pecahan2);
+	*/
+	// Pesan mentah.
+	DEBUG3(_("Panjang pesan mentah dikirim tersandikan: %1$i."), panjang_pecahan);
+	DEBUG5(_("Pesan mentah dikirim tersandikan"), tujuan_ency, 0, panjang_pecahan);
+	
 	// Balasan.
-	int len=MAX_CHUNK_SIZE;
-	if (!sendall(sock, penyangga, &len)){
+	int len=panjang_pecahan;
+	if (!sendall(sock, (char *)tujuan_ency, &len)){
 	// if (!sendall(sock, "peladen", &len)){
 		FAIL(_("Kesalahan dalam menulis ke soket: %1$s (%2$i)."),strerror(errno), errno);
 		exit(EXIT_FAILURE_SOCKET);
 	};
 	
 	// Membuang isi pesan.
-	free(pesan);
+	// free(pesan);
 	close(sock);
 }

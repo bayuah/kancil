@@ -28,7 +28,9 @@ int main(/*int argc, char *argv[]*/){
 	aturan.show_debug2=true;
 	aturan.show_debug3=true;
 	aturan.show_debug4=true;
+	aturan.show_debug5=true;
 	aturan.tempdir="tmp";
+	aturan.rsa_datasize=204;
 	
 	// Informasi Kancil.
 	info_kancil();
@@ -197,7 +199,11 @@ int main(/*int argc, char *argv[]*/){
 		
 		if (pids[connection] == 0){
 			// Proses anak.
-			close(sockfd);
+			#ifndef KANCIL_NOFORK
+				close(sockfd);
+			#endif
+			
+			// Panggil anak.
 			anak_sambungan(newsockfd, berkas_mmap);
 			
 			// Menutup.
@@ -282,6 +288,10 @@ void info_kancil(){
 	printf("%1$s (%2$s).\n", PROGNAME, BUILT_VERSION);
 	printf(_("Dibangun pada %1$s. Protokol versi %2$i."), BUILT_TIME_STR, PROTOCOL_VERSION );
 	printf("\n");
+	#ifdef COMPILE_FLAGS
+		printf(_("Panji pembangun: %1$s."), STRINGIZE_VALUE_OF(COMPILE_FLAGS));
+		printf("\n");
+	#endif
 	
 	free(BUILT_VERSION);
 }
@@ -301,8 +311,8 @@ void free_shm(){
 		status=shm_unlink(SHM_FILE);
 		
 		// Status.
-		if(status){
-			FAIL(_("Gagal membuat berkas memori: %1$s (%2$i)."), strerror(errno), errno);
+		if(status && errno!=2){
+			FAIL(_("Gagal membersihkan berkas memori: %1$s (%2$i)."), strerror(errno), errno);
 			exit(EXIT_FAILURE_MEMORY);
 		};
 	#endif

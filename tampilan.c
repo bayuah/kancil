@@ -105,6 +105,8 @@ char *kancil_signal_code(int sinyal){
 	case EXIT_FAILURE_MESSAGES: return "EXIT_FAILURE_MESSAGES"; break;
 	case EXIT_FAILURE_FORK: return "EXIT_FAILURE_FORK"; break;
 	case EXIT_FAILURE_CHUNK: return "EXIT_FAILURE_CHUNK"; break;
+	case EXIT_FAILURE_CRYPT: return "EXIT_FAILURE_CRYPT"; break;
+	case EXIT_TEST: return "EXIT_TEST"; break;
 	default: return unix_signal_code(sinyal); break;
 	};
 }

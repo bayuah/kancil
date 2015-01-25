@@ -8,19 +8,12 @@
 
 #include "lingkungan.h"
 
-// Memastikan dapat
-// membaca berkas ukuran besar.
+// Memastikan dapat membaca
+// berkas ukuran besar.
 #define __USE_LARGEFILE64
 #define _BSD_SOURCE
 #define _LARGEFILE_SOURCE
 #define _LARGEFILE64_SOURCE
-
-// Bila stat64 tidak ada.
-#ifndef stat64
-	#ifdef _stat64
-		#define stat64 _stat64
-	#endif
-#endif
 
 // Standar.
 #include <string.h>
@@ -53,6 +46,11 @@
 
 // Fungsi lokal.
 char *remove_ext (char* str, char dot, char sep);
+void print_unsigned_char_csv(
+	unsigned char *array,
+	size_t start,
+	size_t maximal
+);
 
 /*
  * @param: type (int)
@@ -64,7 +62,7 @@ char *remove_ext (char* str, char dot, char sep);
  */
 void throw_error(int type, const char * file, const int line,
 	const char *msg, ...){
-	const bool boleh[] = {0,
+	const bool boleh[] = {1,
 		aturan.show_error,
 		aturan.show_warning,
 		aturan.show_notice,
@@ -87,10 +85,13 @@ void throw_error(int type, const char * file, const int line,
 	penyangga=malloc(sizeof(penyangga)*penyangga_ukuran);
 	
 	// Tampilan.
-	va_list args;
-	va_start(args, msg);
-	vsnprintf(penyangga, sizeof(penyangga)*penyangga_ukuran, msg, args);
-	va_end(args);
+	// Antara 1 hingga 8.
+	if(type>=1&&type<=8){
+		va_list args;
+		va_start(args, msg);
+		vsnprintf(penyangga, sizeof(penyangga)*penyangga_ukuran, msg, args);
+		va_end(args);
+	};
 	
 	// Berkas.
 	char *filestr;
@@ -100,6 +101,13 @@ void throw_error(int type, const char * file, const int line,
 	
 	// Pilih.
 	switch(type){
+		case 0:
+			printf(
+				"%s:%d %s: %s\r\n",
+				filestr,
+				line, _("TES"), penyangga
+				);
+		break;
 		case 1:
 			if(boleh[1])
 			fprintf(
@@ -166,22 +174,32 @@ void throw_error(int type, const char * file, const int line,
 				);
 		break;
 		case 9:
-			if(boleh[9])
-			printf(
-				"%s:%d %s: %s\r\n",
-				filestr,
-				line, _("KEKUTU 5"), penyangga
+			if(boleh[9]){
+				int va_argstart=0;
+				int va_argmax=0;
+				va_list args;
+				va_start(args, msg);
+				unsigned char* va_argmsg = va_arg(args, unsigned char*);
+				va_argstart = va_arg(args, int);
+				va_argmax   = va_arg(args, int);
+				va_end(args);
+				printf(
+					"%s:%d %s: %s: %i-%i ",
+					filestr,
+					line, _("KEKUTU 5"),
+					msg, va_argstart, va_argmax
 				);
+				printf("{");
+				print_unsigned_char_csv(va_argmsg, (size_t)va_argstart, (size_t)va_argmax);
+				printf("}");
+				printf("\r\n");
+			};
 		break;
 	};
 	
 	// membersihkan memori.
-	free (filestr);
+	free(filestr);
 	free(penyangga);
-}
-
-void _test(const char * file, const int line, const char *msg){
-	printf("%s:%d %s: %s\n", file, line, _("TES"), msg);
 }
 
 void dec2bin(int num, char *str){
@@ -210,21 +228,21 @@ void dec2bin(int num, char *str){
 char *remove_ext (char* str, char dot, char sep) {
 	char *retstr, *lastdot, *lastsep;
 
-	// Error checks and allocate string.
+	// Memeriksa galat dan alokasi untaian.
 	if (str == NULL)
 		return NULL;
 	if ((retstr = malloc (strlen (str) + 1)) == NULL)
 		return NULL;
 
-	// Make a copy and find the relevant characters.
+	// Menyalin dan mencari karakter tercari.
 	strcpy (retstr, str);
 	lastdot = strrchr (retstr, dot);
 	lastsep = (sep == 0) ? NULL : strrchr (retstr, sep);
 
-	// If it has an extension separator.
+	// Bila pemisah akhiran.
 	if (lastdot != NULL) {
-
-		// and it's before the extenstion separator.
+		
+		// Bila sebelum pemisah akhiran.
 		if (lastsep != NULL) {
 			if (lastsep < lastdot) {
 			
@@ -309,9 +327,21 @@ void print_unsigned_array(unsigned char *array, size_t length){
 	};
 }
 /*
+ * print_unsigned_array_nosymbols()
+ * Sama seperti print_unsigned_array()
+ * selain tanpa simbol, hanya indeks ASCII.
+ */
+void print_unsigned_array_nonsymbol(unsigned char *array, size_t length){
+	// int i;
+	unsigned int i;
+	for(i=0;i<length;i++){
+		printf("index-%i: %i\r\n",i, array[i]);
+	};
+}
+/*
  * print_char()
  * Sama seperti print_array()
- * selain hasil ditampilkan mendatar
+ * selain hasil ditampilkan mendatar.
  */
 void print_char(char *array, size_t length){
 	// int i;
@@ -327,6 +357,22 @@ void print_char(char *array, size_t length){
  * menurut nilai indeks dan CSV.
  */
 void print_char_csv(char *array, size_t start, size_t maximal){
+	// int i;
+	unsigned int i;
+	for(i=start;i<maximal;i++){
+		printf("%i,",array[i]);
+	};
+}
+/*
+ * print_unsigned_char_csv()
+ * Sama seperti print_char_csv()
+ * selain menggunakan unsigned char.
+ */
+void print_unsigned_char_csv(
+	unsigned char *array,
+	size_t start,
+	size_t maximal
+){
 	// int i;
 	unsigned int i;
 	for(i=start;i<maximal;i++){

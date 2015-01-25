@@ -24,6 +24,7 @@ struct GLOBAL_KANCIL {
 	int waitretry;
 	int maxqueue;
 	int waitqueue;
+	int rsa_datasize;
 	bool nowaitqueue;
 	char* tempdir;
 } GLOBAL_KANCIL;

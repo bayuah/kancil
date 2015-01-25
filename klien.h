@@ -15,6 +15,7 @@
 
 // Lokal.
 #include "faedah.h"
+#include "rsa.h"
 #include "soket.h"
 #include "pesan.h"
 #include "tampilan.h"

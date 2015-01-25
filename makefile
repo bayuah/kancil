@@ -12,7 +12,7 @@ VER_MINOR=1
 VER_PATCH=0
 
 # Componen.
-UTILITY_OBJ=faedah.o tampilan.o soket.o pesan.o
+UTILITY_OBJ=faedah.o rsa.o tampilan.o soket.o pesan.o
 
 # Compiler flags.
 CFLAGS =-std=c99
@@ -121,45 +121,49 @@ peladen:information built-peladen built-info
 built-klien:klien.c $(UTILITY_OBJ) klien-anak.o
 	@echo "Build klien with built number $(BUILT_KLIEN)..."
 	@ld -r $(UTILITY_OBJ) klien-anak.o -o klien.o
-	@$(CCF) $(VERSIONING) -D__BUILT_NUMBER=$(BUILT_KLIEN) klien.o klien.c -o klien $(CCLIBS)
+	@$(CCF) $(VERSIONING) -D__BUILT_NUMBER=$(BUILT_KLIEN) klien.o klien.c -o klien $(CCLIBS) -D__COMPILE_FLAGS="$(CCFLAGS) $(CCLIBS)"
 
 built-gerbang:gerbang.c $(UTILITY_OBJ) gerbang-anak.o
 	@echo "Build gerbang with built number $(BUILT_GERBANG)..."
 	@ld -r $(UTILITY_OBJ) gerbang-anak.o -o gerbang.o
-	@$(CCF) $(VERSIONING) -D__BUILT_NUMBER=$(BUILT_GERBANG) gerbang.o gerbang.c -o gerbang $(CCLIBS)
+	@$(CCF) $(VERSIONING) -D__BUILT_NUMBER=$(BUILT_GERBANG) gerbang.o gerbang.c -o gerbang $(CCLIBS) -D__COMPILE_FLAGS="$(CCFLAGS) $(CCLIBS)"
 
 built-peladen:peladen.c $(UTILITY_OBJ) peladen-anak.o
 	@echo "Build peladen with built number $(BUILT_PELADEN)..."
 	@ld -r $(UTILITY_OBJ) peladen-anak.o -o peladen.o
-	@$(CCF) $(VERSIONING) -D__BUILT_NUMBER=$(BUILT_PELADEN) peladen.o peladen.c -o peladen $(CCLIBS)
+	@$(CCF) $(VERSIONING) -D__BUILT_NUMBER=$(BUILT_PELADEN) peladen.o peladen.c -o peladen $(CCLIBS) -D__COMPILE_FLAGS="$(CCFLAGS) $(CCLIBS)"
 
 klien-anak.o:klien-anak.c
 	@echo "Build $@..."
-	@$(CCF) -c klien-anak.c -o klien-anak.o $(CCLIBS)
+	@$(CCF) -c klien-anak.c -o $@ $(CCLIBS)
 
 gerbang-anak.o:gerbang-anak.c
 	@echo "Build $@..."
-	@$(CCF) -c gerbang-anak.c -o gerbang-anak.o $(CCLIBS)
+	@$(CCF) -c gerbang-anak.c -o $@ $(CCLIBS)
 
 peladen-anak.o:peladen-anak.c
 	@echo "Build $@..."
-	@$(CCF) -c peladen-anak.c -o peladen-anak.o $(CCLIBS)
+	@$(CCF) -c peladen-anak.c -o $@ $(CCLIBS)
 
 pesan.o:pesan.c
 	@echo "Build $@..."
-	@$(CCF) -c pesan.c -o pesan.o $(CCLIBS)
+	@$(CCF) -c $< -o $@ $(CCLIBS)
+
+rsa.o:rsa.c
+	@echo "Build $@..."
+	@$(CCF) -c $< -o $@ $(CCLIBS)
 
 soket.o:soket.c
 	@echo "Build $@..."
-	@$(CCF) -c soket.c -o soket.o $(CCLIBS)
+	@$(CCF) -c $< -o $@ $(CCLIBS)
 
 tampilan.o:tampilan.c
 	@echo "Build $@..."
-	@$(CCF) -c tampilan.c -o tampilan.o $(CCLIBS)
+	@$(CCF) -c $< -o $@ $(CCLIBS)
 
 faedah.o:faedah.c
 	@echo "Build $@..."
-	@$(CCF) -c faedah.c -o faedah.o $(CCLIBS)
+	@$(CCF) -c $< -o $@ $(CCLIBS)
 	
 
 built-info:klien.c peladen.c

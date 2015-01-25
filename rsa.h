@@ -8,11 +8,29 @@
 #ifndef _KANCIL_RSA_H_
 #define _KANCIL_RSA_H_
 
+// Menampilan kesalahan.
+#include <openssl/err.h>
+
+// Makro.
+#ifndef RSA_PKCS1_PADDING
+	#define RSA_PKCS1_PADDING 1
+#endif
+#ifndef RSA_PKCS1_OAEP_PADDING
+	#define RSA_PKCS1_OAEP_PADDING 4
+#endif
+#ifndef RSA_SSLV23_PADDING
+	#define RSA_SSLV23_PADDING 2
+#endif
+#ifndef RSA_NO_PADDING
+	#define RSA_NO_PADDING 3
+#endif
+
+// Fungsi.
 int rsa_encrypt(
 	unsigned char *data,
 	int data_len,
 	unsigned char *key,
-	unsigned char *target,
+	unsigned char *target, 
 	int bantalan
 	);
 int rsa_decrypt(

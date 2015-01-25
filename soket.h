@@ -13,9 +13,11 @@
 bool sendall(int s, char *buf, int *len);
 char *kirimdata(
 	char* pesan,
+	int panjang_pesan,
 	char* hostname,
 	char* portno,
-	struct INFOALAMAT *alamat
+	struct INFOALAMAT *alamat,
+	int *panjang_diterima
 );
 
 // Variabel global.

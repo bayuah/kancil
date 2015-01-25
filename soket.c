@@ -94,9 +94,11 @@ bool sendall(int s, char *buf, int *len){
  */
 char *kirimdata(
 	char* pesan,
+	int panjang_pesan,
 	char* hostname,
 	char* portno,
-	struct INFOALAMAT *alamat
+	struct INFOALAMAT *alamat,
+	int *panjang_diterima
 ){
 	// Pengaturan.
 	int     tunggu_detik=5;
@@ -143,7 +145,7 @@ char *kirimdata(
 					NOTICE(_("Menunggu %1$i detik untuk mengirim ulang."), ulang_tunggu);
 				}else{
 					NOTICE(
-						_("Menunggu %1$i detik untuk kirim ulang ke %2$i."),
+						_("Menunggu %1$i detik untuk kirim ulang ke-%2$i."),
 						ulang_tunggu, kali_ulang
 						);
 				};
@@ -538,7 +540,7 @@ char *kirimdata(
 		// freeaddrinfo(serv_addrinfo_result);
 		
 		// Kirim pesan.
-		len=MAX_CHUNK_SIZE;
+		len=panjang_pesan;
 		DEBUG3(_("Mulai menulis soket ke '%1$s' (%2$s)."), hostname, ipstr);
 		if (!sendall(sockfd, pesan, &len)){
 			FAIL(_("Kesalahan dalam menulis ke soket: %1$s (%2$i)."),strerror(errno), errno);
@@ -549,11 +551,12 @@ char *kirimdata(
 		};
 		
 		// Baca respons.
+		int diterima;
 		DEBUG3(_("Menunggu balasan dari '%1$s' (%2$s)."), hostname, ipstr);
-		respons=malloc(sizeof(respons) * MAX_CHUNK_SIZE);
-		memset(respons, 0, MAX_CHUNK_SIZE);
-		status = recv(sockfd, respons, MAX_CHUNK_SIZE, MSG_WAITALL);
-		if (status < 0){
+		respons=malloc(sizeof(respons) * panjang_pesan);
+		memset(respons, 0, panjang_pesan);
+		diterima = recv(sockfd, respons, panjang_pesan, MSG_WAITALL);
+		if (diterima < 0){
 			if(errno==11){
 				WARN(_("Balasan dari '%1$s' terlalu lama."), hostname);
 				close(sockfd);
@@ -564,7 +567,10 @@ char *kirimdata(
 				return NULL;
 			};
 		}else{
+			// Hasil.
 			rturn=respons;
+			*panjang_diterima=diterima;
+			
 			// Pesan.
 			DEBUG3(_("Berhasil mendapatkan jawaban dari '%1$s' (%2$s)."), hostname, ipstr);
 		};

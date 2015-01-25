@@ -126,11 +126,15 @@ void anak_gerbang(
 			);
 			// Kirim.
 			INFO(_("Menghubungi Peladen."), 0);
+			int panjang_diterima;
+			int panjang_pecahan=MAX_CHUNK_SIZE;
 			penyangga=kirimdata(
-				penyangga,
+				(char*)penyangga,
+				panjang_pecahan,
 				hostname,
 				portno,
-				infoalamat
+				infoalamat,
+				&panjang_diterima
 				);
 			
 			// Bila terjadi kesalahan.

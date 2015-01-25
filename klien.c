@@ -35,16 +35,17 @@ int main(int argc, char *argv[]){
 	aturan.show_warning=true;
 	aturan.show_notice=true;
 	aturan.show_info=true;
-	aturan.show_debug1=false;
-	aturan.show_debug2=false;
-	aturan.show_debug3=false;
-	aturan.show_debug4=false;
-	aturan.show_debug5=false;
+	aturan.show_debug1=true;
+	aturan.show_debug2=true;
+	aturan.show_debug3=true;
+	aturan.show_debug4=true;
+	aturan.show_debug5=true;
 	aturan.tempdir="tmp";
 	aturan.tries=20;
 	aturan.waitretry=30;
 	aturan.maxqueue=15000;
 	aturan.waitqueue=30;
+	aturan.rsa_datasize=204;
 	aturan.nowaitqueue=true;
 	
 	// Berbagi memori.
@@ -354,8 +355,8 @@ void free_shm(){
 		status=shm_unlink(SHM_FILE);
 		
 		// Status.
-		if(status){
-			FAIL(_("Gagal membuat berkas memori: %1$s (%2$i)."), strerror(errno), errno);
+		if(status && errno!=2){
+			FAIL(_("Gagal membersihkan berkas memori: %1$s (%2$i)."), strerror(errno), errno);
 			exit(EXIT_FAILURE_MEMORY);
 		};
 	#endif

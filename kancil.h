@@ -81,7 +81,14 @@
 // Pemgturan kompilasi.
 #pragma GCC diagnostic ignored "-Wformat"
 
+// Ubah makro jadi karakter.
+#define STRINGIZE(x) #x
+#define STRINGIZE_VALUE_OF(x) STRINGIZE(x)
+
 // Mendapatkan versi kompilasi.
+#ifdef __COMPILE_FLAGS
+	#define COMPILE_FLAGS __COMPILE_FLAGS
+#endif
 #ifdef COMPILE_MODE_STABLE
 	#define COMPILE_MODE "stable"
 #elif COMPILE_MODE_PREVIEW

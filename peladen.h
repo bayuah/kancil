@@ -15,9 +15,10 @@
 
 // Lokal.
 #include "faedah.h"
-#include "tampilan.h"
+#include "rsa.h"
 #include "soket.h"
 #include "pesan.h"
+#include "tampilan.h"
 
 // Fungsi lokal.
 void info_kancil();

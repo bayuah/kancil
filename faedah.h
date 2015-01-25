@@ -18,8 +18,10 @@ char *remove_ext (char* str, char dot, char sep);
 void set_null(char **str, size_t length);
 void print_array(char *array, int length);
 void print_unsigned_array(unsigned char *array, size_t length);
+void print_unsigned_array_nonsymbol(unsigned char *array, size_t length);
 void print_char(char *array, size_t length);
 void print_char_csv(char *array, size_t start, size_t maximal);
+void print_unsigned_char_csv(unsigned char *array, size_t start, size_t maximal);
 int check_parity(char *str, size_t start, size_t length);
 void insert_string(char **target, size_t target_length,
 	char *str, size_t start, size_t str_length);
@@ -39,6 +41,8 @@ void throw_error(int type, const char * file, const int line,
 void _test(const char * file, const int line, const char *msg);
 
 // Makro.
+#define TEST(msg, ...) \
+	throw_error(0, __FILE__, __LINE__, msg, __VA_ARGS__);
 #define FAIL(msg, ...) \
 	throw_error(1, __FILE__, __LINE__, msg, __VA_ARGS__);
 #define WARN(msg, ...) \
@@ -59,7 +63,5 @@ void _test(const char * file, const int line, const char *msg);
 	throw_error(8, __FILE__, __LINE__, msg, __VA_ARGS__);
 #define DEBUG5(msg, ...) \
 	throw_error(9, __FILE__, __LINE__, msg, __VA_ARGS__);
-#define TEST(msg) \
-	_test(__FILE__, __LINE__, msg);
 
 #endif /* _KANCIL_FAEDAH_ */
