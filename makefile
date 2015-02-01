@@ -16,10 +16,10 @@ UTILITY_OBJ=faedah.o rsa.o tampilan.o soket.o pesan.o
 
 # Compiler flags.
 CFLAGS =-std=c99
-CCFLAGS_DEVEL = -O0 $(CFLAGS) -ggdb3 -Wall -pedantic -W -Wextra -Werror -DCOMPILE_MODE_DEVEL
-CCFLAGS_PREVIEW = -O2 $(CFLAGS) -g -Wall -DCOMPILE_MODE_PREVIEW
+CCFLAGS_DEVEL   = -DCOMPILE_MODE_DEVEL -O0 $(CFLAGS) -ggdb3 -Wall -pedantic -W -Wextra -Werror -fno-stack-protector
+CCFLAGS_PREVIEW = -DCOMPILE_MODE_PREVIEW -O2 $(CFLAGS) -g -Wall
 #CCFLAGS_BUILD= -O2 $((CFLAGS)) -g -Wall
-CCFLAGS_STABLE= -O2 $(CFLAGS) -DCOMPILE_MODE_STABLE
+CCFLAGS_STABLE  = -DCOMPILE_MODE_STABLE -O2 $(CFLAGS)
 
 # Compiler mode selector.
 ifeq ($(mode), stable)
@@ -132,6 +132,9 @@ built-peladen:peladen.c $(UTILITY_OBJ) peladen-anak.o
 	@echo "Build peladen with built number $(BUILT_PELADEN)..."
 	@ld -r $(UTILITY_OBJ) peladen-anak.o -o peladen.o
 	@$(CCF) $(VERSIONING) -D__BUILT_NUMBER=$(BUILT_PELADEN) peladen.o peladen.c -o peladen $(CCLIBS) -D__COMPILE_FLAGS="$(CCFLAGS) $(CCLIBS)"
+
+# coba-rsa:coba-rsa.c $(UTILITY_OBJ)
+# 	@$(CCF) $(UTILITY_OBJ)  $< -o $@ $(CCLIBS)
 
 klien-anak.o:klien-anak.c
 	@echo "Build $@..."

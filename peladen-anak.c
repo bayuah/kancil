@@ -98,8 +98,10 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 	int diterima = 0;
 	int ukuberkas_panjang=12;
 	char *penyangga;
-	penyangga=malloc((sizeof penyangga) * MAX_CHUNK_SIZE *2);
-	memset(penyangga, 0, MAX_CHUNK_SIZE);
+	// penyangga=malloc((sizeof penyangga) * MAX_CHUNK_SIZE);
+	// memset(penyangga, 0, MAX_CHUNK_SIZE);
+	penyangga=malloc((sizeof penyangga) * ENCRYPTED_CONTAINER_SIZE);
+	memset(penyangga, 0, ENCRYPTED_CONTAINER_SIZE);
 	
 	// Pengepala.
 	int versi;
@@ -115,7 +117,7 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 	memset(pesan, 0, CHUNK_MESSAGE_SIZE);
 	
 	// Perilaku.
-	int detik_tunggu_penulisan=10;
+	int detik_tunggu_penulisan=5;
 	int cek_paritas;
 	bool do_ulang=false;
 	
@@ -136,7 +138,7 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 			};
 			
 			// Pesan mentah.
-			DEBUG4(_("Panjang diterima: %1$i."), diterima);
+			DEBUG4(_("Panjang pesan mentah diterima: %1$i."), diterima);
 			DEBUG5(_("Pesan mentah diterima"), penyangga, 0, diterima);
 			
 			// Memecahkan pesan.
@@ -155,7 +157,7 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 			DEBUG4(_("Panjang terpecahkan: %1$i."), diterima);
 			DEBUG5(_("Pesan mentah diterima terpecahkan"), tujuan_deco, 0, diterima);
 			
-			print_unsigned_array(tujuan_deco, 20);
+			// print_unsigned_array(tujuan_deco, 20);
 			// Penugasan.
 			penyangga=(char*)tujuan_deco;
 			
@@ -456,10 +458,18 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 	
 	// Informasi berkas.
 	
+	// Buat pesan.
+	// char* pesan;
+	pesan=malloc((sizeof pesan)* CHUNK_MESSAGE_SIZE);
+	memset(pesan, 0, CHUNK_MESSAGE_SIZE);
+	
+	// Mengisi.
+	strcpy(pesan, PROGCODE);
+	
 	// Menulis balasan.
 	// Pesan Kosong.
 	penyangga=buat_pesan(
-		penyangga, identifikasi, &paritas, "peladen");
+		penyangga, identifikasi, &paritas, pesan);
 	
 	// Pengepala.
 	penyangga=buat_pengepala(
@@ -469,9 +479,14 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 	DEBUG5(_("Pesan mentah dikirim"), penyangga, 0, CHUNK_HEADER_SIZE);
 	
 	// Penyandian.
-	unsigned char *pesan_ency=(unsigned char*)penyangga;
+	unsigned char* pesan_ency=(unsigned char*)penyangga;
+	// memcpy(pesan_ency, penyangga, MAX_CHUNK_SIZE);
+	
+	// Pesan mentah.
+	DEBUG5(_("Pesan mentah dikirim"), pesan_ency, 0, MAX_CHUNK_SIZE);
+	
 	unsigned char *tujuan_ency;
-	tujuan_ency=malloc((sizeof tujuan_ency)*CHUNK_HEADER_SIZE);
+	tujuan_ency=malloc(sizeof(tujuan_ency)*ENCRYPTED_CONTAINER_SIZE);
 	int panjang_pecahan;
 	panjang_pecahan=rsa_encrypt(
 		pesan_ency,
@@ -480,33 +495,18 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 		tujuan_ency,
 		RSA_PKCS1_OAEP_PADDING
 	);
-	/*
-	// Pemecah sandi.
-	// unsigned char *pesan_deco=(unsigned char*)tujuan_ency;
-	unsigned char *tujuan_deco;
-	tujuan_deco=malloc((sizeof tujuan_deco)*MAX_CHUNK_SIZE);
-	int panjang_pecahan2=rsa_decrypt(
-		tujuan_ency,
-		panjang_pecahan,
-		default_rsa_privatekey(),
-		tujuan_deco,
-		RSA_PKCS1_OAEP_PADDING
-	);
-	DEBUG5(_("TES-------------"), tujuan_deco, 0, panjang_pecahan2);
-	*/
+	
 	// Pesan mentah.
-	DEBUG3(_("Panjang pesan mentah dikirim tersandikan: %1$i."), panjang_pecahan);
+	DEBUG4(_("Panjang pesan mentah dikirim tersandikan: %1$i."), panjang_pecahan);
 	DEBUG5(_("Pesan mentah dikirim tersandikan"), tujuan_ency, 0, panjang_pecahan);
 	
 	// Balasan.
-	int len=panjang_pecahan;
-	if (!sendall(sock, (char *)tujuan_ency, &len)){
+	if (!sendall(sock, (char *)tujuan_ency, &panjang_pecahan)){
 	// if (!sendall(sock, "peladen", &len)){
 		FAIL(_("Kesalahan dalam menulis ke soket: %1$s (%2$i)."),strerror(errno), errno);
 		exit(EXIT_FAILURE_SOCKET);
 	};
 	
-	// Membuang isi pesan.
-	// free(pesan);
+	// Menutup.
 	close(sock);
 }

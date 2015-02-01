@@ -129,6 +129,9 @@
 #ifndef MAX_CHUNK_SIZE
 	#define MAX_CHUNK_SIZE 1024
 #endif
+#ifndef ENCRYPTED_CONTAINER_SIZE
+	#define ENCRYPTED_CONTAINER_SIZE 1500 // Sebenarnya adalah 1280-bita.
+#endif
 #ifndef CHUNK_HEADER_SIZE
 	#define CHUNK_HEADER_SIZE 4
 #endif

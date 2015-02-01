@@ -30,27 +30,30 @@ RSA * create_rsa(
 	unsigned char * key,
 	int flag
 ){
+	int status=0;
 	
 	// Membangun BIO.
-	BIO *keybio ;
+	BIO *keybio;
+	DEBUG4("Mulai membangun BIO.", 0);
 	keybio = BIO_new_mem_buf(key, -1);
 	if (keybio==NULL){
 		FAIL(_("Gagal membuat kunci BIO"), 0);
 		exit(EXIT_FAILURE_CRYPT);
+	}else {
+		DEBUG4("Berhasil membangun BIO.", 0);
 	};
-	
 	
 	// Membangun RSA.
 	RSA *rsa= NULL;
 	DEBUG4("Mulai membangun RSA.", 0);
 	if(flag==CREATE_RSA_FROM_PUBKEY){
-		DEBUG4("Membangun RSA menggunakan kunci publik.", 0);
+		DEBUG4(_("Membangun RSA menggunakan kunci publik."), 0);
 		rsa = PEM_read_bio_RSA_PUBKEY(keybio, &rsa,NULL, NULL);
 	}else if(flag==CREATE_RSA_FROM_PRIVKEY){
-		DEBUG4("Membangun RSA menggunakan kunci privat.", 0);
+		DEBUG4(_("Membangun RSA menggunakan kunci privat."), 0);
 		rsa = PEM_read_bio_RSAPrivateKey(keybio, &rsa,NULL, NULL);
 	}else{
-		FAIL("Tidak mengatahui jenis pembangunan RSA.", 0);
+		FAIL(_("Tidak mengatahui jenis pembangunan RSA."), 0);
 		exit(EXIT_FAILURE_CRYPT);
 	};
 	
@@ -78,6 +81,26 @@ RSA * create_rsa(
 		DEBUG4("Berhasil membangun RSA.", 0);
 	};
 	
+	// Menutup.
+	DEBUG4("Menutup BIO.", 0);
+	BIO_set_close(keybio, BIO_NOCLOSE);
+	status=BIO_get_close(keybio);
+	if(status){
+		DEBUG4("Gagal menutup BIO.", 0);
+	}else{
+		DEBUG4("Behasil menutup BIO.", 0);
+	};
+	
+	// Bersihkan.
+	DEBUG4("Membersihkan BIO.", 0);
+	status=BIO_free(keybio);
+	if(status){
+		DEBUG4("Behasil membersihkan BIO.", 0);
+	}else{
+		DEBUG4("Gagal membersihkan BIO.", 0);
+	};
+	
+	// Hasil.
 	return rsa;
 }
 
@@ -91,15 +114,25 @@ int rsa_data_size(RSA *rsa, int bantalan){
 	
 	// Mencari ukuran data RSA.
 	int ukuran_data=0;
+	DEBUG4(_("Memilih bantalan RSA"), 0);
 	if(
 		bantalan==RSA_PKCS1_PADDING
 		|| bantalan==RSA_SSLV23_PADDING
 	){
+		
+		DEBUG4(_("Bantalan RSA jenis %1$s."), "RSA_PKCS1_PADDING");
 		ukuran_data=ukuran_rsa-11;
+		
 	}else if(bantalan==RSA_PKCS1_OAEP_PADDING){
+		
+		DEBUG4(_("Bantalan RSA jenis %1$s."), "RSA_PKCS1_OAEP_PADDING");
 		ukuran_data=ukuran_rsa-42;
+		
 	}else if(bantalan==RSA_NO_PADDING){
+		
+		DEBUG4(_("Bantalan RSA jenis %1$s."), "RSA_NO_PADDING");
 		ukuran_data=ukuran_rsa;
+		
 	}else{
 		// Tidak dikenal.
 		FAIL(_("Tidak mengenali bantalan RSA"), 0);
@@ -123,6 +156,15 @@ int rsa_encrypt(
 	int bantalan
 	){
 	
+	// Pesan.
+	DEBUG4("Mulai enkripsi RSA.", 0);
+	
+	// Apakah panjang adalah NOL.
+	if(data_len<=0){
+		FAIL(_("Panjang data adalah %1$i."), data_len);
+		exit(EXIT_FAILURE_CRYPT);
+	};
+	
 	// RSA.
 	RSA * rsa = create_rsa(key, CREATE_RSA_FROM_PUBKEY);
 	
@@ -130,8 +172,8 @@ int rsa_encrypt(
 	int ukuran_data_rsa=rsa_data_size(rsa, bantalan);
 	
 	// Pesan.
-	DEBUG4("data-length: %1$i", data_len);
-	DEBUG4("enkrip-data: %1$i", ukuran_data_rsa);
+	DEBUG4(_("Lebar data: %1$i"), data_len);
+	DEBUG4(_("Lebar blok: %1$i"), ukuran_data_rsa);
 	
 	// Enkripsi.
 	int awal=0;
@@ -142,23 +184,41 @@ int rsa_encrypt(
 	unsigned long errr;
 	ERR_load_crypto_strings();
 	bool putar=true;
-	errr=0;
 	while(putar){
+		errr=0;
 		rsa_result=0;
+		ukuran_enkripsi=0;
 		
 		// Memasukkan data
 		// tiap ukuran data RSA.
+		DEBUG4(_("Menentukan ukuran blok enkripsi."), 0);
 		if(ukuran_data_tersisa>ukuran_data_rsa){
+			
+			// Pesan.
+			DEBUG4(_("Ukuran blok enkripsi (%1$i) lebih dari ukuran blok RSA (%2$i)."), ukuran_data_tersisa, ukuran_data_rsa);
+			
+			// Bukan akhir.
 			ukuran_enkripsi=ukuran_data_rsa;
 			ukuran_data_tersisa-=ukuran_data_rsa;
+			
 		}else{
+			
+			// Pesan.
+			if (ukuran_data_tersisa<ukuran_data_rsa){
+				DEBUG4(_("Ukuran blok enkripsi (%1$i) kurang dari ukuran blok RSA (%2$i)."), ukuran_data_tersisa, ukuran_data_rsa);
+			}else{
+				DEBUG4(_("Ukuran blok enkripsi (%1$i) sama dengan ukuran blok RSA (%2$i)."), ukuran_data_tersisa, ukuran_data_rsa);
+			};
+			
 			// Merupakan akhir.
 			ukuran_enkripsi=ukuran_data_tersisa;
 			putar=false;
+			
 		};
 		
 		// Enkripsi.
-		DEBUG4("data-remaining-length: %1$i", ukuran_data_tersisa);
+		DEBUG4(_("Panjang data tersisa: %1$i"), ukuran_data_tersisa);
+		DEBUG4(_("Panjang blok enkripsi: %1$i"), ukuran_enkripsi);
 		rsa_result = RSA_public_encrypt(ukuran_enkripsi, data+awal, target+result, rsa, bantalan);
 		
 		// Bila ada kesalahan.
@@ -169,7 +229,7 @@ int rsa_encrypt(
 			char *err_buff;
 			err_buff=malloc(sizeof(err_buff)*32);
 			FAIL("%1$s",  ERR_error_string(errr, err_buff));
-			DEBUG1(_("Dimulai pada bita: %1$i"), awal);
+			DEBUG4(_("Dimulai pada bita: %1$i"), awal);
 			free(err_buff);
 			exit(EXIT_FAILURE_CRYPT);
 		}else{
@@ -179,8 +239,9 @@ int rsa_encrypt(
 			awal +=ukuran_data_rsa;
 		};
 	};
-	DEBUG4("enkrip-data-result: %1$i", result);
 	
+	// Pesan.
+	DEBUG4(_("Ukuran terenkripsi: %1$i"), result);
 	
 	// Hasil.
 	return result;
@@ -198,6 +259,15 @@ int rsa_decrypt(
 	int bantalan
 	){
 	
+	// Pesan.
+	DEBUG4("Mulai dekripsi RSA.", 0);
+	
+	// Apakah panjang adalah NOL.
+	if(data_len<=0){
+		FAIL(_("Panjang data adalah %1$i."), data_len);
+		exit(EXIT_FAILURE_CRYPT);
+	};
+	
 	// RSA.
 	RSA *rsa = create_rsa(key, CREATE_RSA_FROM_PRIVKEY);
 	
@@ -205,8 +275,8 @@ int rsa_decrypt(
 	int ukuran_rsa=RSA_size(rsa);
 	
 	// Pesan.
-	DEBUG4("data-len: %1$i", data_len);
-	DEBUG4("denkrip-data: %1$i", ukuran_rsa);
+	DEBUG4(_("Lebar data: %1$i"), data_len);
+	DEBUG4(_("Lebar blok: %1$i"), ukuran_rsa);
 	
 	// print_unsigned_array_nonsymbol(data+0, ukuran_rsa);
 	
@@ -219,23 +289,40 @@ int rsa_decrypt(
 	unsigned long errr;
 	ERR_load_crypto_strings();
 	bool putar=true;
-	errr=0;
 	while(putar){
+		errr=0;
 		rsa_result=0;
 		
 		// Memasukkan data
 		// tiap ukuran data RSA.
+		DEBUG4(_("Menentukan ukuran blok dekripsi."), 0);
 		if(ukuran_rsa_tersisa>ukuran_rsa){
+			
+			// Pesan.
+			DEBUG4(_("Ukuran blok dekripsi (%1$i) lebih dari ukuran blok RSA (%2$i)."), ukuran_rsa_tersisa, ukuran_rsa);
+			
+			// Bukan akhir.
 			ukuran_dekripsi=ukuran_rsa;
 			ukuran_rsa_tersisa-=ukuran_rsa;
+			
 		}else{
+			
+			// Pesan.
+			if (ukuran_rsa_tersisa<ukuran_rsa){
+				DEBUG4(_("Ukuran blok dekripsi (%1$i) kurang dari ukuran blok RSA (%2$i)."), ukuran_rsa_tersisa, ukuran_rsa);
+			}else{
+				DEBUG4(_("Ukuran blok dekripsi (%1$i) sama dengan ukuran blok RSA (%2$i)."), ukuran_rsa_tersisa, ukuran_rsa);
+			};
+			
+			
 			// Merupakan akhir.
 			ukuran_dekripsi=ukuran_rsa_tersisa;
 			putar=false;
 		};
 		
 		// Dekripsi.
-		DEBUG4("data-remaining-length: %1$i", ukuran_rsa_tersisa);
+		DEBUG4(_("Panjang data tersisa: %1$i"), ukuran_rsa_tersisa);
+		DEBUG4(_("Panjang blok dekripsi: %1$i"), ukuran_dekripsi);
 		rsa_result = RSA_private_decrypt(ukuran_dekripsi, data+awal, target+result, rsa, bantalan);
 		
 		// Apakah terjadi kesalahan.
@@ -246,7 +333,7 @@ int rsa_decrypt(
 			char *err_buff;
 			err_buff=malloc(sizeof(err_buff)*32);
 			FAIL("%1$s",  ERR_error_string(errr, err_buff));
-			DEBUG1(_("Dimulai pada bita: %1$i"), awal);
+			DEBUG4(_("Dimulai pada bita: %1$i"), awal);
 			free(err_buff);
 			exit(EXIT_FAILURE_CRYPT);
 		}else{
@@ -256,7 +343,9 @@ int rsa_decrypt(
 			awal+=ukuran_rsa;
 		};
 	};
-	DEBUG4("denkrip-data-result: %1$i", result);
+	
+	// Pesan.
+	DEBUG4(_("Ukuran terdekripsi: %1$i"), result);
 	
 	// Hasil.
 	return result;

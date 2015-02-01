@@ -101,7 +101,7 @@ char *kirimdata(
 	int *panjang_diterima
 ){
 	// Pengaturan.
-	int     tunggu_detik=5;
+	int     tunggu_detik=10;
 	int tunggu_milidetik=0;
 	
 	// Pengaturan.
@@ -422,7 +422,7 @@ char *kirimdata(
 			// Mendapatkan alamat IP.
 			if (serv_addrinfo->ai_family == AF_INET){
 				// Pesan.
-				DEBUG3(_("Inang '%1$s' adalah %2$s."), hostname, _("IPV4"));
+				DEBUG3(_("Inang '%1$s' adalah %2$s."), hostname, "IPV4");
 				
 				// Mengubah jenis struktur data.
 				struct sockaddr_in *ipv = (struct sockaddr_in *)serv_addrinfo->ai_addr;
@@ -432,7 +432,7 @@ char *kirimdata(
 				
 			}else if(serv_addrinfo->ai_family == AF_INET6) {
 				// Pesan.
-				DEBUG3(_("Inang '%1$s' adalah %2$s."), hostname, _("IPV6"));
+				DEBUG3(_("Inang '%1$s' adalah %2$s."), hostname, "IPV6");
 				
 				// Mengubah jenis struktur data.
 				struct sockaddr_in6 *ipv = (struct sockaddr_in6 *)serv_addrinfo->ai_addr;

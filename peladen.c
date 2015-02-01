@@ -27,8 +27,8 @@ int main(/*int argc, char *argv[]*/){
 	aturan.show_debug1=true;
 	aturan.show_debug2=true;
 	aturan.show_debug3=true;
-	aturan.show_debug4=true;
-	aturan.show_debug5=true;
+	aturan.show_debug4=false;
+	aturan.show_debug5=false;
 	aturan.tempdir="tmp";
 	aturan.rsa_datasize=204;
 	
@@ -206,6 +206,13 @@ int main(/*int argc, char *argv[]*/){
 			// Panggil anak.
 			anak_sambungan(newsockfd, berkas_mmap);
 			
+			// Pesan.
+			INFO(
+				_("Selesai menangani klien: %1$s:%2$i."),
+				inet_ntoa(cli_addr.sin_addr),
+				(int) ntohs(cli_addr.sin_port)
+				);
+		
 			// Menutup.
 			#ifndef KANCIL_NOFORK
 				exit(0);
@@ -228,7 +235,6 @@ void stop_listening(int sock){
 	shm_unlink("BERKAS");
 	printf("Berhenti mendengar...\n");
 	shutdown(sock, 2);
-	exit(0);
 }
 
 /*
@@ -315,5 +321,7 @@ void free_shm(){
 			FAIL(_("Gagal membersihkan berkas memori: %1$s (%2$i)."), strerror(errno), errno);
 			exit(EXIT_FAILURE_MEMORY);
 		};
+	#else
+		DEBUG4(_("Tidak terdapat berkas SHM."), 0);
 	#endif
 }

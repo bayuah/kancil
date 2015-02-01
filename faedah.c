@@ -81,21 +81,21 @@ void throw_error(int type, const char * file, const int line,
 	
 	// Aksi.
 	int penyangga_ukuran=1024;
-	char *penyangga;
-	penyangga=malloc(sizeof(penyangga)*penyangga_ukuran);
+	char penyangga[penyangga_ukuran];
+	// penyangga=malloc(sizeof(penyangga)*penyangga_ukuran);
 	
 	// Tampilan.
 	// Antara 1 hingga 8.
 	if(type>=1&&type<=8){
 		va_list args;
 		va_start(args, msg);
-		vsnprintf(penyangga, sizeof(penyangga)*penyangga_ukuran, msg, args);
+		vsnprintf(penyangga, penyangga_ukuran, msg, args);
 		va_end(args);
 	};
 	
 	// Berkas.
-	char *filestr;
-	filestr=malloc(sizeof(filestr)*strlen(file));
+	char filestr[strlen(file)];
+	// filestr=malloc(sizeof(filestr)*strlen(file));
 	strcpy(filestr, file);
 	// filestr = remove_ext (filestr, '.', DIR_SEPARATOR);
 	
@@ -198,8 +198,8 @@ void throw_error(int type, const char * file, const int line,
 	};
 	
 	// membersihkan memori.
-	free(filestr);
-	free(penyangga);
+	// free(filestr);
+	// free(penyangga);
 }
 
 void dec2bin(int num, char *str){

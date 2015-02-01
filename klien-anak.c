@@ -42,7 +42,8 @@ void anak_kirim(
 	char *portno=kirim->portno;
 	
 	// Alokasi memori.
-	pecahan=malloc(sizeof(pecahan)*MAX_CHUNK_SIZE);
+	// pecahan=malloc(sizeof(pecahan)*MAX_CHUNK_SIZE);
+	pecahan=malloc(sizeof(pecahan)*ENCRYPTED_CONTAINER_SIZE);
 	pesan=malloc((sizeof pesan)* CHUNK_MESSAGE_SIZE);
 	
 	// Berurutan kirim.
@@ -161,59 +162,13 @@ void anak_kirim(
 			identifikasi);
 	};
 	
-	
-	// ============= Tes RSA ========
-	/*
-	// Cypher RSA memiliki ukuran 256 bita (2048/8).
-	// Tiap data RSA maksimal 214 karakter (214 oktat).
-	// Sehingga pecah menjadi 5 sehingga memiliki besar sebesar 204 bita
-	// agar tidak ada yang kosong.
-	
-	int pa=MAX_CHUNK_SIZE;
-	// int maksimal_tiap_rsa=204;
-	// int maksimal_tiap_rsa=CHUNK_MESSAGE_SIZE;
-	// 
-	unsigned char *anu=(unsigned char*)"Sate enak sekali.";
-	unsigned char *tujuan_ency;
-	tujuan_ency=malloc((sizeof tujuan_ency)*CHUNK_MESSAGE_SIZE);
-	// 
-	pa=rsa_encrypt(
-		anu,
-		pa,
-		default_rsa_pubkey(),
-		tujuan_ency,
-		RSA_PKCS1_OAEP_PADDING
-	);
-	// 
-	unsigned char *tujuan_deco;
-	tujuan_deco=malloc((sizeof tujuan_deco)*CHUNK_MESSAGE_SIZE);
-	pa=rsa_decrypt(
-		tujuan_ency,
-		pa,
-		default_rsa_privatekey(),
-		tujuan_deco,
-		RSA_PKCS1_OAEP_PADDING
-	);
-	// 
-	printf("Dekripsi, ukuran: %i\n", pa);
-	// 
-	printf("Panjang:%i\n", strlen((char*)tujuan_deco));
-	printf("\"%s\"\n", tujuan_deco);
-	printf("\n");
-	printf("\n");
-	print_char_csv(pecahan, 0, pa);
-	printf("\n");
-	print_unsigned_array(tujuan_deco, 20);
-	exit(EXIT_TEST);
-	*/
-	// ============= /Tes RSA =======
-	
 	// ============= Enkripsi  =======
 	
 	int panjang_pecahan;
 	
 	// Pesan mentah.
 	DEBUG5(_("Pesan mentah dikirim"), pecahan, 0, MAX_CHUNK_SIZE);
+	
 	// Penyandian.
 	unsigned char *pesan_ency;
 	pesan_ency=malloc(sizeof(pesan_ency)*MAX_CHUNK_SIZE+2);
@@ -243,12 +198,13 @@ void anak_kirim(
 		);
 	
 	// Pesan mentah.
+	DEBUG4(_("Panjang pesan mentah diterima: %1$i"), panjang_pecahan);
 	DEBUG5(_("Pesan mentah diterima"), pecahan, 0, panjang_pecahan);
 	
 	// Bila kosong.
 	if(pecahan == NULL){
 		// Pesan kesalahan.
-		FAIL(_("Kegagalan  %1$s."), _("Soket"));
+		FAIL(_("Kegagalan %1$s."), _("Soket"));
 		
 		// Alokasi ulang memori.
 		// pecahan=malloc((sizeof pecahan) * MAX_CHUNK_SIZE );
@@ -256,6 +212,9 @@ void anak_kirim(
 		// Keluar.
 		exit(EXIT_FAILURE_SOCKET);
 	};
+	
+	// ============= Dekripsi  =======
+	
 	// Pemecah sandi.
 	unsigned char *pesan_deco=(unsigned char*)pecahan;
 	unsigned char *tujuan_deco;
@@ -267,9 +226,12 @@ void anak_kirim(
 		tujuan_deco,
 		RSA_PKCS1_OAEP_PADDING
 	);
-	print_unsigned_array(tujuan_deco, panjang_pecahan);
+	
+	// Periksa.
+	// print_unsigned_array(tujuan_deco, 100);
 	
 	// Pesan mentah.
+	DEBUG4(_("Panjang pesan mentah diterima terpecahkan: %1$i"), panjang_pecahan);
 	DEBUG5(_("Pesan mentah diterima terpecahkan"), tujuan_deco, 0, panjang_pecahan);
 	
 	// Ubah.

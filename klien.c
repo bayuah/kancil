@@ -37,9 +37,9 @@ int main(int argc, char *argv[]){
 	aturan.show_info=true;
 	aturan.show_debug1=true;
 	aturan.show_debug2=true;
-	aturan.show_debug3=true;
-	aturan.show_debug4=true;
-	aturan.show_debug5=true;
+	aturan.show_debug3=false;
+	aturan.show_debug4=false;
+	aturan.show_debug5=false;
 	aturan.tempdir="tmp";
 	aturan.tries=20;
 	aturan.waitretry=30;
