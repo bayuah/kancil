@@ -128,8 +128,8 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 			// Tidak sibuk.
 			
 			// Menerima pesan.
-			while(diterima < MAX_CHUNK_SIZE){
-				n = recv(sock, penyangga+diterima, diterima-MAX_CHUNK_SIZE, 0);
+			while(diterima < CHUNK_MESSAGE_SIZE){
+				n = recv(sock, penyangga+diterima, diterima-CHUNK_MESSAGE_SIZE, 0);
 				if (n < 0){
 					FAIL(_("Gagal membaca soket"), 0);
 					exit(EXIT_FAILURE);
@@ -152,6 +152,9 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 				tujuan_deco,
 				RSA_PKCS1_OAEP_PADDING
 			);
+			
+			// Buang.
+			free(pesan_deco);
 			
 			// Pesan mentah.
 			DEBUG4(_("Panjang terpecahkan: %1$i."), diterima);
@@ -222,8 +225,8 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 						status_peladen=0;
 					}else{
 						// Memasukkan informasi berkas.
-						strncpy(berkas->identifikasi, berkas_id, 64);
-						strncpy(berkas->nama,berkas_nama, 64);
+						strncpy(berkas->identifikasi, berkas_id, KIRIMBERKAS_MAX_STR);
+						strncpy(berkas->nama,berkas_nama, KIRIMBERKAS_MAX_STR);
 						berkas->ukuran=strtod(berkas_ukuran, NULL);
 						berkas->ofset=0;
 						berkas->diterima=0;
@@ -476,6 +479,7 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 		penyangga, identifikasi, panji, cek_paritas,
 		1, status_peladen);
 	
+	// Pesan.
 	DEBUG5(_("Pesan mentah dikirim"), penyangga, 0, CHUNK_HEADER_SIZE);
 	
 	// Penyandian.
@@ -483,7 +487,7 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 	// memcpy(pesan_ency, penyangga, MAX_CHUNK_SIZE);
 	
 	// Pesan mentah.
-	DEBUG5(_("Pesan mentah dikirim"), pesan_ency, 0, MAX_CHUNK_SIZE);
+	DEBUG5(_("Pesan mentah dikirim terenkripsi"), pesan_ency, 0, MAX_CHUNK_SIZE);
 	
 	unsigned char *tujuan_ency;
 	tujuan_ency=malloc(sizeof(tujuan_ency)*ENCRYPTED_CONTAINER_SIZE);
@@ -501,7 +505,7 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 	DEBUG5(_("Pesan mentah dikirim tersandikan"), tujuan_ency, 0, panjang_pecahan);
 	
 	// Balasan.
-	if (!sendall(sock, (char *)tujuan_ency, &panjang_pecahan)){
+	if (!sendall(sock, (char*)tujuan_ency, &panjang_pecahan)){
 	// if (!sendall(sock, "peladen", &len)){
 		FAIL(_("Kesalahan dalam menulis ke soket: %1$s (%2$i)."),strerror(errno), errno);
 		exit(EXIT_FAILURE_SOCKET);

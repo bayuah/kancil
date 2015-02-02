@@ -35,8 +35,8 @@ int main(int argc, char *argv[]){
 	aturan.show_warning=true;
 	aturan.show_notice=true;
 	aturan.show_info=true;
-	aturan.show_debug1=true;
-	aturan.show_debug2=true;
+	aturan.show_debug1=false;
+	aturan.show_debug2=false;
 	aturan.show_debug3=false;
 	aturan.show_debug4=false;
 	aturan.show_debug5=false;

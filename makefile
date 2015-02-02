@@ -40,7 +40,7 @@ endif
 
 # Architecture
 ARCH = $(shell getconf LONG_BIT)
-# ARCH_32=-D_FILE_OFFSET_BITS=32
+# ARCH_32=-D_FILE_OFFSET_BITS=64
 # ARCH_64=-D_FILE_OFFSET_BITS=64
 
 # Combine.

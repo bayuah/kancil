@@ -23,11 +23,11 @@ int main(int argc, char *argv[]){
 	aturan.show_warning=true;
 	aturan.show_notice=true;
 	aturan.show_info=true;
-	aturan.show_debug1=true;
-	aturan.show_debug2=true;
-	aturan.show_debug3=true;
-	aturan.show_debug4=true;
-	aturan.show_debug5=true;
+	aturan.show_debug1=false;
+	aturan.show_debug2=false;
+	aturan.show_debug3=false;
+	aturan.show_debug4=false;
+	aturan.show_debug5=false;
 	aturan.tempdir="tmp";
 	aturan.tries=5;
 	aturan.waitretry=1;
@@ -230,7 +230,6 @@ int main(int argc, char *argv[]){
 		
 		if (pids[connection] == 0){
 			// Proses anak.
-			
 			// Bila proses pencabangan.
 			#ifndef KANCIL_NOFORK
 				close(sockfd);
@@ -242,6 +241,13 @@ int main(int argc, char *argv[]){
 				kirim_mmap,
 				alamat_mmap
 			);
+			
+			// Pesan.
+			INFO(
+				_("Selesai menangani klien: %1$s:%2$i."),
+				inet_ntoa(cli_addr.sin_addr),
+				(int) ntohs(cli_addr.sin_port)
+				);
 			
 			// Menutup.
 			#ifndef KANCIL_NOFORK

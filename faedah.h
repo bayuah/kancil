@@ -11,6 +11,20 @@
 
 #include "lingkungan.h"
 
+// Memastikan dapat membaca
+// berkas ukuran besar.
+#ifndef __USE_LARGEFILE64
+	#define __USE_LARGEFILE64 1
+#endif
+#define _FILE_OFFSET_BITS 64
+#include <sys/types.h>
+
+#if defined __USE_LARGEFILE64 \
+	&& !defined __off64_t_defined
+	typedef __off64_t off64_t;
+	# define __off64_t_defined
+#endif
+
 void dec2bin(int num, char *str);
 int mod_int (int a, int b);
 int int_tak_min(int nilai, int pengganti);
@@ -26,7 +40,7 @@ int check_parity(char *str, size_t start, size_t length);
 void insert_string(char **target, size_t target_length,
 	char *str, size_t start, size_t str_length);
 char *basename (const char *filename);
-off_t fsize(const char *filename);
+off64_t fsize(const char *filename);
 bool file_exist (char *filename);
 char *readable_fs(double size, char *penyanga);
 int killpid(pid_t pid, int sig);

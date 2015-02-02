@@ -14,6 +14,7 @@
 #define _BSD_SOURCE
 #define _LARGEFILE_SOURCE
 #define _LARGEFILE64_SOURCE
+#define _FILE_OFFSET_BITS 64
 
 // Standar.
 #include <string.h>
@@ -467,10 +468,10 @@ char *basename (const char *filename){
  * @url: http://stackoverflow.com/a/8384/1705800
  * @penulis-asli: Ted Percival (stackoverflow.com/users/954)
  */
-off_t fsize(const char *filename) {
-	struct stat st; 
+off64_t fsize(const char *filename) {
+	struct stat64 st; 
 	
-	if (stat(filename, &st) == 0)
+	if (stat64(filename, &st) == 0)
 		return st.st_size;
 	
 	return -1; 
@@ -482,8 +483,8 @@ off_t fsize(const char *filename) {
  * @penulis-asli: Codebunny (stackoverflow.com/users/13667)
  */
 bool file_exist (char *filename){
-	struct stat st;
-	return (stat(filename, &st) == 0)? true:false;
+	struct stat64 st;
+	return (stat64(filename, &st) == 0)? true:false;
 }
 
 /*

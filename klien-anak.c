@@ -163,7 +163,6 @@ void anak_kirim(
 	};
 	
 	// ============= Enkripsi  =======
-	
 	int panjang_pecahan;
 	
 	// Pesan mentah.
@@ -183,8 +182,12 @@ void anak_kirim(
 		RSA_PKCS1_OAEP_PADDING
 	);
 	
+	// Bersihkan.
+	free(pesan_ency);
+	
 	// Pesan mentah.
 	DEBUG5(_("Pesan mentah dikirim tersandikan"), tujuan_ency, 0, MAX_CHUNK_SIZE);
+	
 	// int panjang_pecahan=0;
 	// Kirim.
 	int panjang_diterima;
@@ -229,6 +232,9 @@ void anak_kirim(
 	
 	// Periksa.
 	// print_unsigned_array(tujuan_deco, 100);
+	
+	// Bersihkan.
+	free(pesan_deco);
 	
 	// Pesan mentah.
 	DEBUG4(_("Panjang pesan mentah diterima terpecahkan: %1$i"), panjang_pecahan);

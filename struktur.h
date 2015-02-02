@@ -68,7 +68,7 @@ struct INFOALAMAT{
 
 // Kirim.
 #ifndef KIRIMBERKAS_STR
-	#define KIRIMBERKAS_MAX_STR 64
+	#define KIRIMBERKAS_MAX_STR 255
 #endif
 struct KIRIMBERKAS{
 	unsigned int identifikasi;
@@ -92,8 +92,8 @@ struct KIRIMBERKAS{
 	#define MAX_CHUNK_ID 65025 // 16-bit.
 #endif
 struct BERKAS{
-	char identifikasi[64];
-	char nama[64];
+	char identifikasi[KIRIMBERKAS_MAX_STR];
+	char nama[KIRIMBERKAS_MAX_STR];
 	double ofset;
 	double ukuran;
 	double diterima;
