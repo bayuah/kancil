@@ -365,14 +365,12 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 						// Periksa setiap penyangga apakah masih kosong.
 						// Jika masih kosong, maka meminta Klien
 						// untuk mengirim bagian tersebut.
-						for(unsigned int id=1; id<MAX_CHUNK_ID; id++){
+						for(unsigned int id=1; id<identifikasi; id++){
 							if(!berkas->data_terima[id]){
-								if(id<=identifikasi){
-									NOTICE("Meminta Klien mengirim identifikasi '%1$i.'", id);
-									identifikasi=id;
-									status_peladen=0;
-									break;
-								};
+								NOTICE("Meminta Klien mengirim identifikasi '%1$i.'", id);
+								identifikasi=id;
+								status_peladen=0;
+								break;
 							};
 						};
 						
