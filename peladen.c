@@ -24,7 +24,7 @@ int main(/*int argc, char *argv[]*/){
 	aturan.show_warning=true;
 	aturan.show_notice=true;
 	aturan.show_info=true;
-	aturan.show_debug1=true;
+	aturan.show_debug1=false;
 	aturan.show_debug2=false;
 	aturan.show_debug3=false;
 	aturan.show_debug4=false;
@@ -64,7 +64,7 @@ int main(/*int argc, char *argv[]*/){
 		exit(EXIT_FAILURE_MEMORY);
 	};
 	
-	struct BERKAS *berkas_mmap;
+	struct TERIMABERKAS *berkas_mmap;
 	berkas_mmap = mmap(NULL, berbagi_ukuran, 
 		PROT_WRITE | PROT_READ, berbagi_panji, 
 		shm_berkas, 0 );
@@ -234,7 +234,7 @@ int main(/*int argc, char *argv[]*/){
  * Menutup.
  */
 void stop_listening(int sock){
-	shm_unlink("BERKAS");
+	shm_unlink("TERIMABERKAS");
 	printf("Berhenti mendengar...\n");
 	shutdown(sock, 2);
 }

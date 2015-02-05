@@ -244,6 +244,13 @@ void anak_kirim(
 	// Ubah.
 	pecahan=(char*)tujuan_deco;
 	
+	// Mendapatkan pesan.
+	memset(pesan, 0, CHUNK_MESSAGE_SIZE+1);
+	pesan=ambil_pesan(pecahan);
+	
+	// Periksa.
+	// print_unsigned_array(tujuan_deco, 100);
+	
 	// Mendapatkan pengepala.
 	// Respons.
 	int r_versi;
@@ -303,6 +310,13 @@ void anak_kirim(
 			
 			// Mengatur ulang ukuran berkas terkirim.
 			kirim->ukuran_kirim=0;
+		}else if(r_panji==INTRANSFER_FLAG){
+			// Meminta pengiriman ulang
+			// berkas berdasarkan identifikasi.
+			NOTICE(_("Meminta pengiriman ulang pecahan identifikasi '%1$i'."), r_identifikasi);
+			
+			// Mengatur ulang ukuran berkas terkirim.
+			// kirim->ukuran_kirim=0;
 		};
 		
 		// Mengirim ulang.
@@ -412,7 +426,7 @@ void anak_kirim(
 		}else{
 			kirim->do_kirim=false;
 		};
-		kirim->coba=1;
+		// kirim->coba=1;
 	};
 	
 	// Bila lebih dari maksimal kali kirim,

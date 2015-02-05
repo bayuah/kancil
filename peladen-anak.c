@@ -11,7 +11,7 @@
  * anak_tulis()
  * Proses yang menangani penulisan berkas.
  */
-void anak_tulis(struct BERKAS *berkas){
+void anak_tulis(struct TERIMABERKAS *berkas){
 	// Berkas.
 	double dipotong=0;
 	
@@ -20,6 +20,42 @@ void anak_tulis(struct BERKAS *berkas){
 	
 	// Memasang status sibuk.
 	berkas->sedang_sibuk=true;
+	
+	// Periksa apakah nama kosong.
+	if(!strlen(berkas->nama)){
+		// Nama kosong.
+		FAIL(_("Nama berkas kosong."), 0);
+		
+		// Melepas status sibuk.
+		berkas->sedang_sibuk=false;
+		
+		// Keluar.
+		exit(EXIT_FAILURE_VARS);
+	};
+	
+	// Apakah ukuran kosong.
+	if(berkas->ukuran<=0){
+		// Berkas kosong.
+		FAIL(_("Berkas '%1$s' kosong."), berkas->nama);
+		
+		// Melepas status sibuk.
+		berkas->sedang_sibuk=false;
+		
+		// Keluar.
+		exit(EXIT_FAILURE_VARS);
+	};
+	
+	// Apakah tidak diterima.
+	if(berkas->ukuran<=0){
+		// Tidak diterima.
+		FAIL(_("Tidak menerima berkas '%1$s'."), berkas->nama);
+		
+		// Melepas status sibuk.
+		berkas->sedang_sibuk=false;
+		
+		// Keluar.
+		exit(EXIT_FAILURE_IO);
+	};
 	
 	// Bila diterima lebih besar dari ukuran.
 	if(berkas->diterima>berkas->ukuran){
@@ -62,6 +98,10 @@ void anak_tulis(struct BERKAS *berkas){
 	// Mulai melakukan penulisan.
 	// Membangun lajur.
 	char *berkas_lajur;
+	char pembatas[2];
+	pembatas[0]=DIR_SEPARATOR;
+	pembatas[1]=0;
+	
 	berkas_lajur=malloc(0
 		+strlen(aturan.tempdir)
 		+strlen(berkas->nama)
@@ -69,13 +109,16 @@ void anak_tulis(struct BERKAS *berkas){
 		+3
 		);
 	strcpy(berkas_lajur,aturan.tempdir);
-	// strcat(berkas_lajur,(char*)DIR_SEPARATOR);
-	// strcpy(berkas_lajur,berkas->nama);
+	strcat(berkas_lajur,pembatas);
+	strcat(berkas_lajur,berkas->nama);
+	
+	// Bersihkan.
+	memset(berkas->data_pesan, 0, sizeof(berkas->data_pesan[0][0])*MAX_CHUNK_ID*(CHUNK_MESSAGE_SIZE+1));
+	memset(berkas->data_terima, 0, sizeof(berkas->data_terima[0])*MAX_CHUNK_ID);
 	
 	TEST(berkas_lajur,0 );
 	sleep(60);
 	// Membuka berkas.
-	
 	
 	// Pesan.
 	DEBUG1(_("Selesai menulis berkas '%1$s'."), berkas->nama);
@@ -91,7 +134,7 @@ void anak_tulis(struct BERKAS *berkas){
  * anak_sambungan()
  * Proses yang menangani sambungan dari klien.
  */
-void anak_sambungan (int sock, struct BERKAS *berkas){
+void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 	int n, status;
 	pid_t pid;
 	// pid_t result_waitpid;
@@ -278,6 +321,10 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 					}else{
 						// Tidak ada masalah.
 						
+						// Menyimpan ke penyangga.
+						memcpy(berkas->data_pesan[identifikasi], pesan, CHUNK_MESSAGE_SIZE);
+						berkas->data_terima[identifikasi]=true;
+						
 						// Menambahkan yang terkirim.
 						berkas->diterima=0
 							+((double)(berkas->diterima))
@@ -315,6 +362,20 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 						memset(ukuberkas_diterima, 0, ukuberkas_panjang);
 						memset(ukuberkas_ukuran, 0, ukuberkas_panjang);
 						
+						// Periksa setiap penyangga apakah masih kosong.
+						// Jika masih kosong, maka meminta Klien
+						// untuk mengirim bagian tersebut.
+						for(unsigned int id=1; id<MAX_CHUNK_ID; id++){
+							if(!berkas->data_terima[id]){
+								if(id<=identifikasi){
+									NOTICE("Meminta Klien mengirim identifikasi '%1$i.'", id);
+									identifikasi=id;
+									status_peladen=0;
+									break;
+								};
+							};
+						};
+						
 						// printf("Pesan:\n");
 						// print_char(pesan, CHUNK_MESSAGE_SIZE);
 						// printf("\n");
@@ -332,7 +393,17 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 					);
 					
 					// Memanggil proses juru tulis.
-					pid = fork();
+					// Memecah tugas.
+					// Mencabangkan proses.
+					// 'KANCIL_NOFORK' berguna untuk melakukan pengutuan
+					// sebab proses tidak dipecah.
+					// Kompilasi Kancil dengan parameter 'nofork=yes'.
+					#ifndef KANCIL_NOFORK
+						pid=fork();
+					#else
+						pid=0;
+					#endif
+					
 					if (pid < 0){
 						FAIL(_("Kegagalan proses cabang: %1$s (%2$i)."), strerror(errno), errno);
 						exit(EXIT_FAILURE_FORK);
@@ -340,7 +411,11 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 						if (pid == 0){
 							// Proses anak.
 							anak_tulis(berkas);
-							exit(0);
+							
+							// Menutup.
+							#ifndef KANCIL_NOFORK
+								exit(0);
+							#endif
 						}else{
 							// Proses bapak.
 							berkas->pid_tulis=pid;
@@ -463,11 +538,17 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 	
 	// Buat pesan.
 	// char* pesan;
-	pesan=malloc((sizeof pesan)* CHUNK_MESSAGE_SIZE);
-	memset(pesan, 0, CHUNK_MESSAGE_SIZE);
+	pesan=malloc((sizeof pesan)* CHUNK_MESSAGE_SIZE+1);
+	memset(pesan, 0, CHUNK_MESSAGE_SIZE+1);
 	
-	// Mengisi.
-	strcpy(pesan, PROGCODE);
+	// Pesan peladen.
+	pesan=buat_pesan_peladen(
+		pesan,
+		CHUNK_MESSAGE_SIZE,
+		berkas->identifikasi,
+		(berkas->diterima)+berkas->ofset,
+		berkas->ukuran
+		);
 	
 	// Menulis balasan.
 	// Pesan Kosong.
@@ -479,12 +560,12 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 		penyangga, identifikasi, panji, cek_paritas,
 		1, status_peladen);
 	
+	
 	// Pesan.
 	DEBUG5(_("Pesan mentah dikirim"), penyangga, 0, CHUNK_HEADER_SIZE);
 	
 	// Penyandian.
 	unsigned char* pesan_ency=(unsigned char*)penyangga;
-	// memcpy(pesan_ency, penyangga, MAX_CHUNK_SIZE);
 	
 	// Pesan mentah.
 	DEBUG5(_("Pesan mentah dikirim terenkripsi"), pesan_ency, 0, MAX_CHUNK_SIZE);

@@ -24,6 +24,13 @@ int ambil_pesan_start(
 	char **nama_berkas,
 	char **ukuran_berkas
 	);
+char* buat_pesan_peladen(
+	char *pesan,
+	size_t panjang_pecahan,
+	char* identifikasi_berkas,
+	double ukuran_berkas,
+	double ukuran_diterima
+);
 char* buat_pengepala(
 	char *pecahan,
 	unsigned int identifikasi,

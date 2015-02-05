@@ -1,5 +1,5 @@
 CC = cc
-CCLIBS = -lcrypto -lrt
+CCLIBS = -lcrypto -lrt -lm
 
 ifeq ($(OS),Windows_NT)
 	CCLIBS += -lintl

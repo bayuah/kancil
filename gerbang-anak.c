@@ -262,6 +262,9 @@ void anak_gerbang(
 				&r_status_peladen
 				);
 			
+			// Ambil pesan.
+			pesan=ambil_pesan(penyangga);
+			
 			// Balasan
 			DEBUG2(_("Balasan: Versi: %1$i."), r_versi);
 			DEBUG2(_("Balasan: Identifikasi: %1$i."), r_identifikasi);
@@ -301,6 +304,17 @@ void anak_gerbang(
 					NOTICE(_("Meminta pengiriman ulang informasi berkas."), 0);
 					
 					// Berhenti.
+					status_peladen=0;
+					panji=r_panji;
+					paritas=r_paritas;
+					identifikasi=r_identifikasi;
+					do_ulang=false;
+					break;
+				}else if(r_panji==INTRANSFER_FLAG){
+					// Meminta pengiriman ulang
+					// berkas berdasarkan identifikasi.
+					NOTICE(_("Meminta pengiriman ulang pecahan identifikasi '%1$i'."), r_identifikasi);
+					
 					status_peladen=0;
 					panji=r_panji;
 					paritas=r_paritas;

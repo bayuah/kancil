@@ -103,6 +103,8 @@ char *kancil_signal_code(int sinyal){
 	case EXIT_SUCCESS: return "EXIT_SUCCESS"; break;
 	case EXIT_FAILURE: return "EXIT_FAILURE"; break;
 	case EXIT_FAILURE_ARGS: return "EXIT_FAILURE_ARGS"; break;
+	case EXIT_FAILURE_VARS: return "EXIT_FAILURE_VARS"; break;
+	case EXIT_FAILURE_ENV: return "EXIT_FAILURE_ENV"; break;
 	case EXIT_FAILURE_IO: return "EXIT_FAILURE_IO"; break;
 	case EXIT_FAILURE_MEMORY: return "EXIT_FAILURE_MEMORY"; break;
 	case EXIT_FAILURE_SOCKET: return "EXIT_FAILURE_SOCKET"; break;

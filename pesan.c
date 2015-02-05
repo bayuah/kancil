@@ -9,6 +9,8 @@
 #include "kancil.h"
 #include "faedah.h"
 
+#include <math.h>
+
 /*
  * arti_panji()
  * Mengartikan panji.
@@ -193,6 +195,120 @@ int ambil_pesan_start(
 	
 	// Tidak ada masalah.
 	return EXIT_SUCCESS;
+}
+
+/*
+ * buat_pesan_peladen()
+ * Membuat pesan balasan kepada Klien.
+ * Setiap bagian dibatasi oleh karakter [CR][LF].
+ * @param (char*) pesan, tujuan;
+ * @param (size_t) panjang_pecahan, panjang maksimal;
+ * @param (char*) berkas_identifikasi, penanda berkas terkirim.
+ *  Digunakan agar peladen mengetahui bahwa berkas
+ *  yang dikirim merupakan bagian dari berkas lain;
+ * @param (double) berkas_ukuran, ukuran berkas;
+ *  Angkat bulat yang akan diubah menjadi string (char*)
+ * @param (double) ukuran_diterima, ukuran berkas diterima.
+ *  Angkat bulat yang akan diubah menjadi string (char*)
+ */
+char *buat_pesan_peladen(
+	char *pesan,
+	size_t panjang_pecahan,
+	char* identifikasi_berkas,
+	double ukuran_berkas,
+	double ukuran_diterima
+){
+	int panjang=0;
+	
+	// Memeriksa identifikasi.
+	panjang += strlen(identifikasi_berkas);
+	
+	/*Bagian Kedua*/
+	
+	// Mengubah angka jadi huruf.
+	char* ukuran_berkas_str;
+	ukuran_berkas_str=malloc(sizeof (ukuran_berkas_str) * BERKAS_MAX_STR+1);
+	memset(ukuran_berkas_str, 0, BERKAS_MAX_STR+1);
+	sprintf(ukuran_berkas_str, "%.0f", ukuran_berkas);
+	
+	// Memeriksa panjang ukuran.
+	panjang += strlen(ukuran_berkas_str);
+	
+	/*Bagian Ketiga*/
+	
+	// Mengubah angka jadi huruf.
+	char* ukuran_diterima_str;
+	ukuran_diterima_str=malloc(sizeof (ukuran_diterima_str) * BERKAS_MAX_STR+1);
+	memset(ukuran_diterima_str, 0, BERKAS_MAX_STR+1);
+	sprintf(ukuran_diterima_str, "%.0f", ukuran_diterima);
+	
+	// Memeriksa panjang ukuran.
+	panjang += strlen(ukuran_diterima_str);
+	
+	/*Bagian Keempat*/
+	
+	// Ambil waktu sekarang.
+	double waktu_unix, waktu_unix_detik, waktu_unix_mikrodetik;
+	waktu_unix=current_time(CURRENTTIME_MICROSECONDS);
+	waktu_unix_mikrodetik=modf(waktu_unix, &waktu_unix_detik);
+	
+	// Mengubah angka jadi huruf.
+	char* waktu_unix_detik_str;
+	waktu_unix_detik_str=malloc(sizeof (waktu_unix_detik_str) * BERKAS_MAX_STR+1);
+	memset(waktu_unix_detik_str, 0, BERKAS_MAX_STR+1);
+	sprintf(waktu_unix_detik_str, "%1$.0f", waktu_unix_detik);
+	
+	// Memeriksa panjang ukuran.
+	panjang += strlen(waktu_unix_detik_str);
+	
+	// Mengubah angka jadi huruf.
+	char*waktu_unix_mikrodetik_str;
+	waktu_unix_mikrodetik_str=malloc(sizeof (waktu_unix_mikrodetik_str) * BERKAS_MAX_STR+1);
+	memset(waktu_unix_mikrodetik_str, 0, BERKAS_MAX_STR+1);
+	sprintf(waktu_unix_mikrodetik_str, "%f", waktu_unix_mikrodetik);
+	
+	// Buang tanda desimal.
+	memmove(
+		waktu_unix_mikrodetik_str+0,
+		waktu_unix_mikrodetik_str+2,
+		BERKAS_MAX_STR+1-2
+	);
+	
+	// Memeriksa panjang ukuran.
+	panjang += strlen(waktu_unix_mikrodetik_str);
+	
+	
+	// Memeriksa panjang semua.
+	if(panjang+6>(int)panjang_pecahan){
+		// Bila lebih dari ukuran,
+		// keluar dari program.
+		FAIL(
+			_("Panjang %1$s (%2$i) terlalu besar. Maksimal %3$i."),
+			_("pecahan awal"),panjang, panjang_pecahan
+			);
+		exit(EXIT_FAILURE_MESSAGES);
+	};
+	
+	
+	// Buat komposisi.
+	sprintf(
+		pesan,
+		"%1$s\r\n%2$s\r\n%3$s\r\n%4$s.%5$s\r\n",
+		identifikasi_berkas,
+		ukuran_berkas_str,
+		ukuran_diterima_str,
+		waktu_unix_detik_str,
+		waktu_unix_mikrodetik_str
+	);
+	
+	// Bersihkan.
+	free(ukuran_berkas_str);
+	free(ukuran_diterima_str);
+	free(waktu_unix_detik_str);
+	free(waktu_unix_mikrodetik_str);
+	
+	// Hasil.
+	return pesan;
 }
 
 /* pengepala()

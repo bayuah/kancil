@@ -97,7 +97,7 @@ struct KIRIMBERKAS{
 } KIRIMBERKAS;
 
 // Berkas.
-struct BERKAS{
+struct TERIMABERKAS{
 	char identifikasi[BERKAS_MAX_STR];
 	char nama[BERKAS_MAX_STR];
 	double ofset;
@@ -108,5 +108,5 @@ struct BERKAS{
 	bool terima_berkas;
 	char data_pesan[MAX_CHUNK_ID][CHUNK_MESSAGE_SIZE+1];
 	bool data_terima[MAX_CHUNK_ID];
-} BERKAS;
+} TERIMABERKAS;
 #endif /* _KANCIL_STRUKTUR_H_ */
