@@ -26,6 +26,7 @@
 // Untuk isalpha()
 // dan isdigit().
 #include <ctype.h>  
+#include <time.h>
 
 // Kekutu.
 // Ada masalah
@@ -86,8 +87,14 @@
 #define STRINGIZE_VALUE_OF(x) STRINGIZE(x)
 
 // Mendapatkan versi kompilasi.
-#ifdef __COMPILE_FLAGS
-	#define COMPILE_FLAGS __COMPILE_FLAGS
+#ifdef __COMPILER_FLAGS
+	#define COMPILER_FLAGS __COMPILER_FLAGS
+#endif
+#ifdef __COMPILER_MACHINE
+	#define COMPILER_MACHINE __COMPILER_MACHINE
+#endif
+#ifdef __COMPILER_VERSION
+	#define COMPILER_VERSION __COMPILER_VERSION
 #endif
 #ifdef COMPILE_MODE_STABLE
 	#define COMPILE_MODE "stable"

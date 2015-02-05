@@ -14,6 +14,11 @@ int main(int argc, char *argv[]){
 	int ukuberkas_panjang=12;
 	int status;
 	
+	// Penyangga STDOUT.
+	char stdout_buf[1024];
+	setvbuf(stdout, stdout_buf, _IOFBF, sizeof(stdout_buf));
+	
+	// Berkas.
 	char *berkas;
 	
 	// Lokalisasi.
@@ -113,6 +118,9 @@ int main(int argc, char *argv[]){
 	// Berkas.
 	berkas = argv[3];
 	
+	// Buang STDOUT.
+	fflush(stdout);
+	
 	// Bila berkas tidak ada.
 	if (!file_exist(berkas)){
 		FAIL ( 
@@ -123,13 +131,12 @@ int main(int argc, char *argv[]){
 		
 		// Bila ada.
 		kirim_mmap->ukuran_berkas=fsize(berkas);
-		char *penyangga_fschar;
-		penyangga_fschar=malloc(sizeof(penyangga_fschar)*ukuberkas_panjang);
+		char penyangga_fschar[ukuberkas_panjang];
+		memset(penyangga_fschar, 0, ukuberkas_panjang);
 		INFO(
 			_("Berkas '%1$s' ditemukan dengan ukuran %2$s (%3$.0lf bita)."),
 			berkas, readable_fs(kirim_mmap->ukuran_berkas, penyangga_fschar), kirim_mmap->ukuran_berkas
 			);
-		free(penyangga_fschar);
 		
 		// Membaca berkas.
 		FILE *pberkas=fopen(berkas, "rb");
@@ -150,11 +157,34 @@ int main(int argc, char *argv[]){
 			kirim_mmap->urut_kali=0;
 			// kirim_mmap->ukuran_berkas;
 			kirim_mmap->ukuran_kirim=0;
+			kirim_mmap->ukuran_kirim_sebelumnya=0;
 			kirim_mmap->do_kirim=true;
-			strncpy(kirim_mmap->hostname, argv[1], KIRIMBERKAS_MAX_STR);
-			strncpy(kirim_mmap->portno, argv[2], KIRIMBERKAS_MAX_STR);
-			strncpy(kirim_mmap->berkas, berkas, KIRIMBERKAS_MAX_STR);
+			strncpy(kirim_mmap->hostname, argv[1], BERKAS_MAX_STR);
+			strncpy(kirim_mmap->portno, argv[2], BERKAS_MAX_STR);
+			strncpy(kirim_mmap->berkas, berkas, BERKAS_MAX_STR);
+			memset(kirim_mmap->data_terkirim, 0, sizeof(kirim_mmap->data_terkirim[0])*MAX_CHUNK_ID);
+			kirim_mmap->waktu_terkirim=current_time(CURRENTTIME_MICROSECONDS);
 			kirim_mmap->coba=1;
+			
+			// Identifikasi berkas.
+			char berkas_identifikasi[BERKAS_MAX_STR];
+			char berkas_nama[BERKAS_MAX_STR];
+			int waktu=current_time(CURRENTTIME_SECONDS);
+			strncpy(berkas_nama, basename(berkas), BERKAS_MAX_STR);
+			int panjang_nama=strlen(berkas_nama);
+			
+			// Membangun Identifikasi berkas.
+			snprintf(
+				berkas_identifikasi,
+				BERKAS_MAX_STR,
+				"%1$.3s%2$.0d%3$s",
+				berkas_nama,
+				waktu,
+				berkas_nama+(panjang_nama-3)
+			);
+			
+			// Memasukkan Identifikasi berkas.
+			strncpy(kirim_mmap->berkas_identifikasi, berkas_identifikasi, BERKAS_MAX_STR);
 			
 			// Mulai.
 			pid_t pid, pid_anak;
@@ -193,7 +223,7 @@ int main(int argc, char *argv[]){
 						exit(0);
 					#endif
 				}else{
-				// Bapak tunggu anak.
+					// Bapak tunggu anak.
 					do{
 						pid_anak  = waitpid(pid, &status, WUNTRACED | WCONTINUED);
 						if (pid_anak  == -1) {
@@ -307,6 +337,20 @@ void info_kancil(){
 	printf("%1$s (%2$s).\n", PROGNAME, BUILT_VERSION);
 	printf(_("Dibangun pada %1$s. Protokol versi %2$i."), BUILT_TIME_STR, PROTOCOL_VERSION );
 	printf("\n");
+	
+	// Informasi pembangun.
+	#ifdef COMPILER_MACHINE
+		printf(_("Dibuat di %1$s."), STRINGIZE_VALUE_OF(COMPILER_MACHINE));
+		#ifdef COMPILER_MACHINE
+			printf(" ");
+			printf(_("Versi pembangun %1$s."), STRINGIZE_VALUE_OF(COMPILER_VERSION));
+		#endif
+		printf("\n");
+	#endif
+	#ifdef COMPILER_FLAGS
+		printf(_("Panji pembangun:"));
+		printf(_("\n%1$s\n"), STRINGIZE_VALUE_OF(COMPILER_FLAGS));
+	#endif
 	
 	free(BUILT_VERSION);
 }

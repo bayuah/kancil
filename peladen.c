@@ -24,7 +24,7 @@ int main(/*int argc, char *argv[]*/){
 	aturan.show_warning=true;
 	aturan.show_notice=true;
 	aturan.show_info=true;
-	aturan.show_debug1=false;
+	aturan.show_debug1=true;
 	aturan.show_debug2=false;
 	aturan.show_debug3=false;
 	aturan.show_debug4=false;
@@ -71,8 +71,10 @@ int main(/*int argc, char *argv[]*/){
 	
 	// Nilai awal.
 	// Berkas.
-	memset(berkas_mmap->identifikasi, 0, KIRIMBERKAS_MAX_STR);
-	memset(berkas_mmap->nama, 0, KIRIMBERKAS_MAX_STR);
+	memset(berkas_mmap->identifikasi, 0, BERKAS_MAX_STR);
+	memset(berkas_mmap->nama, 0, BERKAS_MAX_STR);
+	memset(berkas_mmap->data_pesan, 0, sizeof(berkas_mmap->data_pesan[0][0])*MAX_CHUNK_ID*(CHUNK_MESSAGE_SIZE+1));
+	memset(berkas_mmap->data_terima, 0, sizeof(berkas_mmap->data_terima[0])*MAX_CHUNK_ID);
 	berkas_mmap->ofset=0;
 	berkas_mmap->ukuran=0;
 	berkas_mmap->diterima=0;
@@ -294,9 +296,19 @@ void info_kancil(){
 	printf("%1$s (%2$s).\n", PROGNAME, BUILT_VERSION);
 	printf(_("Dibangun pada %1$s. Protokol versi %2$i."), BUILT_TIME_STR, PROTOCOL_VERSION );
 	printf("\n");
-	#ifdef COMPILE_FLAGS
-		printf(_("Panji pembangun: %1$s."), STRINGIZE_VALUE_OF(COMPILE_FLAGS));
+	
+	// Informasi pembangun.
+	#ifdef COMPILER_MACHINE
+		printf(_("Dibuat di %1$s."), STRINGIZE_VALUE_OF(COMPILER_MACHINE));
+		#ifdef COMPILER_MACHINE
+			printf(" ");
+			printf(_("Versi pembangun %1$s."), STRINGIZE_VALUE_OF(COMPILER_VERSION));
+		#endif
 		printf("\n");
+	#endif
+	#ifdef COMPILER_FLAGS
+		printf(_("Panji pembangun:"));
+		printf(_("\n%1$s\n"), STRINGIZE_VALUE_OF(COMPILER_FLAGS));
 	#endif
 	
 	free(BUILT_VERSION);

@@ -15,4 +15,10 @@ void tampil_info_progres_berkas(
 	int ukuberkas_panjang
 	);
 char *kancil_signal_code(int sinyal);
+void _progress(char *msg, ...);
+
+// Makro.
+#define PROGRESS(msg, ...) \
+	_progress(msg, __VA_ARGS__);
+
 #endif

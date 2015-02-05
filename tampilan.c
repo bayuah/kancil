@@ -21,14 +21,18 @@
 	#endif
 #endif
 
+// standar.
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdarg.h>
+#include <unistd.h>
 
 // Posix
 #define _POSIX_SOURCE
 #include <sys/types.h>
+#include <sys/ioctl.h>
 
 #ifndef _LOCALE_H
 	#include <libintl.h>
@@ -65,7 +69,7 @@ void tampil_info_progres_berkas(
 	// Pesan.
 	switch(tipe){
 		case 0:
-			NOTICE(
+			INFO(
 				_("Berkas '%1$s' terkirim %2$s/%3$s (%4$.0lf/%5$.0lf bita)."),
 				basename(berkas),
 				ukuberkas_dikirim, ukuberkas_ukuran,
@@ -73,7 +77,7 @@ void tampil_info_progres_berkas(
 				);
 		break;
 		case 1:
-			NOTICE(
+			INFO(
 				_("Berkas '%1$s' diterima %2$s/%3$s (%4$.0lf/%5$.0lf bita)."),
 				basename(berkas),
 				ukuberkas_dikirim, ukuberkas_ukuran,
@@ -92,7 +96,7 @@ void tampil_info_progres_berkas(
  * Menampilan sinyal kancil.
  * Bila sinyal tidak diketahui, mencoba memanggil sinyal unix.
  * @param (int) sinyal
- * @hasil (cahr*) NULL bila tidak ditemukan.
+ * @hasil (char*) NULL bila tidak ditemukan.
  */
 char *kancil_signal_code(int sinyal){
 	switch(sinyal){
@@ -110,4 +114,52 @@ char *kancil_signal_code(int sinyal){
 	default: return unix_signal_code(sinyal); break;
 	};
 }
- 
+
+/*
+ * `_progress()`
+ * Memberikan tampilan perkembangan.
+ * @param (char*) Format pesan.
+ * @param (char*) Pesan.
+ */
+void _progress(char *msg, ...){
+	
+	// Buang STDOUT.
+	fflush(stdout);
+	
+	// Penyangga.
+	int penyangga_ukuran=256;
+	char penyangga[penyangga_ukuran];
+	
+	// Mendapatkan ukuran tty.
+	struct winsize ws;
+	ioctl(0, TIOCGWINSZ, &ws);
+	int tty_kolom=ws.ws_col;
+	
+	// Ubah format.
+	va_list args;
+	va_start(args, msg);
+	vsnprintf(penyangga, penyangga_ukuran, msg, args);
+	va_end(args);
+	
+	// Panjang tampilan.
+	int panjang_tampilan=strlen(penyangga);
+	
+	// Bila terlalu panjang.
+	// if(panjang_tampilan>tty_kolom){
+		// panjang_tampilan=tty_kolom;
+		// penyangga[tty_kolom]=0;
+	// };
+	
+	// Hasil.
+	printf("\r");
+	printf("%*.*s", 0, tty_kolom, penyangga);
+	for(int i=0; i < (tty_kolom-panjang_tampilan); i++)
+		printf(" ");
+	printf("\r");
+	
+	memset(penyangga, 0, penyangga_ukuran);
+	
+	// Buang STDOUT.
+	fflush(stdout);
+	
+}

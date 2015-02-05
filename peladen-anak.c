@@ -225,22 +225,20 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 						status_peladen=0;
 					}else{
 						// Memasukkan informasi berkas.
-						strncpy(berkas->identifikasi, berkas_id, KIRIMBERKAS_MAX_STR);
-						strncpy(berkas->nama,berkas_nama, KIRIMBERKAS_MAX_STR);
+						strncpy(berkas->identifikasi, berkas_id, BERKAS_MAX_STR);
+						strncpy(berkas->nama,berkas_nama, BERKAS_MAX_STR);
 						berkas->ukuran=strtod(berkas_ukuran, NULL);
 						berkas->ofset=0;
 						berkas->diterima=0;
 						
 						// Pesan.
-						char *ukuberkas;
-						ukuberkas=malloc(sizeof(char*)*ukuberkas_panjang);
-						ukuberkas=readable_fs(berkas->ukuran, ukuberkas);
+						char ukuberkas[ukuberkas_panjang];
+						strcpy(ukuberkas, readable_fs(berkas->ukuran, ukuberkas));
 						INFO(
 							_("Menerima berkas '%1$s': %2$s (%3$.0lf bita)."),
-							berkas->nama,
-							ukuberkas, berkas->ukuran
+							berkas->nama, ukuberkas, berkas->ukuran
 							);
-						free(ukuberkas);
+						memset(ukuberkas, 0, ukuberkas_panjang);
 					}
 					
 					free(berkas_id);
@@ -292,13 +290,11 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 						float persen_selesai=(float)br_diterima/(float)br_ukuran*100;
 						
 						// Mempersiapkan tampilan ukuran.
-						char *ukuberkas_diterima;
-						ukuberkas_diterima=malloc(sizeof(char*)*ukuberkas_panjang);
-						ukuberkas_diterima=readable_fs(br_diterima, ukuberkas_diterima);
+						char ukuberkas_diterima[ukuberkas_panjang];
+						strcpy(ukuberkas_diterima, readable_fs(br_diterima, ukuberkas_diterima));
 						
-						char *ukuberkas_ukuran;
-						ukuberkas_ukuran=malloc(sizeof(char*)*ukuberkas_panjang);
-						ukuberkas_ukuran=readable_fs(br_ukuran, ukuberkas_ukuran);
+						char ukuberkas_ukuran[ukuberkas_panjang];
+						strcpy(ukuberkas_ukuran, readable_fs(br_ukuran, ukuberkas_ukuran));
 						
 						// Pesan.
 						INFO(
@@ -306,14 +302,18 @@ void anak_sambungan (int sock, struct BERKAS *berkas){
 								berkas->nama, persen_selesai
 							);
 						DEBUG1(
-							_("Menerima %1$s/%2$s (%3$.0lf/%4$.0lf bita)."),
+							_("Identifikasi berkas: '%1$s'"),
+								berkas->identifikasi
+							);
+						DEBUG1(
+							_("Diterima %1$s/%2$s (%3$.0lf/%4$.0lf bita)."),
 								ukuberkas_diterima, ukuberkas_ukuran,
 								br_diterima, br_ukuran
 							);
 						
 						// Membersihkan.
-						free(ukuberkas_diterima);
-						free(ukuberkas_ukuran);
+						memset(ukuberkas_diterima, 0, ukuberkas_panjang);
+						memset(ukuberkas_ukuran, 0, ukuberkas_panjang);
 						
 						// printf("Pesan:\n");
 						// print_char(pesan, CHUNK_MESSAGE_SIZE);

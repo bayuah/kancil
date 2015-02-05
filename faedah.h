@@ -19,13 +19,16 @@
 #define _FILE_OFFSET_BITS 64
 #include <sys/types.h>
 
-#if defined __USE_LARGEFILE64 \
-	&& !defined __off64_t_defined
+#ifndef __off64_t_defined
 	typedef __off64_t off64_t;
 	# define __off64_t_defined
 #endif
 
+#define CURRENTTIME_SECONDS 0
+#define CURRENTTIME_MICROSECONDS 1
+
 void dec2bin(int num, char *str);
+double current_time(int select);
 int mod_int (int a, int b);
 int int_tak_min(int nilai, int pengganti);
 char *remove_ext (char* str, char dot, char sep);

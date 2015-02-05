@@ -154,10 +154,15 @@ int main(int argc, char *argv[]){
 	int connection;
 	int i;
 	
+	// Mendengarkan.
 	connection=0;
 	listen(sockfd, 5);
 	clilen = sizeof(cli_addr);
 	INFO(_("Mendengarkan porta %1$i."), portno);
+	
+	// Nama inang dan porta.
+	char *inang_peladen=argv[2];
+	char *porta_peladen=argv[3];
 	
 	// Inisiasi isi kirim.
 	kirim_mmap->identifikasi=0;
@@ -167,9 +172,9 @@ int main(int argc, char *argv[]){
 	// kirim_mmap->ukuran_berkas;
 	kirim_mmap->ukuran_kirim=0;
 	kirim_mmap->do_kirim=true;
-	strncpy(kirim_mmap->hostname, argv[2], KIRIMBERKAS_MAX_STR);
-	strncpy(kirim_mmap->portno, argv[3], KIRIMBERKAS_MAX_STR);
-	// strncpy(kirim_mmap->berkas, berkas, KIRIMBERKAS_MAX_STR);
+	strncpy(kirim_mmap->hostname, inang_peladen, BERKAS_MAX_STR);
+	strncpy(kirim_mmap->portno, porta_peladen, BERKAS_MAX_STR);
+	// strncpy(kirim_mmap->berkas, berkas, BERKAS_MAX_STR);
 	kirim_mmap->coba=1;
 	
 	while (1){
@@ -244,9 +249,10 @@ int main(int argc, char *argv[]){
 			
 			// Pesan.
 			INFO(
-				_("Selesai menangani klien: %1$s:%2$i."),
+				_("Selesai menangani Klien %1$s:%2$i untuk Peladen %3$s:%4$i."),
 				inet_ntoa(cli_addr.sin_addr),
-				(int) ntohs(cli_addr.sin_port)
+				(int) ntohs(cli_addr.sin_port),
+				inang_peladen, atoi(porta_peladen)
 				);
 			
 			// Menutup.
@@ -293,6 +299,20 @@ void info_kancil(){
 	printf("%1$s (%2$s).\n", PROGNAME, BUILT_VERSION);
 	printf(_("Dibangun pada %1$s. Protokol versi %2$i."), BUILT_TIME_STR, PROTOCOL_VERSION );
 	printf("\n");
+	
+	// Informasi pembangun.
+	#ifdef COMPILER_MACHINE
+		printf(_("Dibuat di %1$s."), STRINGIZE_VALUE_OF(COMPILER_MACHINE));
+		#ifdef COMPILER_MACHINE
+			printf(" ");
+			printf(_("Versi pembangun %1$s."), STRINGIZE_VALUE_OF(COMPILER_VERSION));
+		#endif
+		printf("\n");
+	#endif
+	#ifdef COMPILER_FLAGS
+		printf(_("Panji pembangun:"));
+		printf(_("\n%1$s\n"), STRINGIZE_VALUE_OF(COMPILER_FLAGS));
+	#endif
 	
 	free(BUILT_VERSION);
 }

@@ -76,7 +76,7 @@ void anak_kirim(
 		pesan=buat_pesan_start(
 			pesan,
 			CHUNK_MESSAGE_SIZE,
-			"sate",
+			kirim->berkas_identifikasi,
 			basename(kirim->berkas),
 			kirim->ukuran_berkas
 			);
@@ -109,14 +109,15 @@ void anak_kirim(
 		// Bila telah selesai.
 		if (!panjang_pesan){
 			if(feof(pberkas)!=0){
+				
 				// Selesai kirim.
-				char *penyangga_feof;
-				penyangga_feof=malloc(sizeof(penyangga_feof)*ukuberkas_panjang);
+				char penyangga_feof[ukuberkas_panjang];
 				INFO(
 					_("Berkas '%1$s' dengan ukuran %2$s (%3$.0lf bita) telah selesai dikirim."),
 					basename(kirim->berkas), readable_fs(kirim->ukuran_berkas, penyangga_feof), kirim->ukuran_berkas
 					);
-				free(penyangga_feof);
+				memset(penyangga_feof, 0, ukuberkas_panjang);
+				
 			}else if(ferror(pberkas)!=0){
 				WARN(_("Gagal membaca berkas '%1$s': %2$s (%3$i)."), basename(kirim->berkas), strerror(errno), errno);
 			}else{
@@ -313,14 +314,65 @@ void anak_kirim(
 		// percobaan pengiriman.
 		kirim->coba++;
 	}else{
+		
 		// Berhasil.
-		char *penyangga_succ;
-		penyangga_succ=malloc(sizeof(penyangga_succ)*ukuberkas_panjang);
-		INFO(
-			_("Berhasil mengirim %1$s (%2$.0lf bita)."),
-			readable_fs(kirim->ukuran_kirim, penyangga_succ), kirim->ukuran_kirim
+		DEBUG2(_("Berhasil mengirim ke Gerbang dan Peladen."), 0);
+		
+		// Berhasil.
+		DEBUG4(_("Menghitung kecepatan."), 0);
+		
+		// Beda ukuran.
+		// Kecepatan.
+		double beda_ukuran=(kirim->ukuran_kirim)-(kirim->ukuran_kirim_sebelumnya);
+		double beda_waktu= (current_time(CURRENTTIME_MICROSECONDS) - kirim->waktu_terkirim );
+		double kecepatan = beda_ukuran / beda_waktu;
+		
+		// Pesan.
+		DEBUG4(_("Berhasil menghitung kecepatan."), 0);
+		
+		// Bila minus,
+		// tidak ditampilkan.
+		if(kecepatan<0){
+			DEBUG4(_("Kecepatan bernilai minus."), 0);
+		}else{
+			DEBUG4(_("Berhasil menghitung kecepatan."), 0);
+			
+			// Mendapat informasi.
+			double br_dikirim=kirim->ukuran_kirim;
+			
+			// Mempersiapkan tampilan ukuran.
+			char ukuberkas_dikirim[ukuberkas_panjang];
+			strcpy(ukuberkas_dikirim, readable_fs(br_dikirim, ukuberkas_dikirim));
+			
+			char ukukecepatan[ukuberkas_panjang];
+			if(kecepatan<1){
+				snprintf(ukukecepatan, ukuberkas_panjang, "%1$.04f B", kecepatan);
+			}else{
+				strcpy(ukukecepatan, readable_fs(kecepatan, ukukecepatan));
+			};
+			
+			// Tampilan.
+			PROGRESS(
+				_("Berhasil mengirim %1$s (%2$.0lf bita) (%3$s/s)."),
+				ukuberkas_dikirim, br_dikirim, ukukecepatan
 			);
-		free(penyangga_succ);
+			
+			// Bersihkan.
+			DEBUG4(_("Membersihkan penyangga kecepatan."), 0);
+			memset(ukuberkas_dikirim, 0, ukuberkas_panjang);
+			memset(ukukecepatan, 0, ukuberkas_panjang);
+		
+		};
+		
+		// Menyimpan waktu sekarang.
+		DEBUG4(_("Menyimpan waktu sekarang."), 0);
+		kirim->waktu_terkirim=current_time(CURRENTTIME_MICROSECONDS);
+		DEBUG4(_("Selesai menyimpan waktu sekarang."), 0);
+		
+		// Menyimpan ukuran sekarang.
+		DEBUG4(_("Menyimpan ukuran sekarang."), 0);
+		kirim->ukuran_kirim_sebelumnya=kirim->ukuran_kirim;
+		DEBUG4(_("Selesai menyimpan ukuran sekarang."), 0);
 		
 		// Bila belum selesai.
 		if(kirim->ukuran_kirim<=kirim->ukuran_berkas){

@@ -21,6 +21,9 @@ CCFLAGS_PREVIEW = -DCOMPILE_MODE_PREVIEW -O2 $(CFLAGS) -g -Wall
 #CCFLAGS_BUILD= -O2 $((CFLAGS)) -g -Wall
 CCFLAGS_STABLE  = -DCOMPILE_MODE_STABLE -O2 $(CFLAGS)
 
+CC_MACHINE=$(shell $(CC) -dumpmachine)
+CC_VERSION=$(shell $(CC) -dumpversion)
+
 # Compiler mode selector.
 ifeq ($(mode), stable)
 	CCFLAGS_0 = $(CCFLAGS_STABLE)
@@ -121,17 +124,32 @@ peladen:information built-peladen built-info
 built-klien:klien.c $(UTILITY_OBJ) klien-anak.o
 	@echo "Build klien with built number $(BUILT_KLIEN)..."
 	@ld -r $(UTILITY_OBJ) klien-anak.o -o klien.o
-	@$(CCF) $(VERSIONING) -D__BUILT_NUMBER=$(BUILT_KLIEN) klien.o klien.c -o klien $(CCLIBS) -D__COMPILE_FLAGS="$(CCFLAGS) $(CCLIBS)"
+	@$(CCF) $(VERSIONING) \
+		-D__BUILT_NUMBER=$(BUILT_KLIEN) \
+		klien.o klien.c -o klien $(CCLIBS) \
+		-D__COMPILER_FLAGS="$(CCFLAGS) $(CCLIBS)" \
+		-D__COMPILER_MACHINE="$(CC_MACHINE)" \
+		-D__COMPILER_VERSION="$(CC_VERSION)" 
 
 built-gerbang:gerbang.c $(UTILITY_OBJ) gerbang-anak.o
 	@echo "Build gerbang with built number $(BUILT_GERBANG)..."
 	@ld -r $(UTILITY_OBJ) gerbang-anak.o -o gerbang.o
-	@$(CCF) $(VERSIONING) -D__BUILT_NUMBER=$(BUILT_GERBANG) gerbang.o gerbang.c -o gerbang $(CCLIBS) -D__COMPILE_FLAGS="$(CCFLAGS) $(CCLIBS)"
+	@$(CCF) $(VERSIONING) \
+		-D__BUILT_NUMBER=$(BUILT_GERBANG) \
+		gerbang.o gerbang.c -o gerbang $(CCLIBS) \
+		-D__COMPILER_FLAGS="$(CCFLAGS) $(CCLIBS)" \
+		-D__COMPILER_MACHINE="$(CC_MACHINE)" \
+		-D__COMPILER_VERSION="$(CC_VERSION)" 
 
 built-peladen:peladen.c $(UTILITY_OBJ) peladen-anak.o
 	@echo "Build peladen with built number $(BUILT_PELADEN)..."
 	@ld -r $(UTILITY_OBJ) peladen-anak.o -o peladen.o
-	@$(CCF) $(VERSIONING) -D__BUILT_NUMBER=$(BUILT_PELADEN) peladen.o peladen.c -o peladen $(CCLIBS) -D__COMPILE_FLAGS="$(CCFLAGS) $(CCLIBS)"
+	@$(CCF) $(VERSIONING) \
+		-D__BUILT_NUMBER=$(BUILT_PELADEN) \
+		peladen.o peladen.c -o peladen $(CCLIBS) \
+		-D__COMPILER_FLAGS="$(CCFLAGS) $(CCLIBS)" \
+		-D__COMPILER_MACHINE="$(CC_MACHINE)" \
+		-D__COMPILER_VERSION="$(CC_VERSION)" 
 
 # coba-rsa:coba-rsa.c $(UTILITY_OBJ)
 # 	@$(CCF) $(UTILITY_OBJ)  $< -o $@ $(CCLIBS)

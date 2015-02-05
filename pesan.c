@@ -70,7 +70,7 @@ char *arti_status(int status){
  * @param (char*) berkas_identifikasi, penanda berkas terkirim.
  *  Digunakan agar peladen mengetahui bahwa berkas
  *  yang dikirim merupakan bagian dari berkas lain;
- * @param (char*) berkas_nama, nama berkas tujuan. Maksimal KIRIMBERKAS_MAX_STR karakter;
+ * @param (char*) berkas_nama, nama berkas tujuan. Maksimal BERKAS_MAX_STR karakter;
  * @param (double) berkas_ukuran, ukuran berkas.
  *  Angkat bulat yang akan diubah menjadi string (char*)
  */
@@ -86,20 +86,20 @@ char* buat_pesan_start(
 	// Memeriksa identifikasi.
 	panjang += strlen(identifikasi_berkas);
 	
-	// Bila lebih dari KIRIMBERKAS_MAX_STR karakter,
+	// Bila lebih dari BERKAS_MAX_STR karakter,
 	// nama berkas dipotong.
 	char* nama;
-	nama=malloc(sizeof (nama) * KIRIMBERKAS_MAX_STR+1);
-	memset(nama, 0, KIRIMBERKAS_MAX_STR+1);
-	memcpy(nama, nama_berkas, KIRIMBERKAS_MAX_STR);
+	nama=malloc(sizeof (nama) * BERKAS_MAX_STR+1);
+	memset(nama, 0, BERKAS_MAX_STR+1);
+	memcpy(nama, nama_berkas, BERKAS_MAX_STR);
 	
 	// Memeriksa panjang nama.
 	panjang += strlen(nama);
 	
 	// Mengubah angka jadi huruf.
 	char* ukuran;
-	ukuran=malloc(sizeof (ukuran) * KIRIMBERKAS_MAX_STR+1);
-	memset(ukuran, 0, KIRIMBERKAS_MAX_STR+1);
+	ukuran=malloc(sizeof (ukuran) * BERKAS_MAX_STR+1);
+	memset(ukuran, 0, BERKAS_MAX_STR+1);
 	sprintf(ukuran, "%1$.0lf", ukuran_berkas);
 	
 	// Memeriksa panjang ukuran.

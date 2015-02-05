@@ -51,8 +51,8 @@ void anak_gerbang(
 	// Inisiasi.
 	char *hostname;
 	char *portno;
-	hostname=malloc((sizeof hostname) * KIRIMBERKAS_MAX_STR);
-	portno=malloc((sizeof portno) * KIRIMBERKAS_MAX_STR);
+	hostname=malloc((sizeof hostname) * BERKAS_MAX_STR);
+	portno=malloc((sizeof portno) * BERKAS_MAX_STR);
 	
 	// RSA.
 	unsigned char *tujuan_ency;
@@ -61,8 +61,8 @@ void anak_gerbang(
 	unsigned char *pesan_deco;
 	
 	// Teruskan.
-	strncpy(hostname, kirim->hostname, KIRIMBERKAS_MAX_STR);
-	strncpy(portno, kirim->portno, KIRIMBERKAS_MAX_STR);
+	strncpy(hostname, kirim->hostname, BERKAS_MAX_STR);
+	strncpy(portno, kirim->portno, BERKAS_MAX_STR);
 	
 	// Penerima. --------------------------------------------------------------
 	

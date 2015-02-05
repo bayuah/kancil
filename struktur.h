@@ -66,10 +66,18 @@ struct INFOALAMAT{
 	char sockaddr_sa_data             [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP][14];
 } INFOALAMAT;
 
-// Kirim.
-#ifndef KIRIMBERKAS_STR
-	#define KIRIMBERKAS_MAX_STR 255
+// Kancil.
+#ifndef CHUNK_MESSAGE_SIZE
+	#define CHUNK_MESSAGE_SIZE 1020
 #endif
+#ifndef MAX_CHUNK_ID
+	#define MAX_CHUNK_ID 65025 // 16-bit.
+#endif
+#ifndef BERKAS_MAX_STR
+	#define BERKAS_MAX_STR 255
+#endif
+
+// Kirim.
 struct KIRIMBERKAS{
 	unsigned int identifikasi;
 	unsigned int identifikasi_sebelumnya;
@@ -77,23 +85,21 @@ struct KIRIMBERKAS{
 	int urut_kali;
 	double ukuran_berkas;
 	double ukuran_kirim;
+	double ukuran_kirim_sebelumnya;
 	bool do_kirim;
-	char hostname[KIRIMBERKAS_MAX_STR];
-	char portno[KIRIMBERKAS_MAX_STR];
-	char berkas[KIRIMBERKAS_MAX_STR];
+	char hostname[BERKAS_MAX_STR];
+	char portno[BERKAS_MAX_STR];
+	char berkas[BERKAS_MAX_STR];
+	char berkas_identifikasi[BERKAS_MAX_STR];
+	bool data_terkirim[MAX_CHUNK_ID];
+	double waktu_terkirim;
 	int coba;
 } KIRIMBERKAS;
 
 // Berkas.
-#ifndef CHUNK_MESSAGE_SIZE
-	#define CHUNK_MESSAGE_SIZE 1020
-#endif
-#ifndef MAX_CHUNK_ID
-	#define MAX_CHUNK_ID 65025 // 16-bit.
-#endif
 struct BERKAS{
-	char identifikasi[KIRIMBERKAS_MAX_STR];
-	char nama[KIRIMBERKAS_MAX_STR];
+	char identifikasi[BERKAS_MAX_STR];
+	char nama[BERKAS_MAX_STR];
 	double ofset;
 	double ukuran;
 	double diterima;
@@ -101,11 +107,6 @@ struct BERKAS{
 	bool sedang_sibuk;
 	bool terima_berkas;
 	char data_pesan[MAX_CHUNK_ID][CHUNK_MESSAGE_SIZE+1];
+	bool data_terima[MAX_CHUNK_ID];
 } BERKAS;
-
-struct RSA_KANCIL{
-	char kunci_privat[2048];
-	char kunci_publik[2048];
-	int bantalan;
-}RSA_KANCIL;
 #endif /* _KANCIL_STRUKTUR_H_ */

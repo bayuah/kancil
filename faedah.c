@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <sys/stat.h>
 #include <errno.h>
 
 // Soket.
@@ -35,6 +34,10 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <sys/stat.h>
+
+// BSD
+#include <sys/time.h>
 
 #ifndef _LOCALE_H
 	#include <libintl.h>
@@ -44,6 +47,9 @@
 
 // Ambil struktur.
 #include "struktur.h"
+
+#define CURRENTTIME_SECONDS 0
+#define CURRENTTIME_MICROSECONDS 1
 
 // Fungsi lokal.
 char *remove_ext (char* str, char dot, char sep);
@@ -75,19 +81,22 @@ void throw_error(int type, const char * file, const int line,
 		aturan.show_debug5
 		};
 	
+	// Buang STDOUT.
+	fflush(stdout);
+	
 	// Memastikan berhenti
 	//sebelum inisiasi.
 	if(!boleh[type])
 		return;
 	
 	// Aksi.
-	int penyangga_ukuran=1024;
+	int penyangga_ukuran=256;
 	char penyangga[penyangga_ukuran];
 	// penyangga=malloc(sizeof(penyangga)*penyangga_ukuran);
 	
 	// Tampilan.
 	// Antara 1 hingga 8.
-	if(type>=1&&type<=8){
+	if(type>=0&&type<=8){
 		va_list args;
 		va_start(args, msg);
 		vsnprintf(penyangga, penyangga_ukuran, msg, args);
@@ -137,8 +146,7 @@ void throw_error(int type, const char * file, const int line,
 		case 4:
 			if(boleh[4])
 			printf(
-				"%s: %s\r\n",
-				_("INFO"),
+				"%s\r\n",
 				penyangga
 				);
 		break;
@@ -201,6 +209,9 @@ void throw_error(int type, const char * file, const int line,
 	// membersihkan memori.
 	// free(filestr);
 	// free(penyangga);
+	
+	// Buang STDOUT.
+	fflush(stdout);
 }
 
 void dec2bin(int num, char *str){
@@ -210,6 +221,29 @@ void dec2bin(int num, char *str){
 	*str++ = !!(mask & num) + '0';
 }
 
+/*
+ * `current_time()`
+ * Mendapatkan waktu sekarang.
+ * @param: (int)
+ *   CURRENTTIME_SECONDS      Mendapatkan waktu detik utuh;
+ *   CURRENTTIME_MICROSECONDS  Mendapatkan waktu detik dan pecahan.
+ */
+double current_time(int select){
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	double result;
+	
+	// Select.
+	if(select==CURRENTTIME_SECONDS){
+		result=tv.tv_sec;
+	}else if(select==CURRENTTIME_MICROSECONDS){
+		result=tv.tv_sec+tv.tv_usec/(double)1000000;
+	}
+	
+	
+	// Hasil.
+	return result;
+}
 
 /*
  * remove_ext()
@@ -498,9 +532,17 @@ bool file_exist (char *filename){
  */
 char *readable_fs(double ukuran, char *penyanga) {
 	int i = 0;
-	const char* satuan[] = {"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
-	while (ukuran > 1024) {
-		ukuran /= 1024;
+	int basis=1024;
+	/*
+	 * Referensi basis satuan menggunakan IEC 60027-2.
+	 * Lihat: http://en.wikipedia.org/wiki/IEC_60027
+	 * Atau: http://webstore.iec.ch/webstore/webstore.nsf/Artnum_PK/44009
+	 * Atau pratayang IEC 60027:
+	 *      http://webstore.iec.ch/preview/info_iec60027-2(Bed3.0)b.pdf
+	 */
+	const char* satuan[] = {"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"};
+	while (ukuran > basis) {
+		ukuran /= basis;
 		i++;
 	};
 	sprintf(penyanga, "%.*f %s", i, ukuran, satuan[i]);
