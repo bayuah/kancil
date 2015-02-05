@@ -30,7 +30,7 @@ int main(int argc, char *argv[]){
 	aturan.show_debug5=false;
 	aturan.tempdir="tmp";
 	aturan.tries=5;
-	aturan.waitretry=1;
+	aturan.waitretry=5;
 	aturan.maxqueue=15000;
 	aturan.waitqueue=30;
 	aturan.rsa_datasize=204;

@@ -14,8 +14,8 @@ void anak_kirim(
 	struct INFOALAMAT *infoalamat,
 	int ukuberkas_panjang
 ){
-	char *pesan="";
-	char *pecahan="";
+	char pesan[CHUNK_MESSAGE_SIZE];
+	char pecahan[ENCRYPTED_CONTAINER_SIZE];
 	size_t panjang_pesan=0;
 	
 	// Perilaku.
@@ -40,11 +40,6 @@ void anak_kirim(
 	// Tujuan.
 	char *hostname=kirim->hostname;
 	char *portno=kirim->portno;
-	
-	// Alokasi memori.
-	// pecahan=malloc(sizeof(pecahan)*MAX_CHUNK_SIZE);
-	pecahan=malloc(sizeof(pecahan)*ENCRYPTED_CONTAINER_SIZE);
-	pesan=malloc((sizeof pesan)* CHUNK_MESSAGE_SIZE);
 	
 	// Berurutan kirim.
 	kirim->urut_kali++;
@@ -73,13 +68,13 @@ void anak_kirim(
 		
 		// Pecahan pertama adalah
 		// pecahan dengan informasi berkas.
-		pesan=buat_pesan_start(
+		memcpy(pesan, buat_pesan_start(
 			pesan,
 			CHUNK_MESSAGE_SIZE,
 			kirim->berkas_identifikasi,
 			basename(kirim->berkas),
 			kirim->ukuran_berkas
-			);
+			), CHUNK_MESSAGE_SIZE);
 	// Apakah hampir akhir.
 	}else if(identifikasi==MAX_CHUNK_ID){
 		// Panji.
@@ -135,22 +130,23 @@ void anak_kirim(
 	};
 	
 	// Bangun pesan.
-	pecahan=buat_pesan(
+	memcpy(pecahan, buat_pesan(
 		pecahan,
 		identifikasi,
 		&paritas,
-		pesan);
+		pesan
+	), MAX_CHUNK_SIZE);
 	
 	// Bangun pengepala.
 	DEBUG2(_("Panji %1$s."), arti_panji(panji));
-	pecahan=buat_pengepala(
+	memcpy(pecahan, buat_pengepala(
 		pecahan,
 		identifikasi,
 		panji,
 		paritas,
 		status_gerbang,
 		status_peladen
-	);
+	), MAX_CHUNK_SIZE);
 	
 	// Pesan.
 	if(kelompok_kirim>1){
@@ -170,11 +166,9 @@ void anak_kirim(
 	DEBUG5(_("Pesan mentah dikirim"), pecahan, 0, MAX_CHUNK_SIZE);
 	
 	// Penyandian.
-	unsigned char *pesan_ency;
-	pesan_ency=malloc(sizeof(pesan_ency)*MAX_CHUNK_SIZE+2);
-	pesan_ency=(unsigned char*)pecahan;
-	unsigned char *tujuan_ency;
-	tujuan_ency=malloc((sizeof tujuan_ency)*MAX_CHUNK_SIZE+5);
+	unsigned char pesan_ency[MAX_CHUNK_SIZE+1];
+	memcpy(pesan_ency, pecahan, MAX_CHUNK_SIZE);
+	unsigned char tujuan_ency[ENCRYPTED_CONTAINER_SIZE+1];
 	panjang_pecahan=rsa_encrypt(
 		pesan_ency,
 		MAX_CHUNK_SIZE+1,
@@ -184,7 +178,7 @@ void anak_kirim(
 	);
 	
 	// Bersihkan.
-	free(pesan_ency);
+	memset(pesan_ency, 0, MAX_CHUNK_SIZE);
 	
 	// Pesan mentah.
 	DEBUG5(_("Pesan mentah dikirim tersandikan"), tujuan_ency, 0, MAX_CHUNK_SIZE);
@@ -192,14 +186,14 @@ void anak_kirim(
 	// int panjang_pecahan=0;
 	// Kirim.
 	int panjang_diterima;
-	pecahan=kirimdata(
+	memcpy(pecahan, kirimdata(
 		(char*)tujuan_ency,
 		panjang_pecahan,
 		hostname,
 		portno,
 		infoalamat,
 		&panjang_diterima
-		);
+	), ENCRYPTED_CONTAINER_SIZE);
 	
 	// Pesan mentah.
 	DEBUG4(_("Panjang pesan mentah diterima: %1$i"), panjang_pecahan);
@@ -210,9 +204,6 @@ void anak_kirim(
 		// Pesan kesalahan.
 		FAIL(_("Kegagalan %1$s."), _("Soket"));
 		
-		// Alokasi ulang memori.
-		// pecahan=malloc((sizeof pecahan) * MAX_CHUNK_SIZE );
-		
 		// Keluar.
 		exit(EXIT_FAILURE_SOCKET);
 	};
@@ -220,9 +211,9 @@ void anak_kirim(
 	// ============= Dekripsi  =======
 	
 	// Pemecah sandi.
-	unsigned char *pesan_deco=(unsigned char*)pecahan;
-	unsigned char *tujuan_deco;
-	tujuan_deco=malloc((sizeof tujuan_deco)*MAX_CHUNK_SIZE);
+	unsigned char pesan_deco[ENCRYPTED_CONTAINER_SIZE+1];
+	memcpy(pesan_deco, pecahan, ENCRYPTED_CONTAINER_SIZE);
+	unsigned char tujuan_deco[MAX_CHUNK_SIZE+1];
 	panjang_pecahan=rsa_decrypt(
 		pesan_deco,
 		panjang_diterima,
@@ -235,18 +226,18 @@ void anak_kirim(
 	// print_unsigned_array(tujuan_deco, 100);
 	
 	// Bersihkan.
-	free(pesan_deco);
+	memset(pesan_deco, 0, MAX_CHUNK_SIZE);
 	
 	// Pesan mentah.
 	DEBUG4(_("Panjang pesan mentah diterima terpecahkan: %1$i"), panjang_pecahan);
 	DEBUG5(_("Pesan mentah diterima terpecahkan"), tujuan_deco, 0, panjang_pecahan);
 	
 	// Ubah.
-	pecahan=(char*)tujuan_deco;
+	memcpy(pecahan, tujuan_deco, MAX_CHUNK_SIZE);
 	
 	// Mendapatkan pesan.
-	memset(pesan, 0, CHUNK_MESSAGE_SIZE+1);
-	pesan=ambil_pesan(pecahan);
+	memset(pesan, 0, CHUNK_MESSAGE_SIZE);
+	memcpy(pesan, ambil_pesan(pecahan), CHUNK_MESSAGE_SIZE);
 	
 	// Periksa.
 	// print_unsigned_array(tujuan_deco, 100);

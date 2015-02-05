@@ -19,6 +19,7 @@ void anak_tulis(struct TERIMABERKAS *berkas){
 	int status;
 	
 	// Memasang status sibuk.
+	DEBUG1(_("Mulai melakukan tindakan penulisan berkas."), 0);
 	berkas->sedang_sibuk=true;
 	
 	// Periksa apakah nama kosong.
@@ -97,33 +98,114 @@ void anak_tulis(struct TERIMABERKAS *berkas){
 	
 	// Mulai melakukan penulisan.
 	// Membangun lajur.
-	char *berkas_lajur;
 	char pembatas[2];
 	pembatas[0]=DIR_SEPARATOR;
 	pembatas[1]=0;
 	
-	berkas_lajur=malloc(0
-		+strlen(aturan.tempdir)
-		+strlen(berkas->nama)
-		+sizeof(berkas_lajur)
-		+3
-		);
+	int panjang_=strlen(aturan.tempdir)+strlen(berkas->nama)+3;
+	char berkas_lajur[panjang_];
+	
+	// Membangun lajur.
 	strcpy(berkas_lajur,aturan.tempdir);
 	strcat(berkas_lajur,pembatas);
 	strcat(berkas_lajur,berkas->nama);
+	
+	// Membuka berkas.
+	FILE *pberkas=fopen(berkas_lajur, "a+b");
+	
+	// Periksa kesalahan.
+	if(pberkas == NULL){
+		FAIL ( 
+			_("Gagal membuka berkas '%1$s': %2$s (%1$i)."),
+			berkas_lajur, strerror(errno), errno
+			);
+		exit(EXIT_FAILURE_IO);
+	}else{
+		
+		// Mulai tulis.
+		size_t pesan_tertulis;
+		size_t panjang_tulis;
+		size_t tulis_tersisa;
+		double sudah_tertulis;
+		pesan_tertulis=0;
+		sudah_tertulis=0;
+		unsigned int id;
+		id=1;
+		DEBUG4(_("Mulai menulis berkas '%1$s'."), berkas->nama);
+		while(sudah_tertulis<(berkas->diterima-dipotong)){
+			
+			// Menentukan panjang penulisan.
+			// Bila panjang tersisa
+			// adalah lebih besar `CHUNK_MESSAGE_SIZE`
+			// maka `CHUNK_MESSAGE_SIZE`.
+			tulis_tersisa=(berkas->diterima-dipotong)-sudah_tertulis;
+			if(tulis_tersisa > CHUNK_MESSAGE_SIZE){
+				panjang_tulis=CHUNK_MESSAGE_SIZE;
+			}else{
+				panjang_tulis=tulis_tersisa;
+			}
+			
+			// Tulis.
+			DEBUG4(_("Menulis berkas %1$lu bita."),(long unsigned int) panjang_tulis);
+			pesan_tertulis=fwrite((berkas->data_pesan[id]), 1, panjang_tulis, pberkas);
+			DEBUG4(_("Selesai menulis berkas."), 0);
+			
+			// Bila telah selesai.
+			if (pesan_tertulis){
+				// Tambah.
+				sudah_tertulis+=(double)pesan_tertulis;
+			}else{
+				if(errno==0){
+					// Tidak terjadi kesalahan.
+					// Tambah.
+					sudah_tertulis+=(double)pesan_tertulis;
+				}else if(feof(pberkas)!=0){
+					
+					// Tambah.
+					sudah_tertulis+=(double)pesan_tertulis;
+					
+				}else if(ferror(pberkas)!=0){
+					
+					// Pesan.
+					FAIL(_("Gagal menulis berkas '%1$s': %2$s (%3$i)."), basename(berkas->nama), strerror(errno), errno);
+					
+					// Melepas status sibuk.
+					DEBUG1(_("Selesai melakukan tindakan penulisan berkas."), 0);
+					berkas->sedang_sibuk=false;
+					
+					// Keluar.
+					exit(EXIT_FAILURE_IO);
+				}else{
+					
+					// Pesan.
+					FAIL(_("Kesalahan berkas yang tidak diketahui: %1$s (%2$i)."), strerror(errno), errno);
+					
+					// Melepas status sibuk.
+					DEBUG1(_("Selesai melakukan tindakan penulisan berkas."), 0);
+					berkas->sedang_sibuk=false;
+					
+					// Keluar.
+					exit(EXIT_FAILURE_IO);
+				};
+			};
+			
+			// Naik.
+			id++;
+		};
+		fclose (pberkas);
+		// Pesan.
+		DEBUG1(_("Selesai menulis berkas '%1$s' sebesar %2$.0f bita."), berkas->nama, sudah_tertulis);
+	};
 	
 	// Bersihkan.
 	memset(berkas->data_pesan, 0, sizeof(berkas->data_pesan[0][0])*MAX_CHUNK_ID*(CHUNK_MESSAGE_SIZE+1));
 	memset(berkas->data_terima, 0, sizeof(berkas->data_terima[0])*MAX_CHUNK_ID);
 	
-	TEST(berkas_lajur,0 );
-	sleep(60);
-	// Membuka berkas.
-	
 	// Pesan.
 	DEBUG1(_("Selesai menulis berkas '%1$s'."), berkas->nama);
 	
 	// Melepas status sibuk.
+	DEBUG1(_("Selesai melakukan tindakan penulisan berkas."), 0);
 	berkas->sedang_sibuk=false;
 	
 	// Membersihkan.
@@ -140,10 +222,7 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 	// pid_t result_waitpid;
 	int diterima = 0;
 	int ukuberkas_panjang=12;
-	char *penyangga;
-	// penyangga=malloc((sizeof penyangga) * MAX_CHUNK_SIZE);
-	// memset(penyangga, 0, MAX_CHUNK_SIZE);
-	penyangga=malloc((sizeof penyangga) * ENCRYPTED_CONTAINER_SIZE);
+	char penyangga[ENCRYPTED_CONTAINER_SIZE];
 	memset(penyangga, 0, ENCRYPTED_CONTAINER_SIZE);
 	
 	// Pengepala.
@@ -155,8 +234,7 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 	unsigned int identifikasi;
 	
 	// Pesan.
-	char *pesan;
-	pesan=malloc((sizeof pesan) * CHUNK_MESSAGE_SIZE);
+	char pesan[CHUNK_MESSAGE_SIZE];
 	memset(pesan, 0, CHUNK_MESSAGE_SIZE);
 	
 	// Perilaku.
@@ -185,9 +263,9 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 			DEBUG5(_("Pesan mentah diterima"), penyangga, 0, diterima);
 			
 			// Memecahkan pesan.
-			unsigned char *pesan_deco=(unsigned char*)penyangga;
-			unsigned char *tujuan_deco;
-			tujuan_deco=malloc((sizeof tujuan_deco)*MAX_CHUNK_SIZE);
+			unsigned char pesan_deco[ENCRYPTED_CONTAINER_SIZE+1];
+			memcpy(pesan_deco, penyangga, ENCRYPTED_CONTAINER_SIZE);
+			unsigned char tujuan_deco[MAX_CHUNK_SIZE+1];
 			diterima=rsa_decrypt(
 				pesan_deco,
 				diterima,
@@ -197,7 +275,7 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 			);
 			
 			// Buang.
-			free(pesan_deco);
+			memset(pesan_deco, 0, ENCRYPTED_CONTAINER_SIZE);
 			
 			// Pesan mentah.
 			DEBUG4(_("Panjang terpecahkan: %1$i."), diterima);
@@ -205,7 +283,7 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 			
 			// print_unsigned_array(tujuan_deco, 20);
 			// Penugasan.
-			penyangga=(char*)tujuan_deco;
+			memcpy(penyangga, tujuan_deco, MAX_CHUNK_SIZE);
 			
 			// Membaca pesan.
 			// Mendapatkan pengepala.
@@ -220,7 +298,7 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 				);
 			
 			// Mendapatkan pesan.
-			pesan=ambil_pesan(penyangga);
+			memcpy(pesan, ambil_pesan(penyangga), CHUNK_MESSAGE_SIZE);
 			
 			// Keterangan.
 			DEBUG2(_("Versi: %1$i."),versi);
@@ -244,6 +322,7 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 					char* berkas_nama;
 					char* berkas_ukuran;
 					
+					// Alikasi memori.
 					berkas_id=malloc(sizeof(berkas_id)* (CHUNK_MESSAGE_SIZE/2));
 					berkas_nama=malloc(sizeof(berkas_nama)* (CHUNK_MESSAGE_SIZE/2));
 					berkas_ukuran=malloc(sizeof(berkas_ukuran)* (CHUNK_MESSAGE_SIZE/2));
@@ -389,6 +468,18 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 						br_diterima, br_ukuran,
 						ukuberkas_panjang
 					);
+					
+					// Periksa setiap penyangga apakah masih kosong.
+					// Jika masih kosong, maka meminta Klien
+					// untuk mengirim bagian tersebut.
+					for(unsigned int id=1; id<identifikasi; id++){
+						if(!berkas->data_terima[id]){
+							NOTICE("Meminta Klien mengirim identifikasi '%1$i.'", id);
+							identifikasi=id;
+							status_peladen=0;
+							break;
+						};
+					};
 					
 					// Memanggil proses juru tulis.
 					// Memecah tugas.
@@ -536,27 +627,28 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 	
 	// Buat pesan.
 	// char* pesan;
-	pesan=malloc((sizeof pesan)* CHUNK_MESSAGE_SIZE+1);
-	memset(pesan, 0, CHUNK_MESSAGE_SIZE+1);
+	memset(pesan, 0, CHUNK_MESSAGE_SIZE);
 	
 	// Pesan peladen.
-	pesan=buat_pesan_peladen(
+	memcpy(pesan, buat_pesan_peladen(
 		pesan,
 		CHUNK_MESSAGE_SIZE,
 		berkas->identifikasi,
 		(berkas->diterima)+berkas->ofset,
 		berkas->ukuran
-		);
+	), CHUNK_MESSAGE_SIZE);
 	
 	// Menulis balasan.
 	// Pesan Kosong.
-	penyangga=buat_pesan(
-		penyangga, identifikasi, &paritas, pesan);
+	memcpy(penyangga, buat_pesan(
+		penyangga, identifikasi, &paritas, pesan
+	), MAX_CHUNK_SIZE);
 	
 	// Pengepala.
-	penyangga=buat_pengepala(
+	memcpy( penyangga, buat_pengepala(
 		penyangga, identifikasi, panji, cek_paritas,
-		1, status_peladen);
+		1, status_peladen
+	), MAX_CHUNK_SIZE);
 	
 	
 	// Pesan.
@@ -568,8 +660,7 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 	// Pesan mentah.
 	DEBUG5(_("Pesan mentah dikirim terenkripsi"), pesan_ency, 0, MAX_CHUNK_SIZE);
 	
-	unsigned char *tujuan_ency;
-	tujuan_ency=malloc(sizeof(tujuan_ency)*ENCRYPTED_CONTAINER_SIZE);
+	unsigned char tujuan_ency[ENCRYPTED_CONTAINER_SIZE];
 	int panjang_pecahan;
 	panjang_pecahan=rsa_encrypt(
 		pesan_ency,

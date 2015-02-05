@@ -31,8 +31,7 @@ void anak_gerbang(
 	
 	// Penyangga.
 	// size_t panjang_pesan=0;
-	char *penyangga;
-	penyangga=malloc((sizeof penyangga) * ENCRYPTED_CONTAINER_SIZE+1);
+	char penyangga[ENCRYPTED_CONTAINER_SIZE+1];
 	memset(penyangga, 0, ENCRYPTED_CONTAINER_SIZE+1);
 	
 	// Pengepala.
@@ -44,21 +43,18 @@ void anak_gerbang(
 	unsigned int identifikasi;
 	
 	// Pesan.
-	char *pesan;
-	pesan=malloc((sizeof pesan) * CHUNK_MESSAGE_SIZE+1);
+	char pesan[CHUNK_MESSAGE_SIZE+1];
 	memset(pesan, 0, CHUNK_MESSAGE_SIZE+1);
 	
 	// Inisiasi.
-	char *hostname;
-	char *portno;
-	hostname=malloc((sizeof hostname) * BERKAS_MAX_STR);
-	portno=malloc((sizeof portno) * BERKAS_MAX_STR);
+	char hostname[BERKAS_MAX_STR];
+	char portno[BERKAS_MAX_STR];
 	
 	// RSA.
-	unsigned char *tujuan_ency;
-	unsigned char *tujuan_deco;
-	unsigned char *pesan_ency;
-	unsigned char *pesan_deco;
+	unsigned char tujuan_ency[ENCRYPTED_CONTAINER_SIZE+1];
+	unsigned char tujuan_deco[MAX_CHUNK_SIZE+1];
+	unsigned char pesan_ency[MAX_CHUNK_SIZE+1];
+	unsigned char pesan_deco[ENCRYPTED_CONTAINER_SIZE+1];;
 	
 	// Teruskan.
 	strncpy(hostname, kirim->hostname, BERKAS_MAX_STR);
@@ -71,7 +67,7 @@ void anak_gerbang(
 		n = recv(sock, penyangga+diterima, diterima-MAX_CHUNK_SIZE, 0);
 		if (n < 0){
 			WARN(_("Gagal membaca soket"), 0);
-			free(penyangga);
+			memset(penyangga, 0, ENCRYPTED_CONTAINER_SIZE+1);
 			return;
 		};
 		diterima+=n;
@@ -82,9 +78,8 @@ void anak_gerbang(
 	DEBUG5(_("Pesan mentah diterima"), penyangga, 0, diterima);
 	
 	// Memecahkan pesan.
-	pesan_deco=(unsigned char*)penyangga;
-	tujuan_deco=malloc((sizeof tujuan_deco)*ENCRYPTED_CONTAINER_SIZE+1);
-	memset(tujuan_deco, 0, ENCRYPTED_CONTAINER_SIZE+1);
+	memcpy(pesan_deco, penyangga, ENCRYPTED_CONTAINER_SIZE);
+	memset(tujuan_deco, 0, MAX_CHUNK_SIZE+1);
 	diterima=rsa_decrypt(
 		pesan_deco,
 		diterima,
@@ -94,14 +89,14 @@ void anak_gerbang(
 	);
 	
 	// Buang.
-	free(pesan_deco);
+	memset(pesan_deco, 0, ENCRYPTED_CONTAINER_SIZE);
 	
 	// Pesan mentah.
 	DEBUG4(_("Panjang terpecahkan: %1$i."), diterima);
 	DEBUG5(_("Pesan mentah diterima terpecahkan"), tujuan_deco, 0, diterima);
 	
 	// Penugasan.
-	penyangga=(char*)tujuan_deco;
+	memcpy(penyangga, tujuan_deco, MAX_CHUNK_SIZE);
 	
 	// Membaca pesan.
 	// Mendapatkan pengepala.
@@ -116,7 +111,7 @@ void anak_gerbang(
 		);
 	
 	// Mendapatkan pesan.
-	pesan=ambil_pesan(penyangga);
+	memcpy(pesan, ambil_pesan(penyangga), CHUNK_MESSAGE_SIZE);
 	
 	// Keterangan.
 	DEBUG2(_("Versi: %1$i."),versi);
@@ -141,22 +136,23 @@ void anak_gerbang(
 		do{
 			
 			// Bangun pesan.
-			penyangga=buat_pesan(
+			memcpy(penyangga, buat_pesan(
 				penyangga,
 				identifikasi,
 				&cek_paritas,
-				pesan);
+				pesan
+			), MAX_CHUNK_SIZE);
 			
 			// Bangun pengepala.
 			DEBUG2(_("Panji %1$s."), arti_panji(panji));
-			penyangga=buat_pengepala(
+			memcpy(penyangga, buat_pengepala(
 				penyangga,
 				identifikasi,
 				panji,
 				paritas,
 				status_gerbang,
 				status_peladen
-			);
+			), MAX_CHUNK_SIZE);
 			
 			// ============= Enkripsi  =======
 			
@@ -166,10 +162,9 @@ void anak_gerbang(
 			DEBUG5(_("Pesan mentah dikirim"), penyangga, 0, MAX_CHUNK_SIZE);
 			
 			// Penyandian.
-			pesan_ency=malloc(sizeof(pesan_ency)*ENCRYPTED_CONTAINER_SIZE+1);
-			memset(pesan_ency, 0, ENCRYPTED_CONTAINER_SIZE+1);
-			pesan_ency=(unsigned char*)penyangga;
-			tujuan_ency=malloc((sizeof tujuan_ency)*ENCRYPTED_CONTAINER_SIZE+1);
+			memset(pesan_ency, 0, MAX_CHUNK_SIZE+1);
+			memcpy(pesan_ency, penyangga, MAX_CHUNK_SIZE);
+			memset(tujuan_ency, 0, ENCRYPTED_CONTAINER_SIZE+1);
 			panjang_penyangga=rsa_encrypt(
 				pesan_ency,
 				MAX_CHUNK_SIZE+1,
@@ -184,14 +179,14 @@ void anak_gerbang(
 			// Kirim.
 			INFO(_("Menghubungi Peladen."), 0);
 			int panjang_diterima;
-			penyangga=kirimdata(
+			memcpy(penyangga, kirimdata(
 				(char*)tujuan_ency,
 				panjang_penyangga,
 				hostname,
 				portno,
 				infoalamat,
 				&panjang_diterima
-				);
+			), ENCRYPTED_CONTAINER_SIZE);
 			
 			// Pesan mentah.
 			DEBUG4(_("Panjang pesan mentah diterima: %1$i"), panjang_penyangga);
@@ -201,14 +196,14 @@ void anak_gerbang(
 			if(penyangga == NULL){
 				// Pesan kesalahan.
 				FAIL(_("Kegagalan %1$s."), _("Soket"));
-				pesan="Gerbang";
+				strcpy(pesan, "Gerbang");
 				// Kirim status.
 				status_peladen=0;
 				panji=0;
 				paritas=cek_paritas;
 				
 				// Alokasi ulang memori.
-				penyangga=malloc((sizeof penyangga) * MAX_CHUNK_SIZE );
+				memset(penyangga, 0, MAX_CHUNK_SIZE+1);
 				
 				// Berhenti.
 				break;
@@ -217,9 +212,8 @@ void anak_gerbang(
 			// ============= Dekripsi  =======
 			
 			// Pemecah sandi.
-			pesan_deco=(unsigned char*)penyangga;
-			tujuan_deco=malloc((sizeof tujuan_deco)*ENCRYPTED_CONTAINER_SIZE+1);
-			memset(tujuan_deco, 0, ENCRYPTED_CONTAINER_SIZE+1);
+			memcpy(pesan_deco, penyangga, ENCRYPTED_CONTAINER_SIZE);
+			memset(tujuan_deco, 0, MAX_CHUNK_SIZE+1);
 			panjang_penyangga=rsa_decrypt(
 				pesan_deco,
 				panjang_diterima,
@@ -229,7 +223,7 @@ void anak_gerbang(
 			);
 			
 			// Buang.
-			free(pesan_deco);
+			memset(pesan_deco, 0, ENCRYPTED_CONTAINER_SIZE);
 			
 			// Periksa.
 			// print_unsigned_array(tujuan_deco, 100);
@@ -239,10 +233,10 @@ void anak_gerbang(
 			DEBUG5(_("Pesan mentah diterima terpecahkan"), tujuan_deco, 0, panjang_penyangga);
 			
 			// Ubah.
-			penyangga=(char*)tujuan_deco;
+			memcpy(penyangga, tujuan_deco, MAX_CHUNK_SIZE);
 			
 			// Buang.
-			free(tujuan_deco);
+			memset(tujuan_deco, 0, MAX_CHUNK_SIZE+1);
 			
 			// Mendapatkan pengepala.
 			// Respons.
@@ -263,7 +257,7 @@ void anak_gerbang(
 				);
 			
 			// Ambil pesan.
-			pesan=ambil_pesan(penyangga);
+			memcpy(pesan, ambil_pesan(penyangga), CHUNK_MESSAGE_SIZE);
 			
 			// Balasan
 			DEBUG2(_("Balasan: Versi: %1$i."), r_versi);
@@ -346,19 +340,20 @@ void anak_gerbang(
 	
 	// Menulis balasan.
 	// Pesan Kosong.
-	penyangga=buat_pesan(
-		penyangga, identifikasi, &paritas, pesan);
+	memcpy(penyangga, buat_pesan(
+		penyangga, identifikasi, &paritas, pesan
+	), MAX_CHUNK_SIZE);
 	
 	// Pengepala.
-	penyangga=buat_pengepala(
+	memcpy(penyangga, buat_pengepala(
 		penyangga, identifikasi, panji, paritas,
-		status_gerbang, status_peladen);
+		status_gerbang, status_peladen
+	), MAX_CHUNK_SIZE);
 	
 		// Pesan.
 	DEBUG5(_("Pesan mentah dikirim"), penyangga, 0, CHUNK_HEADER_SIZE);
 	
 	// ============= Enkripsi  =======
-	pesan_ency=malloc(sizeof(pesan_ency)*MAX_CHUNK_SIZE+1);
 	memset(pesan_ency, 0, MAX_CHUNK_SIZE+1);
 	memcpy(pesan_ency, penyangga, MAX_CHUNK_SIZE);
 	
@@ -366,7 +361,6 @@ void anak_gerbang(
 	DEBUG5(_("Pesan mentah dikirim terenkripsi"), pesan_ency, 0, MAX_CHUNK_SIZE);
 	
 	// Enkripsi.
-	tujuan_ency=malloc(sizeof(tujuan_ency)*ENCRYPTED_CONTAINER_SIZE+1);
 	memset(tujuan_ency, 0, ENCRYPTED_CONTAINER_SIZE+1);
 	int panjang_penyangga=rsa_encrypt(
 		pesan_ency,

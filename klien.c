@@ -138,7 +138,7 @@ int main(int argc, char *argv[]){
 			berkas, readable_fs(kirim_mmap->ukuran_berkas, penyangga_fschar), kirim_mmap->ukuran_berkas
 			);
 		
-		// Membaca berkas.
+		// Membuka berkas.
 		FILE *pberkas=fopen(berkas, "rb");
 		
 		// Bila gagal.
