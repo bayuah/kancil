@@ -48,6 +48,14 @@ void ambil_pengepala(
 	int *status_gerbang,
 	int *status_peladen
 	);
+int ambil_pesan_peladen(
+	char *pesan,
+	size_t panjang_pesan,
+	char** identifikasi_berkas,
+	char** ukuran_berkas,
+	char** ukuran_diterima,
+	char** unix_time
+);
 char *buat_pesan(
 	char *pecahan,
 	unsigned int identifikasi,

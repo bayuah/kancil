@@ -7,210 +7,6 @@
  */
 
 #include "peladen.h"
-/*
- * anak_tulis()
- * Proses yang menangani penulisan berkas.
- */
-void anak_tulis(struct TERIMABERKAS *berkas){
-	// Berkas.
-	double dipotong=0;
-	
-	// Perilaku.
-	int status;
-	
-	// Memasang status sibuk.
-	DEBUG1(_("Mulai melakukan tindakan penulisan berkas."), 0);
-	berkas->sedang_sibuk=true;
-	
-	// Periksa apakah nama kosong.
-	if(!strlen(berkas->nama)){
-		// Nama kosong.
-		FAIL(_("Nama berkas kosong."), 0);
-		
-		// Melepas status sibuk.
-		berkas->sedang_sibuk=false;
-		
-		// Keluar.
-		exit(EXIT_FAILURE_VARS);
-	};
-	
-	// Apakah ukuran kosong.
-	if(berkas->ukuran<=0){
-		// Berkas kosong.
-		FAIL(_("Berkas '%1$s' kosong."), berkas->nama);
-		
-		// Melepas status sibuk.
-		berkas->sedang_sibuk=false;
-		
-		// Keluar.
-		exit(EXIT_FAILURE_VARS);
-	};
-	
-	// Apakah tidak diterima.
-	if(berkas->ukuran<=0){
-		// Tidak diterima.
-		FAIL(_("Tidak menerima berkas '%1$s'."), berkas->nama);
-		
-		// Melepas status sibuk.
-		berkas->sedang_sibuk=false;
-		
-		// Keluar.
-		exit(EXIT_FAILURE_IO);
-	};
-	
-	// Bila diterima lebih besar dari ukuran.
-	if(berkas->diterima>berkas->ukuran){
-		dipotong=berkas->diterima-berkas->ukuran;
-		DEBUG1(
-			_("Berkas diterima (%1$.0f bita) lebih besar dari ukuran (%2$.0f bita)."),
-			berkas->diterima, berkas->ukuran
-			);
-		DEBUG2(_("Memotong berkas sebesar %1$.0f bita."), dipotong);
-		
-	};
-	
-	// Bila direktori sementara tidak ada.
-	if(!file_exist(aturan.tempdir)){
-		DEBUG1(_("Direktori sementara '%1$s' tidak ditemukan."), aturan.tempdir);
-		status=mkdir(aturan.tempdir, 0775);
-		if(status){
-			FAIL(
-				_("Gagal membuat direktori '%1$s': %2$s (%3$i)."),
-				aturan.tempdir, strerror(errno), errno
-				);
-			
-			// Melepas status sibuk.
-			berkas->sedang_sibuk=false;
-			
-			// Keluar.
-			exit(EXIT_FAILURE_IO);
-		}else{
-			// Pesan.
-			DEBUG1(
-				_("Berhasil membuat direktori sementara '%1$s'."),
-				aturan.tempdir
-				);
-		};
-	};
-	
-	// Pesan.
-	DEBUG1(_("Menjalankan penulisan berkas '%1$s'."), berkas->nama);
-	
-	// Mulai melakukan penulisan.
-	// Membangun lajur.
-	char pembatas[2];
-	pembatas[0]=DIR_SEPARATOR;
-	pembatas[1]=0;
-	
-	int panjang_=strlen(aturan.tempdir)+strlen(berkas->nama)+3;
-	char berkas_lajur[panjang_];
-	
-	// Membangun lajur.
-	strcpy(berkas_lajur,aturan.tempdir);
-	strcat(berkas_lajur,pembatas);
-	strcat(berkas_lajur,berkas->nama);
-	
-	// Membuka berkas.
-	FILE *pberkas=fopen(berkas_lajur, "a+b");
-	
-	// Periksa kesalahan.
-	if(pberkas == NULL){
-		FAIL ( 
-			_("Gagal membuka berkas '%1$s': %2$s (%1$i)."),
-			berkas_lajur, strerror(errno), errno
-			);
-		exit(EXIT_FAILURE_IO);
-	}else{
-		
-		// Mulai tulis.
-		size_t pesan_tertulis;
-		size_t panjang_tulis;
-		size_t tulis_tersisa;
-		double sudah_tertulis;
-		pesan_tertulis=0;
-		sudah_tertulis=0;
-		unsigned int id;
-		id=1;
-		DEBUG4(_("Mulai menulis berkas '%1$s'."), berkas->nama);
-		while(sudah_tertulis<(berkas->diterima-dipotong)){
-			
-			// Menentukan panjang penulisan.
-			// Bila panjang tersisa
-			// adalah lebih besar `CHUNK_MESSAGE_SIZE`
-			// maka `CHUNK_MESSAGE_SIZE`.
-			tulis_tersisa=(berkas->diterima-dipotong)-sudah_tertulis;
-			if(tulis_tersisa > CHUNK_MESSAGE_SIZE){
-				panjang_tulis=CHUNK_MESSAGE_SIZE;
-			}else{
-				panjang_tulis=tulis_tersisa;
-			}
-			
-			// Tulis.
-			DEBUG4(_("Menulis berkas %1$lu bita."),(long unsigned int) panjang_tulis);
-			pesan_tertulis=fwrite((berkas->data_pesan[id]), 1, panjang_tulis, pberkas);
-			DEBUG4(_("Selesai menulis berkas."), 0);
-			
-			// Bila telah selesai.
-			if (pesan_tertulis){
-				// Tambah.
-				sudah_tertulis+=(double)pesan_tertulis;
-			}else{
-				if(errno==0){
-					// Tidak terjadi kesalahan.
-					// Tambah.
-					sudah_tertulis+=(double)pesan_tertulis;
-				}else if(feof(pberkas)!=0){
-					
-					// Tambah.
-					sudah_tertulis+=(double)pesan_tertulis;
-					
-				}else if(ferror(pberkas)!=0){
-					
-					// Pesan.
-					FAIL(_("Gagal menulis berkas '%1$s': %2$s (%3$i)."), basename(berkas->nama), strerror(errno), errno);
-					
-					// Melepas status sibuk.
-					DEBUG1(_("Selesai melakukan tindakan penulisan berkas."), 0);
-					berkas->sedang_sibuk=false;
-					
-					// Keluar.
-					exit(EXIT_FAILURE_IO);
-				}else{
-					
-					// Pesan.
-					FAIL(_("Kesalahan berkas yang tidak diketahui: %1$s (%2$i)."), strerror(errno), errno);
-					
-					// Melepas status sibuk.
-					DEBUG1(_("Selesai melakukan tindakan penulisan berkas."), 0);
-					berkas->sedang_sibuk=false;
-					
-					// Keluar.
-					exit(EXIT_FAILURE_IO);
-				};
-			};
-			
-			// Naik.
-			id++;
-		};
-		fclose (pberkas);
-		// Pesan.
-		DEBUG1(_("Selesai menulis berkas '%1$s' sebesar %2$.0f bita."), berkas->nama, sudah_tertulis);
-	};
-	
-	// Bersihkan.
-	memset(berkas->data_pesan, 0, sizeof(berkas->data_pesan[0][0])*MAX_CHUNK_ID*(CHUNK_MESSAGE_SIZE+1));
-	memset(berkas->data_terima, 0, sizeof(berkas->data_terima[0])*MAX_CHUNK_ID);
-	
-	// Pesan.
-	DEBUG1(_("Selesai menulis berkas '%1$s'."), berkas->nama);
-	
-	// Melepas status sibuk.
-	DEBUG1(_("Selesai melakukan tindakan penulisan berkas."), 0);
-	berkas->sedang_sibuk=false;
-	
-	// Membersihkan.
-	// free(berkas_lajur);
-}
 
 /*
  * anak_sambungan()
@@ -346,12 +142,35 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 						DEBUG1(_("Tidak menerima pecahan %1$i (Status %2$i)."), identifikasi, status);
 						status_peladen=0;
 					}else{
+						
 						// Memasukkan informasi berkas.
 						strncpy(berkas->identifikasi, berkas_id, BERKAS_MAX_STR);
 						strncpy(berkas->nama,berkas_nama, BERKAS_MAX_STR);
 						berkas->ukuran=strtod(berkas_ukuran, NULL);
-						berkas->ofset=0;
 						berkas->diterima=0;
+						
+						// Memeriksa ofset.
+						// Membangun lajur.
+						char pembatas[2];
+						pembatas[0]=DIR_SEPARATOR;
+						pembatas[1]=0;
+						
+						// Nama untuk berkas belum selesai.
+						int panjang_tmp=strlen(aturan.tempdir)+strlen(berkas_id)+3;
+						char berkas_lajur_tmp[panjang_tmp];
+						strcpy(berkas_lajur_tmp,aturan.tempdir);
+						strcat(berkas_lajur_tmp,pembatas);
+						strcat(berkas_lajur_tmp,berkas_id);
+						
+						// Memeriksa bila berkas sementara ada.
+						if(file_exist(berkas_lajur_tmp)){
+							// Memeriksa ukuran.
+							berkas->ofset=fsize(berkas_lajur_tmp);
+							TEST(_("Berkas '%1$s' ditemukan dengan ukuran %2$.0f bita."), berkas_id, berkas->ofset);
+						}else{
+							berkas->ofset=0;
+							TEST(_("Berkas '%1$s' tidak ditemukan."), 0);
+						};
 						
 						// Pesan.
 						char ukuberkas[ukuberkas_panjang];
@@ -400,66 +219,99 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 					}else{
 						// Tidak ada masalah.
 						
-						// Menyimpan ke penyangga.
-						memcpy(berkas->data_pesan[identifikasi], pesan, CHUNK_MESSAGE_SIZE);
-						berkas->data_terima[identifikasi]=true;
-						
-						// Menambahkan yang terkirim.
-						berkas->diterima=0
-							+((double)(berkas->diterima))
-							+((double)diterima)
-							-((double)CHUNK_HEADER_SIZE);
-						
-						// Mendapat informasi.
-						double br_diterima=(berkas->diterima)+berkas->ofset;
-						double br_ukuran=berkas->ukuran;
-						float persen_selesai=(float)br_diterima/(float)br_ukuran*100;
-						
-						// Mempersiapkan tampilan ukuran.
-						char ukuberkas_diterima[ukuberkas_panjang];
-						strcpy(ukuberkas_diterima, readable_fs(br_diterima, ukuberkas_diterima));
-						
-						char ukuberkas_ukuran[ukuberkas_panjang];
-						strcpy(ukuberkas_ukuran, readable_fs(br_ukuran, ukuberkas_ukuran));
+						// Bila telah terkirim.
+						if(berkas->data_terima[identifikasi]){
+							// Pesan.
+							NOTICE(_("Identifikasi %1$i telah diterima."), identifikasi);
+							
+						}else{
+							// Menyimpan ke penyangga.
+							memcpy(berkas->data_pesan[identifikasi], pesan, CHUNK_MESSAGE_SIZE);
+							berkas->data_terima[identifikasi]=true;
+							
+							// Menambahkan yang terkirim.
+							berkas->diterima=0
+								+((double)(berkas->diterima))
+								+((double)diterima)
+								-((double)CHUNK_HEADER_SIZE);
+							
+							// Mendapat informasi.
+							double br_diterima=(berkas->diterima)+berkas->ofset;
+							double br_ukuran=berkas->ukuran;
+							float persen_selesai=(float)br_diterima/(float)br_ukuran*100;
+							
+							// Mempersiapkan tampilan ukuran.
+							char ukuberkas_diterima[ukuberkas_panjang];
+							strcpy(ukuberkas_diterima, readable_fs(br_diterima, ukuberkas_diterima));
+							
+							char ukuberkas_ukuran[ukuberkas_panjang];
+							strcpy(ukuberkas_ukuran, readable_fs(br_ukuran, ukuberkas_ukuran));
+							
+							// Pesan.
+							INFO(
+								_("Menerima berkas '%1$s' (%2$.2f%%)."),
+									berkas->nama, persen_selesai
+								);
+							DEBUG1(
+								_("Identifikasi berkas: '%1$s'"),
+									berkas->identifikasi
+								);
+							DEBUG1(
+								_("Diterima %1$s/%2$s (%3$.0lf/%4$.0lf bita)."),
+									ukuberkas_diterima, ukuberkas_ukuran,
+									br_diterima, br_ukuran
+								);
+							
+							// Membersihkan.
+							memset(ukuberkas_diterima, 0, ukuberkas_panjang);
+							memset(ukuberkas_ukuran, 0, ukuberkas_panjang);
+							
+							/*
+							// Periksa setiap penyangga apakah masih kosong.
+							// Jika masih kosong, maka meminta Klien
+							// untuk mengirim bagian tersebut.
+							for(unsigned int id=1; id<identifikasi; id++){
+								if(!berkas->data_terima[id]){
+									// Menunggu 5 detik
+									// untuk memeriksa apakah
+									// telah dikirim oleh proses lain.
+										NOTICE("Meminta Klien mengirim identifikasi '%1$i.'", id);
+									sleep(5);
+									if(!berkas->data_terima[id]){
+										NOTICE("Meminta Klien mengirim identifikasi '%1$i.'", id);
+										identifikasi=id;
+										status_peladen=0;
+										break;
+									};
+								};
+							};
+							*/
+							// printf("Pesan:\n");
+							// print_char(pesan, CHUNK_MESSAGE_SIZE);
+							// printf("\n");
+						};
+					};
+				// Bila berhenti atau telah melebihi ukuran.
+				}else if(
+					   panji==STOP_FLAG
+					|| (berkas->diterima)+berkas->ofset > berkas->ukuran
+					){
+					berkas->sedang_sibuk=true;
+					
+					// Pesan.
+					if(panji==STOP_FLAG){
+						NOTICE(_("Mendapatkan sinyal akhir kelompok pecahan."), 0);
+					}else{
+						NOTICE(
+							_("Telah melebihi ukuran berkas sebesar %1$.0f bita."),
+							((berkas->diterima)+berkas->ofset)-berkas->ukuran
+						);
 						
 						// Pesan.
-						INFO(
-							_("Menerima berkas '%1$s' (%2$.2f%%)."),
-								berkas->nama, persen_selesai
-							);
-						DEBUG1(
-							_("Identifikasi berkas: '%1$s'"),
-								berkas->identifikasi
-							);
-						DEBUG1(
-							_("Diterima %1$s/%2$s (%3$.0lf/%4$.0lf bita)."),
-								ukuberkas_diterima, ukuberkas_ukuran,
-								br_diterima, br_ukuran
-							);
-						
-						// Membersihkan.
-						memset(ukuberkas_diterima, 0, ukuberkas_panjang);
-						memset(ukuberkas_ukuran, 0, ukuberkas_panjang);
-						
-						// Periksa setiap penyangga apakah masih kosong.
-						// Jika masih kosong, maka meminta Klien
-						// untuk mengirim bagian tersebut.
-						for(unsigned int id=1; id<identifikasi; id++){
-							if(!berkas->data_terima[id]){
-								NOTICE("Meminta Klien mengirim identifikasi '%1$i.'", id);
-								identifikasi=id;
-								status_peladen=0;
-								break;
-							};
-						};
-						
-						// printf("Pesan:\n");
-						// print_char(pesan, CHUNK_MESSAGE_SIZE);
-						// printf("\n");
+						DEBUG1(_("Mengirim panji '%1$s'."),_("Henti"));
+						panji=STOP_FLAG;
 					};
-				// Bila berhenti.
-				}else if(panji==STOP_FLAG){
-					NOTICE(_("Mendapatkan sinyal akhir kelompok pecahan."), 0);
+					
 					// Perkembangan.
 					double br_diterima=(berkas->diterima)+berkas->ofset;
 					double br_ukuran=berkas->ukuran;
@@ -500,6 +352,7 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 						if (pid == 0){
 							// Proses anak.
 							anak_tulis(berkas);
+							berkas->sedang_sibuk=false;
 							
 							// Menutup.
 							#ifndef KANCIL_NOFORK
@@ -634,8 +487,8 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 		pesan,
 		CHUNK_MESSAGE_SIZE,
 		berkas->identifikasi,
-		(berkas->diterima)+berkas->ofset,
-		berkas->ukuran
+		berkas->ukuran,
+		(berkas->diterima)+berkas->ofset
 	), CHUNK_MESSAGE_SIZE);
 	
 	// Menulis balasan.

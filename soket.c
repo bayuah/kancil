@@ -12,6 +12,7 @@
 
 #include "kancil.h"
 #include "faedah.h"
+#include "tampilan.h"
 
 // Ekstra.
 #include <errno.h>
@@ -101,7 +102,7 @@ char *kirimdata(
 	int *panjang_diterima
 ){
 	// Pengaturan.
-	int     tunggu_detik=10;
+	int     tunggu_detik=15;
 	int tunggu_milidetik=0;
 	
 	// Pengaturan.
@@ -184,9 +185,19 @@ char *kirimdata(
 		// Mencari alamat.
 		DEBUG3(_("Mulai mencari informasi alamat '%1$s'."), hostname);
 		
+		// Bila dikunci.
+		if(alamat->kunci==true){
+			// Menunggu.
+			do{
+				DEBUG4(_("Informasi alamat terkunci."), 0);
+				sleep(1);
+			}while(alamat->kunci==true);
+			alamat->kunci=true;
+		};
+		
 		// Mencoba di tembolok.
 		serv_addrinfo_result=NULL;
-		for(i=0; i<INFOALAMAT_MAX_ID; i++){
+		for(i=1; i<INFOALAMAT_MAX_ID; i++){
 			DEBUG4(_("Mencoba tembolok identifikasi '%1$i'."), i);
 			if(!strlen(alamat->inang[i])){
 				// Tidak ditemukan.
@@ -221,11 +232,11 @@ char *kirimdata(
 					for(j=0;j<alamat->ipcount[i];j++){
 						DEBUG4(_("Memasukkan %1$s dari tembolok identifikasi '%2$i'."), _("Informasi Jaringan"), i);
 						tmp_addrinfo=malloc(sizeof(struct addrinfo)+1);
-						DEBUG4(_("Memasukkan %1$s (%2$i) dari tembolok identifikasi '%3$i'."), _("Keluarga Alamat"), alamat->ai_family[i][j], i);
+						DEBUG4(_("Memasukkan %1$s (%2$s) dari tembolok identifikasi '%3$i'."), _("Keluarga Alamat"), keterangan_soket(1, alamat->ai_family[i][j]), i);
 						tmp_addrinfo->ai_family=alamat->ai_family[i][j];
-						DEBUG4(_("Memasukkan %1$s (%2$i) dari tembolok identifikasi '%3$i'."), _("Jenis Soket"), alamat->ai_socktype[i][j], i);
+						DEBUG4(_("Memasukkan %1$s (%2$s) dari tembolok identifikasi '%3$i'."), _("Jenis Soket"), keterangan_soket(2, alamat->ai_socktype[i][j]), i);
 						tmp_addrinfo->ai_socktype=alamat->ai_socktype[i][j];
-						DEBUG4(_("Memasukkan %1$s (%2$i) dari tembolok identifikasi '%3$i'."), _("Jenis Protokolt"), alamat->ai_protocol[i][j], i);
+						DEBUG4(_("Memasukkan %1$s (%2$s) dari tembolok identifikasi '%3$i'."), _("Jenis Protokol"), keterangan_soket(3, alamat->ai_protocol[i][j]), i);
 						tmp_addrinfo->ai_protocol=alamat->ai_protocol[i][j];
 						DEBUG4(_("Memasukkan %1$s (%2$i) dari tembolok identifikasi '%3$i'."), _("Panjang Alamat"), alamat->ai_addrlen[i][j], i);
 						tmp_addrinfo->ai_addrlen=alamat->ai_addrlen[i][j];
@@ -238,7 +249,7 @@ char *kirimdata(
 						DEBUG4(_("Memasukkan %1$s dari tembolok identifikasi '%2$i'."), _("Informasi Alamat"), i);
 						struct sockaddr *tmp_sockaddr;
 						tmp_sockaddr=malloc(sizeof(struct sockaddr)+1);
-						DEBUG4(_("Memasukkan %1$s (%2$i) dari tembolok identifikasi '%3$i'."), _("Keluarga Alamat"), alamat->sockaddr_sa_family[i][j], i);
+						DEBUG4(_("Memasukkan %1$s (%2$s) dari tembolok identifikasi '%3$i'."), _("Keluarga Alamat"), keterangan_soket(1, alamat->sockaddr_sa_family[i][j]), i);
 						tmp_sockaddr->sa_family=alamat->sockaddr_sa_family[i][j];
 						DEBUG4(_("Memasukkan %1$s dari tembolok identifikasi '%2$i'."), _("Data Alamat"), i);
 						memcpy(tmp_sockaddr->sa_data, alamat->sockaddr_sa_data[i][j], 14);
@@ -302,11 +313,15 @@ char *kirimdata(
 			bool ulang=false;
 			bool jangan_tanya_alamat=false;
 			int coba=1;
-			int id=0;
+			int id=1;
 			// for(i=0; i<INFOALAMAT_MAX_ID; i++)
+			// Mengunci.
+			DEBUG4(_("Mengunci informasi alamat."), 0);
+			alamat->kunci=true;
 			do{
 				// Pesan.
 				DEBUG4(_("Mencoba memasukkan ke tembolok identifikasi '%1$i'."), id);
+				
 				
 				// Bila alamat tidak kosong.
 				if(!jangan_tanya_alamat && strlen(alamat->inang[id])){
@@ -327,6 +342,18 @@ char *kirimdata(
 						coba=0;
 						jangan_tanya_alamat=true;
 						ulang=true;
+					}else if(strcmp(hostname, alamat->inang[id])==0){
+						
+						// Masih kosong.
+						DEBUG4(_("Alamat IP adalah sama."), 0);
+						DEBUG4(_("Isi ditimpa."), 0);
+						DEBUG4(_("Tetap melanjutkan."), 0);
+						
+						// Muat ulang.
+						coba=0;
+						jangan_tanya_alamat=true;
+						ulang=true;
+						
 					}else if(coba>INFOALAMAT_MAX_ID){
 						// Pesan.
 						DEBUG4(_("Telah mencoba sebanyak %1$i kali."), coba);
@@ -360,11 +387,11 @@ char *kirimdata(
 					){
 						// Memasukkan.
 						DEBUG4(_("Memasukkan %1$s ke tembolok identifikasi '%2$i'."), _("Informasi Jaringan"), id);
-						DEBUG4(_("Memasukkan %1$s (%2$i) ke tembolok identifikasi '%3$i'."), _("Keluarga Alamat"), serv_addrinfo->ai_family, id);
+						DEBUG4(_("Memasukkan %1$s (%2$s) ke tembolok identifikasi '%3$i'."), _("Keluarga Alamat"), keterangan_soket(1, serv_addrinfo->ai_family), id);
 						alamat->ai_family[id][j]=serv_addrinfo->ai_family;
-						DEBUG4(_("Memasukkan %1$s (%2$i) ke tembolok identifikasi '%3$i'."), _("Jenis Soket"), serv_addrinfo->ai_socktype, id);
+						DEBUG4(_("Memasukkan %1$s (%2$s) ke tembolok identifikasi '%3$i'."), _("Jenis Soket"), keterangan_soket(2, serv_addrinfo->ai_socktype), id);
 						alamat->ai_socktype[id][j]=serv_addrinfo->ai_socktype;
-						DEBUG4(_("Memasukkan %1$s (%2$i) ke tembolok identifikasi '%3$i'."), _("Protokol"), serv_addrinfo->ai_protocol, id);
+						DEBUG4(_("Memasukkan %1$s (%2$s) ke tembolok identifikasi '%3$i'."), _("Protokol"), keterangan_soket(3, serv_addrinfo->ai_protocol), id);
 						alamat->ai_protocol[id][j]=serv_addrinfo->ai_protocol;
 						DEBUG4(_("Memasukkan %1$s (%2$i) ke tembolok identifikasi '%3$i'."), _("Panjang Alamat"), serv_addrinfo->ai_addrlen, id);
 						alamat->ai_addrlen[id][j]=serv_addrinfo->ai_addrlen;
@@ -377,7 +404,7 @@ char *kirimdata(
 						};//else
 							// alamat->ai_canonname[id][j];
 							
-						DEBUG4(_("Memasukkan %1$s (%2$i) ke tembolok identifikasi '%3$i'."), _("Keluarga Alamat"), serv_addrinfo->ai_addr->sa_family, id);
+						DEBUG4(_("Memasukkan %1$s (%2$s) ke tembolok identifikasi '%3$i'."), _("Keluarga Alamat"), keterangan_soket(1, serv_addrinfo->ai_addr->sa_family), id);
 						alamat->sockaddr_sa_family[id][j]=serv_addrinfo->ai_addr->sa_family;
 						DEBUG4(_("Memasukkan %1$s ke tembolok identifikasi '%2$i'."), _("Data Alamat"), id);
 						memcpy(alamat->sockaddr_sa_data[id][j], serv_addrinfo->ai_addr->sa_data, 14);
@@ -403,8 +430,10 @@ char *kirimdata(
 					ulang=false;
 				};
 			}while(ulang);
+			
+			// Membuka kunci.
+			alamat->kunci=false;
 		};
-		
 		
 		// Pengaturan.
 		// Gunakan ulang.

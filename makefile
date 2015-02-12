@@ -141,9 +141,9 @@ built-gerbang:gerbang.c $(UTILITY_OBJ) gerbang-anak.o
 		-D__COMPILER_MACHINE="$(CC_MACHINE)" \
 		-D__COMPILER_VERSION="$(CC_VERSION)" 
 
-built-peladen:peladen.c $(UTILITY_OBJ) peladen-anak.o
+built-peladen:peladen.c $(UTILITY_OBJ) peladen-tulis.o peladen-anak.o
 	@echo "Build peladen with built number $(BUILT_PELADEN)..."
-	@ld -r $(UTILITY_OBJ) peladen-anak.o -o peladen.o
+	@ld -r $(UTILITY_OBJ) peladen-tulis.o peladen-anak.o -o peladen.o
 	@$(CCF) $(VERSIONING) \
 		-D__BUILT_NUMBER=$(BUILT_PELADEN) \
 		peladen.o peladen.c -o peladen $(CCLIBS) \
@@ -165,6 +165,10 @@ gerbang-anak.o:gerbang-anak.c
 peladen-anak.o:peladen-anak.c
 	@echo "Build $@..."
 	@$(CCF) -c peladen-anak.c -o $@ $(CCLIBS)
+
+peladen-tulis.o:peladen-tulis.c
+	@echo "Build $@..."
+	@$(CCF) -c peladen-tulis.c -o $@ $(CCLIBS)
 
 pesan.o:pesan.c
 	@echo "Build $@..."

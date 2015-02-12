@@ -117,6 +117,61 @@ char *kancil_signal_code(int sinyal){
 	};
 }
 
+char *keterangan_soket(int apa, int nilai){
+	switch(apa){
+		// Keluarga Alamat dan Protokol
+		case 1:
+			switch(nilai){
+				case 0: return "AF_UNSPEC";break;
+				case 1: return "AF_UNIX";break;
+				case 2: return "AF_INET";break;
+				default:  return "AF_XXX";break;
+			};
+		break;
+		// Keluarga Protokol.
+		case 2:
+			switch(nilai){
+				case 1: return "SOCK_STREAM";break;
+				case 2: return "SOCK_DGRAM";break;
+				case 3: return "SOCK_RAW";break;
+				case 4: return "SOCK_RDM";break;
+				case 5: return "SOCK_SEQPACKET";break;
+				case 6: return "SOCK_DCCP";break;
+				case 10: return "SOCK_PACKET";break;
+				default:  return "SOCK_XXX";break;
+			};
+		break;
+		// Protokol IP.
+		case 3:
+			switch(nilai){
+				case 0: return "IPPROTO_IP";break;
+				case 1: return "IPPROTO_ICMP";break;
+				case 2: return "IPPROTO_IGMP";break;
+				case 4: return "IPPROTO_IPIP";break;
+				case 6: return "IPPROTO_TCP";break;
+				case 8: return "IPPROTO_EGP";break;
+				case 12: return "IPPROTO_PUP";break;
+				case 17: return "IPPROTO_UDP";break;
+				case 22: return "IPPROTO_IDP";break;
+				case 33: return "IPPROTO_DCCP";break;
+				case 46: return "IPPROTO_RSVP";break;
+				case 47: return "IPPROTO_GRE";break;
+				case 41: return "IPPROTO_IPV6";break;
+				case 50: return "IPPROTO_ESP";break;
+				case 51: return "IPPROTO_AH";break;
+				case 94: return "IPPROTO_BEETPH";break;
+				case 103: return "IPPROTO_PIM";break;
+				case 108: return "IPPROTO_COMP";break;
+				case 132: return "IPPROTO_SCTP";break;
+				case 136: return "IPPROTO_UDPLITE";break;
+				case 255: return "IPPROTO_RAW";break;
+				default: return "IPPROTO_MAX";break;
+			};
+		break;
+	}
+	return NULL;
+}
+
 /*
  * `_progress()`
  * Memberikan tampilan perkembangan.

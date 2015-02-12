@@ -47,14 +47,12 @@ int main(int argc, char *argv[]){
 	aturan.show_debug5=false;
 	aturan.tempdir="tmp";
 	aturan.tries=20;
-	aturan.waitretry=30;
-	aturan.maxqueue=15000;
-	aturan.waitqueue=30;
-	aturan.rsa_datasize=204;
-	aturan.nowaitqueue=true;
+	aturan.waitretry=15;
+	aturan.waitqueue=5;
+	aturan.parallel=20;
 	
 	// Berbagi memori.
-	int berbagi_ukuran = 1024 * 1024 * 128; //128 mb
+	int berbagi_ukuran = 1024 * 1024 * 128; //128 MiB
 	int persen_ukuran=0;
 	int shm_berkas = -1; 
 	int berbagi_panji = MAP_SHARED;
@@ -138,170 +136,466 @@ int main(int argc, char *argv[]){
 			berkas, readable_fs(kirim_mmap->ukuran_berkas, penyangga_fschar), kirim_mmap->ukuran_berkas
 			);
 		
-		// Membuka berkas.
-		FILE *pberkas=fopen(berkas, "rb");
+		// Jumlah sambungan.
+		int sambungan_maksimal=aturan.parallel;
+		int sambungan_maksimal_sekarang=sambungan_maksimal;
+		FILE *pberkas[sambungan_maksimal];
 		
-		// Bila gagal.
-		if(pberkas == NULL){
-			FAIL ( 
-				_("Gagal membuka berkas '%1$s': %2$s (%1$i)."),
-				berkas, strerror(errno), errno
-				);
-			exit(EXIT_FAILURE_IO);
-		}else{
+		// Membuka berkas
+		// sebanyak maksimal sambungan.
+		for(int ib=0; ib<sambungan_maksimal;ib++){
+			pberkas[ib]=fopen(berkas, "rb");
+			if(pberkas[ib]==NULL){
+				// Gagal.
+				FAIL ( 
+					_("Gagal membuka berkas '%1$s': %2$s (%1$i)."),
+					berkas, strerror(errno), errno
+					);
+				exit(EXIT_FAILURE_IO);
+			};
+		};
+		
+		// Inisiasi isi.
+		kirim_mmap->identifikasi=0;
+		kirim_mmap->identifikasi_sebelumnya=0;
+		kirim_mmap->kelompok_kirim=1;
+		kirim_mmap->urut_kali=0;
+		// kirim_mmap->ukuran_berkas;
+		kirim_mmap->ukuran_kirim=0;
+		kirim_mmap->ukuran_kirim_sebelumnya=0;
+		kirim_mmap->do_kirim=true;
+		strncpy(kirim_mmap->hostname, argv[1], BERKAS_MAX_STR);
+		strncpy(kirim_mmap->portno, argv[2], BERKAS_MAX_STR);
+		strncpy(kirim_mmap->berkas_lajur, berkas, BERKAS_MAX_STR);
+		strncpy(kirim_mmap->berkas, basename(berkas), BERKAS_MAX_STR);
+		memset(kirim_mmap->data_terkirim, 0, sizeof(kirim_mmap->data_terkirim[0])*MAX_CHUNK_ID);
+		kirim_mmap->waktu_terkirim=current_time(CURRENTTIME_MICROSECONDS);
+		kirim_mmap->paksa_panji=UNDEFINED_FLAG;
+		kirim_mmap->kecepatan=0;
+		kirim_mmap->coba=1;
+		
+		// Identifikasi berkas.
+		char berkas_identifikasi[BERKAS_MAX_STR];
+		char berkas_nama[BERKAS_MAX_STR];
+		int waktu=current_time(CURRENTTIME_SECONDS);
+		strncpy(berkas_nama, basename(berkas), BERKAS_MAX_STR);
+		int panjang_nama=strlen(berkas_nama);
+		
+		// Membangun Identifikasi berkas.
+		snprintf(
+			berkas_identifikasi,
+			BERKAS_MAX_STR,
+			"%1$.3s%2$.0d%3$s",
+			berkas_nama,
+			waktu,
+			berkas_nama+(panjang_nama-3)
+		);
+		
+		// Memasukkan Identifikasi berkas.
+		strncpy(kirim_mmap->berkas_identifikasi, berkas_identifikasi, BERKAS_MAX_STR);
+		
+		// Mendaptakan jumlah pecahan.
+		
+		// Mulai.
+		// int pid_status;
+		pid_t pids[sambungan_maksimal+1], pid_anak;
+		memset(pids, 0, sizeof(pids[0])*sambungan_maksimal+1);
+		
+		// Pecahan.
+		int sambungan=0;
+		unsigned int identifikasi=0;
+		
+		// Perilaku.
+		bool pengawas=true;
+		bool pertama=true;
+		
+		// Aturan dasar.
+		int kec_rendah_minimal=100*1024; // Bita
+		int sambungan_maksimal_kec_rendah=3; // Bita
+		
+		// Perulangan.
+		while(kirim_mmap->do_kirim){
 			
-			// Inisiasi isi.
-			kirim_mmap->identifikasi=0;
-			kirim_mmap->identifikasi_sebelumnya=0;
-			kirim_mmap->kelompok_kirim=1;
-			kirim_mmap->urut_kali=0;
-			// kirim_mmap->ukuran_berkas;
-			kirim_mmap->ukuran_kirim=0;
-			kirim_mmap->ukuran_kirim_sebelumnya=0;
-			kirim_mmap->do_kirim=true;
-			strncpy(kirim_mmap->hostname, argv[1], BERKAS_MAX_STR);
-			strncpy(kirim_mmap->portno, argv[2], BERKAS_MAX_STR);
-			strncpy(kirim_mmap->berkas, berkas, BERKAS_MAX_STR);
-			memset(kirim_mmap->data_terkirim, 0, sizeof(kirim_mmap->data_terkirim[0])*MAX_CHUNK_ID);
-			kirim_mmap->waktu_terkirim=current_time(CURRENTTIME_MICROSECONDS);
-			kirim_mmap->coba=1;
-			
-			// Identifikasi berkas.
-			char berkas_identifikasi[BERKAS_MAX_STR];
-			char berkas_nama[BERKAS_MAX_STR];
-			int waktu=current_time(CURRENTTIME_SECONDS);
-			strncpy(berkas_nama, basename(berkas), BERKAS_MAX_STR);
-			int panjang_nama=strlen(berkas_nama);
-			
-			// Membangun Identifikasi berkas.
-			snprintf(
-				berkas_identifikasi,
-				BERKAS_MAX_STR,
-				"%1$.3s%2$.0d%3$s",
-				berkas_nama,
-				waktu,
-				berkas_nama+(panjang_nama-3)
-			);
-			
-			// Memasukkan Identifikasi berkas.
-			strncpy(kirim_mmap->berkas_identifikasi, berkas_identifikasi, BERKAS_MAX_STR);
-			
-			// Mulai.
-			pid_t pid, pid_anak;
-			while(kirim_mmap->do_kirim){
+			// Pengawas.
+			// Mengawasi dan menugasi pengiriman.
+			if(pengawas){
 				
-				// Memecah tugas.
-				// Mencabangkan proses.
-				// 'KANCIL_NOFORK' berguna untuk melakukan pengutuan
-				// sebab proses tidak dipecah.
-				// Kompilasi Kancil dengan parameter 'nofork=yes'.
-				#ifndef KANCIL_NOFORK
-					pid=fork();
-				#else
-					pid=0;
-				#endif
-				
-				// Bila terjadi kesalahan.
-				if (pid< 0){
-					FAIL(_("Kegagalan proses cabang: %1$s (%2$i)."), strerror(errno), errno);
-					exit(EXIT_FAILURE_FORK);
-				}else{
+				// Bila pertama.
+				if(pertama){
+					pertama=false;
+					
+					// Ubah sambungan maksimal
+					// bila lebih besar dari ukuran.
+					if((double)(sambungan_maksimal*CHUNK_MESSAGE_SIZE)>(double)kirim_mmap->ukuran_berkas){
+						// Pesan
+						DEBUG3(
+							_("Sambungan maksimal (%1$i) melebihi ukuran berkas (%2$.0f)."),
+							sambungan_maksimal, kirim_mmap->ukuran_berkas
+							);
+						
+						// Ubah.
+						sambungan_maksimal=(int)((double)kirim_mmap->ukuran_berkas/(double)CHUNK_MESSAGE_SIZE)*25/100;
+						
+						// Pesan.
+						DEBUG3(
+							_("Sambungan maksimal diubah ke %1$i."),
+							sambungan_maksimal
+							);
+					};
+					
+					// Ubah sambungan maksimal
+					// bila lebih besar MAX_CHUNK_ID.
+					if((sambungan_maksimal)>MAX_CHUNK_ID){
+						// Pesan
+						DEBUG3(
+							_("Sambungan maksimal (%1$i) melebihi jumlah pecahan (%2$i)."),
+							sambungan_maksimal, MAX_CHUNK_ID
+							);
+						
+						// Ubah.
+						sambungan_maksimal=MAX_CHUNK_ID-5;
+						
+						// Pesan.
+						DEBUG3(
+							_("Sambungan maksimal diubah ke %1$i."),
+							sambungan_maksimal
+							);
+					};
+					
+					// Bila terlalu kecil.
+					if(sambungan_maksimal<=0)
+						sambungan_maksimal=1;
 				};
 				
-				if (pid == 0){
+				// Bila identifikasi adalah lebih dari MAX_CHUNK_ID,
+				// maka kembali ke NOL.
+				if(kirim_mmap->identifikasi>MAX_CHUNK_ID){
+					DEBUG1(_("Telah melebihi maksimal identifikasi %1$i."), MAX_CHUNK_ID);
+					DEBUG1(_("Nilai identifikasi adalah %1$i."), kirim_mmap->identifikasi);
+					kirim_mmap->identifikasi=0;
+				};
+				
+				// Bila adalah identifikasi NOL,
+				// maka hanya SATU sambungan.
+				if(kirim_mmap->identifikasi==0){
+					DEBUG3(_("Pecahan identifikasi awal."),0);
+					sambungan_maksimal_sekarang=1;
 					
-					// Panggil anak.
-					anak_kirim(
-						pberkas,
-						kirim_mmap,
-						alamat_mmap,
-						ukuberkas_panjang
-					);
+				}else if(
+					kirim_mmap->identifikasi<= (unsigned int) sambungan_maksimal
+					|| kirim_mmap->identifikasi < 10
+					){
+					// Bila adalah identifikasi NOL,
+					// maka hanya SATU sambungan.
+					DEBUG3(_("Pecahan awal."),0);
+					sambungan_maksimal_sekarang=1;
 					
-					// Menutup.
-					#ifndef KANCIL_NOFORK
-						exit(0);
-					#endif
+				}else if(kirim_mmap->identifikasi==MAX_CHUNK_ID){
+					// Bila telah mencapai
+					// batas identifikasi.
+					DEBUG3(_("Pecahan identifikasi telah sama dengan jumlah maksimal pecahan (%1$i)."), MAX_CHUNK_ID);
+					sambungan_maksimal_sekarang=1;
+					
+				}else if(kirim_mmap->ukuran_kirim>kirim_mmap->ukuran_berkas){
+					// Bila melebihi ukuran berkas.
+					DEBUG3(
+						_("Berkas terkirim (%1$.0f bita) telah melebihi ukuran berkas (%2$.0f bita)."),
+						kirim_mmap->ukuran_kirim, kirim_mmap->ukuran_berkas
+						);
+					sambungan_maksimal_sekarang=1;
+					
+				}else if(
+					kirim_mmap->ukuran_berkas-kirim_mmap->ukuran_kirim
+					<=  kec_rendah_minimal
+					&& sambungan_maksimal > sambungan_maksimal_kec_rendah
+				){
+					// Bila ukuran tersisa kurang dari
+					// kecepatan rendah minimal
+					// maka jumlah maksimal paralel adalah
+					// sambunan maksimal kecepatan rendah.
+					DEBUG3(_("Menggunakan kecepatan rendah dengan %1$i sambungan dalam %2$.0f bita tersisa."),
+						sambungan_maksimal_kec_rendah, (kirim_mmap->ukuran_berkas-kirim_mmap->ukuran_kirim)
+						);
+					sambungan_maksimal_sekarang=sambungan_maksimal_kec_rendah;
+					
 				}else{
-					// Bapak tunggu anak.
-					do{
-						pid_anak  = waitpid(pid, &status, WUNTRACED | WCONTINUED);
-						if (pid_anak  == -1) {
-							// Pesan.
-							FAIL(_("Kegagalan proses cabang: %1$s (%2$i)."), strerror(errno), errno);
-							exit(EXIT_FAILURE_FORK);
-						};
+					// Maksimalkan.
+					DEBUG3(_("Menggunakan %1$i sambungan."), sambungan_maksimal);
+					sambungan_maksimal_sekarang=sambungan_maksimal;
+				};
+				
+				// Pesan.
+				DEBUG3(_("Jumlah sambungan adalah %1$i."), sambungan_maksimal_sekarang);
+				
+				// Berhasil.
+				DEBUG4(_("Menghitung kecepatan."), 0);
+				
+				// Kecepatan.
+				// Kecepatan merupakan perbedaan ukuran sekarang
+				// dibandingkan dengan perbedaan waktu.
+				double kecepatan_sebelumnya=kirim_mmap->kecepatan;
+				double beda_ukuran=(kirim_mmap->ukuran_kirim)-(kirim_mmap->ukuran_kirim_sebelumnya);
+				double beda_waktu= (current_time(CURRENTTIME_MICROSECONDS) - kirim_mmap->waktu_terkirim );
+				double kecepatan = beda_ukuran / beda_waktu;
+				
+				// Bila kurang dari NOL.
+				if (kecepatan<0)
+					kecepatan=0;
+				
+				// Kecepataan rerata.
+				// Kecepataan rerata menggunakan
+				// rumus Tapis Rerata Kecepatan Pesat Tertimbang
+				// (Exponentially Weighted Moving Average Filter).
+				// Lihat: http://lorien.ncl.ac.uk/ming/filter/filewma.htm
+				// HakCipta (c) 2009 M.T. Tham
+				// Berkas dimodifikasi: Jumat, 21 Agustus 2009, 06:22:02 WIB
+				// Berkas diakses: Sabtu, 07 Februari 2015, 00:40:40 WIB
+				double konstanta=0.5;
+				double kecepatan_rerata=konstanta* kecepatan + (1 - konstanta) * kecepatan_sebelumnya;
+				
+				// Bila kurang dari NOL.
+				if (kecepatan_rerata<0)
+					kecepatan_rerata=0;
+				
+				// Menyimpan.
+				kirim_mmap->kecepatan=kecepatan_rerata;
+				
+				// Pesan.
+				DEBUG4(_("Berhasil menghitung kecepatan."), 0);
+				
+				// Mendapat informasi.
+				double br_dikirim=kirim_mmap->ukuran_kirim;
+				
+				// Mempersiapkan tampilan ukuran.
+				char ukuberkas_dikirim[ukuberkas_panjang];
+				strcpy(ukuberkas_dikirim, readable_fs(br_dikirim, ukuberkas_dikirim));
+				
+				char ukukecepatan[ukuberkas_panjang];
+				if(kecepatan_rerata<1){
+					snprintf(ukukecepatan, ukuberkas_panjang, "%1$.04f B", kecepatan);
+				}else{
+					strcpy(ukukecepatan, readable_fs(kecepatan_rerata, ukukecepatan));
+				};
+				
+				// Tampilan.
+				// Bila tidak aktif,
+				// maka menggunakan progress.
+				if(
+					aturan.show_debug1
+					|| aturan.show_debug2
+					|| aturan.show_debug3
+					|| aturan.show_debug4
+					|| aturan.show_debug5
+				){
+					INFO(
+						_("Berhasil mengirim %1$s (%2$.0lf bita) (%3$s/s)."),
+						ukuberkas_dikirim, br_dikirim, ukukecepatan
+						);
+				}else{
+					PROGRESS(
+						_("Berhasil mengirim %1$s (%2$.0lf bita) (%3$s/s)."),
+						ukuberkas_dikirim, br_dikirim, ukukecepatan
+						);
+				};
+				
+				// Bersihkan.
+				DEBUG4(_("Membersihkan penyangga kecepatan."), 0);
+				memset(ukuberkas_dikirim, 0, ukuberkas_panjang);
+				memset(ukukecepatan, 0, ukuberkas_panjang);
+				
+				// Menyimpan waktu sekarang.
+				DEBUG4(_("Menyimpan waktu sekarang."), 0);
+				kirim_mmap->waktu_terkirim=current_time(CURRENTTIME_MICROSECONDS);
+				DEBUG4(_("Selesai menyimpan waktu sekarang."), 0);
+				
+				// Menyimpan ukuran sekarang.
+				DEBUG4(_("Menyimpan ukuran sekarang."), 0);
+				kirim_mmap->ukuran_kirim_sebelumnya=kirim_mmap->ukuran_kirim;
+				DEBUG4(_("Selesai menyimpan ukuran sekarang."), 0);
+				
+				// Menambah identifikasi.
+				// kirim_mmap->identifikasi++;
+				// identifikasi=kirim_mmap->identifikasi;
+				
+				// Matikan pengawas.
+				pengawas=false;
+				
+			};
+			
+			// Memecah tugas.
+			// Mencabangkan proses.
+			// 'KANCIL_NOFORK' berguna untuk melakukan pengutuan
+			// sebab proses tidak dipecah.
+			// Kompilasi Kancil dengan parameter 'nofork=yes'.
+			#ifndef KANCIL_NOFORK
+				pids[sambungan]=fork();
+			#else
+				pids[sambungan]=0;
+			#endif
+			
+			// Bila terjadi kesalahan.
+			if (pids[sambungan]< 0){
+				FAIL(_("Kegagalan proses cabang: %1$s (%2$i)."), strerror(errno), errno);
+				exit(EXIT_FAILURE_FORK);
+			}else{
+			};
+			
+			if (pids[sambungan] == 0){
+				// Proses anak.	
+				
+				// Panggil anak.
+				identifikasi=anak_kirim(
+					identifikasi,
+					pberkas[sambungan],
+					kirim_mmap,
+					alamat_mmap,
+					ukuberkas_panjang
+				);
+				
+				// Memasukkan nilai identifikasi.
+				// DEBUG2(_("Menyimpan identifikasi %1$i."), identifikasi);
+				kirim_mmap->identifikasi=identifikasi;
+				// DEBUG2(_("Identifikasi %1$i tersimpan."), kirim_mmap->identifikasi);
+				
+				// Menutup.
+				#ifndef KANCIL_NOFORK
+					exit(0);
+				#endif
+			}else{
+				// Proses Bapak.
+				if((sambungan+1)>=(sambungan_maksimal_sekarang)){
+					for (int i = 0; i < sambungan_maksimal_sekarang; ++i) {
 						
-						// Status anak.
-						if(WCOREDUMP(status)){
+						// DEBUG2(_("Menunggu proses %1$i (%2$i)."), i, pids[i]);
+						// while (-1 == waitpid(pids[i], &pid_status, WNOHANG)){
+							// sleep(1);
+							// killpid(pids[i], SIGKILL);
+							// WARN(_("Proses %1$i (%2$i) terlalu lama."), i, pids[i]);
+						// };
+						// if (!WIFEXITED(pid_status) || WEXITSTATUS(pid_status) != 0) {
+							// FAIL(_("Gagal mematikan proses %1$i (%2$i)."), i, pids[i]);
+							// exit(EXIT_FAILURE_FORK);
+						// };
+						
+						// Bapak tunggu anak.
+						do{
+							pid_anak  = waitpid(pids[i], &status, WUNTRACED | WCONTINUED);
+							if (pid_anak  == -1) {
+								// Pesan.
+								FAIL(_("Kegagalan proses cabang (PID%1$i): %2$s (%3$i)."), pids[i], strerror(errno), errno);
+								exit(EXIT_FAILURE_FORK);
+							};
 							
-							// Terjadi kesalahan.
-							FAIL(
-								_("Kesalahan memori di proses cabang: %1$s (%2$i)."),
-								kancil_signal_code(EXIT_FAILURE_MEMORY),
-								EXIT_FAILURE_MEMORY
+							// Status anak.
+							if(WCOREDUMP(status)){
+								
+								// Terjadi kesalahan.
+								FAIL(
+									_("Kesalahan memori di proses cabang (PID%1$i): %2$s (%3$i)."),
+									pids[i], kancil_signal_code(EXIT_FAILURE_MEMORY),
+									EXIT_FAILURE_MEMORY
+									);
+								
+								// Berhenti.
+								exit(EXIT_FAILURE_MEMORY);
+							}else if (WIFSTOPPED(status)) {
+								WARN(
+									_("Proses cabang (PID%1$i) dihentikan sinyal %2$s (%3$i)."),
+									pids[i], kancil_signal_code(WIFSTOPPED(status)),
+									WIFSTOPPED(status)
+									);
+								
+								// Berhenti.
+								// kirim_mmap->do_kirim=false;
+								exit(WIFSTOPPED(status));
+							}else if(WIFSIGNALED(status)) {
+								
+								// Anak terbunuh sinyal.
+								WARN(
+									_("Proses cabang (PID%1$i) terbunuh sinyal %1$s (%2$i)."),
+									pids[i], kancil_signal_code(WIFSIGNALED(status)),
+									status
 								);
-							
-							// Berhenti.
-							exit(EXIT_FAILURE_MEMORY);
-						}else if (WIFSTOPPED(status)) {
-							WARN(
-								_("Proses cabang dihentikan sinyal %1$s (%2$i)."),
-								kancil_signal_code(WIFSTOPPED(status)),
-								WIFSTOPPED(status)
-								);
-							
-							// Berhenti.
-							// kirim_mmap->do_kirim=false;
-							exit(WIFSTOPPED(status));
-						}else if(WIFSIGNALED(status)) {
-							
-							// Anak terbunuh sinyal.
-							WARN(
-								_("Proses cabang terbunuh sinyal %1$s (%2$i)."),
-								kancil_signal_code(WIFSIGNALED(status)),
-								status
-							);
-							
-							// Mengulangi.
-							NOTICE(_("Mengulangi proses cabang."), 0);
-							break;
-							
-							// kirim_mmap->do_kirim=false;
-							// exit(WIFSIGNALED(status));
-						}else if(WEXITSTATUS(status)) {
-							
-							// Terjadi kesalahan.
-							FAIL(
-								_("Proses cabang berhenti dengan status: %1$s (%2$i)."),
-								kancil_signal_code(WEXITSTATUS(status)),
-								WEXITSTATUS(status)
-								);
-							
-							// Berhenti.
-							// kirim_mmap->do_kirim=false;
-							exit(WEXITSTATUS(status));
-						}else if(WIFEXITED(status)) {
-							
-							// Berhenti dengan normal.
-							DEBUG3(_("Proses cabang selesai."), 0);
-						}else if(WIFCONTINUED(status)) {
-							
-							// MAsih berjalan.
-							DEBUG3(_("Proses cabang sedang berlangsung."), 0);
-						}
-					} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+								
+								// Mengulangi.
+								NOTICE(_("Mengulangi proses cabang."), 0);
+								break;
+								
+								// kirim_mmap->do_kirim=false;
+								// exit(WIFSIGNALED(status));
+							}else if(WEXITSTATUS(status)) {
+								
+								// Terjadi kesalahan.
+								FAIL(
+									_("Proses cabang (PID%1$i) berhenti dengan status: %2$s (%3$i)."),
+									pids[i], kancil_signal_code(WEXITSTATUS(status)),
+									WEXITSTATUS(status)
+									);
+								
+								// Berhenti.
+								// kirim_mmap->do_kirim=false;
+								exit(WEXITSTATUS(status));
+							}else if(WIFEXITED(status)) {
+								
+								// Berhenti dengan normal.
+								DEBUG3(_("Proses cabang (PID%1$i) selesai."), pids[i]);
+							}else if(WIFCONTINUED(status)) {
+								
+								// MAsih berjalan.
+								DEBUG3(_("Proses cabang sedang berlangsung."), 0);
+							}
+						} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+						
+						// Menambah identifikasi.
+						// identifikasi++;
+						// DEBUG1(_("Menyimpan identifikasi %1$i."), identifikasi);
+						// kirim_mmap->identifikasi=identifikasi;
+						// DEBUG1(_("Identifikasi %1$i tersimpan."), kirim_mmap->identifikasi);
+						identifikasi=kirim_mmap->identifikasi;
+						
+						// Menunggu milidetik.
+						// usleep(100);
+					};
+					
+					// Atur ulang sambungan.
+					sambungan=0;
+					
+					// Aktifkan pengawas.
+					pengawas=true;
+					
+				}else{
+					// Tambah.
+					sambungan++;
+					
+					// Identifikasi.
+					identifikasi++;
 				};
 			};
-			// Perkembangan.
-			tampil_info_progres_berkas(
-				PROGRES_KIRIM, berkas,
-				kirim_mmap->ukuran_kirim, kirim_mmap->ukuran_berkas,
-				ukuberkas_panjang
-			);
 			
-			// Menutup.
-			fclose (pberkas);
+			#ifdef KANCIL_NOFORK
+				sambungan=0;
+				identifikasi=kirim_mmap->identifikasi;
+				identifikasi++;
+			#endif
+			
+		};
+		// Perkembangan.
+		tampil_info_progres_berkas(
+			PROGRES_KIRIM, berkas,
+			kirim_mmap->ukuran_kirim, kirim_mmap->ukuran_berkas,
+			ukuberkas_panjang
+		);
+		
+		// Menutup.
+		for(int ibc=0; ibc<sambungan_maksimal;ibc++){
+			if(fclose(pberkas[ibc])!=0){
+				// Gagal.
+				FAIL ( 
+					_("Gagal membuka berkas '%1$s': %2$s (%1$i)."),
+					berkas, strerror(errno), errno
+					);
+				exit(EXIT_FAILURE_IO);
+			};
 		};
 	};
 	

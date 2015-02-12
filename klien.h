@@ -23,7 +23,8 @@
 // Fungsi lokal.
 void info_kancil();
 void signal_callback_handler(int signum);
-void anak_kirim(
+unsigned int anak_kirim(
+	unsigned int identifikasi,
 	FILE *pberkas,
 	struct KIRIMBERKAS *kirim,
 	struct INFOALAMAT *info_alamat,

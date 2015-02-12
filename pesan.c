@@ -310,6 +310,81 @@ char *buat_pesan_peladen(
 	// Hasil.
 	return pesan;
 }
+int ambil_pesan_peladen(
+	char *pesan,
+	size_t panjang_pesan,
+	char** identifikasi_berkas,
+	char** ukuran_berkas,
+	char** ukuran_diterima,
+	char** unix_time
+){
+	
+	// Memeriksa panjang.
+	int panjang = strlen(pesan);
+	
+	// Memeriksa panjang semua.
+	if(panjang>(int)panjang_pesan){
+		// Bila lebih dari ukuran,
+		// keluar dari program.
+		WARN(
+			_("Panjang %1$s (%2$i) terlalu besar. Maksimal %3$i."),
+			_("pesan peladen"),panjang, panjang_pesan
+			);
+		return EXIT_FAILURE_CHUNK;
+	};
+	
+	// Memecah nilai.
+	// Identifikasi||Ukuran berkas||Ukuran diterima||
+	// Waktu UNIX detik[.]Waktu UNIX milidetik||
+	
+	// Memeriksa apakah ada [CR][LF]
+	if (strstr(pesan, "\r\n") == NULL){
+		WARN(_("%1$s tidak sah."),_("Pesan"));
+		return EXIT_FAILURE_CHUNK;
+	}else{
+		char* tok;
+		int panjang_tok=0;
+		tok = strtok (pesan,"\r\n");
+		if (strchr(tok, 0)==NULL){
+			WARN(_("%1$s tidak sah."),_("Pesan"));
+			return EXIT_FAILURE_CHUNK;
+		}else{
+			// Identifikasi.
+			panjang_tok=strlen(tok);
+			strncpy(*identifikasi_berkas,tok,panjang_tok+1);
+			tok = strtok (NULL, "\r\n");
+			if (strchr(tok, 0)==NULL){
+				WARN(_("%1$s tidak sah."),_("Pesan"));
+				return EXIT_FAILURE_CHUNK;
+			}else{
+				// Ukuran berkas.
+				panjang_tok=strlen(tok);
+				strncpy(*ukuran_berkas,tok,panjang_tok+1);
+				tok = strtok (NULL, "\r\n");
+				if (strchr(tok, 0)==NULL){
+					WARN(_("%1$s tidak sah."),_("Pesan"));
+					return EXIT_FAILURE_CHUNK;
+				}else{
+					// Ukuran diterima.
+					panjang_tok=strlen(tok);
+					strncpy(*ukuran_diterima,tok,panjang_tok+1);
+					tok = strtok (NULL, "\r\n");
+					if (strchr(tok, 0)==NULL){
+						WARN(_("%1$s tidak sah."),_("Pesan"));
+						return EXIT_FAILURE_CHUNK;
+					}else{
+						// Waktu unix.
+						panjang_tok=strlen(tok);
+						strncpy(*unix_time,tok,panjang_tok+1);
+					};
+				};
+			};
+		};
+	};
+	
+	// Tidak ada masalah.
+	return EXIT_SUCCESS;
+}
 
 /* pengepala()
  * Pengepala mengambil EMPAT bita pertama dari POTONGAN

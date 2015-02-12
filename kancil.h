@@ -147,6 +147,7 @@
 #endif
 #ifndef MAX_CHUNK_ID
 	#define MAX_CHUNK_ID 65025 // 16-bit.
+	// #define MAX_CHUNK_ID 10 // 16-bit.
 #endif
 
 // Nilai panji.
@@ -161,6 +162,9 @@
 #endif
 #ifndef INVALID_FLAG
 	#define INVALID_FLAG 0
+#endif
+#ifndef UNDEFINED_FLAG
+	#define UNDEFINED_FLAG -1
 #endif
 
 // Ambil struktur.

@@ -8,7 +8,15 @@
 
 #include "klien.h"
 
-void anak_kirim(
+// char bacaberkas(
+	// unsigned int identifikasi,
+	// FILE *pberkas
+// ){
+	// 
+// }
+
+unsigned int anak_kirim(
+	unsigned int identifikasi,
 	FILE *pberkas,
 	struct KIRIMBERKAS *kirim,
 	struct INFOALAMAT *infoalamat,
@@ -19,19 +27,21 @@ void anak_kirim(
 	size_t panjang_pesan=0;
 	
 	// Perilaku.
-	int penunjuk_berkas=0;
+	int status=0;
+	long int penunjuk_berkas=0;
 	int maksimal_coba=aturan.tries;
 	int ulang_tunggu=aturan.waitretry;
-	int urut_maksimal=aturan.maxqueue;
+	// int urut_maksimal=aturan.maxqueue;
 	int urut_tunggu=aturan.waitqueue;
-	bool urut_jangan_tunggu=true;
+	// bool urut_jangan_tunggu=true;
 	unsigned int kelompok_kirim=kirim->kelompok_kirim;
-	char *berkas=kirim->berkas;
+	char *nama_berkas=kirim->berkas;
+	
+	// Identifikasi.
+	bool identifikasi_awal=true;
+	unsigned int identifikasi_sebelumnya=kirim->identifikasi_sebelumnya;
 	
 	// Pengepala Pecahan.
-	bool identifikasi_awal=true;
-	unsigned int identifikasi=kirim->identifikasi;
-	unsigned int identifikasi_sebelumnya=kirim->identifikasi_sebelumnya;
 	int paritas=0;
 	int panji=0;
 	int status_gerbang=0;
@@ -48,19 +58,46 @@ void anak_kirim(
 	memset(pesan, 0, CHUNK_MESSAGE_SIZE);
 	memset(pecahan, 0, MAX_CHUNK_SIZE);
 	
-	// Pesan.
-	if (pesan == NULL){
-		FAIL(_("Gagal mengalokasikan memori."),0);
-		exit(EXIT_FAILURE_MEMORY);
+	// Bila identifikasi
+	// lebih dari MAX_CHUNK_ID,
+	// maka identifikasi adalah NOL.
+	if(identifikasi>MAX_CHUNK_ID){
+		DEBUG1(_("Telah melebihi maksimal identifikasi %1$i."), MAX_CHUNK_ID);
+		DEBUG1(_("Nilai identifikasi adalah %1$i."), identifikasi);
+		
+		// Ke NOL.
+		identifikasi=0;
+		DEBUG1(_("Mengubah identifikasi ke nilai 0."), 0);
+		
+		// Keluar.
+		DEBUG1(_("Tidak melanjutkan pengiriman."), 0);
+		return identifikasi;
 	};
 	
 	// Apakah pertama.
-	if(identifikasi==0){
+	if(kirim->paksa_panji!=UNDEFINED_FLAG){
+		// Memaksa panji.
+		panji=kirim->paksa_panji;
+		kirim->paksa_panji=UNDEFINED_FLAG;
+		
+		// Pesan.
+		DEBUG1(_("Memaksa panji '%1$s'."),arti_panji(panji));
+		
+		// Langsung berhenti bila panji STOP.
+		if(panji==STOP_FLAG){
+			
+			// Mengirim panji STOP
+			// dan keluar dari perulangan.
+			DEBUG1(_("Menghentikan pengulangan pengiriman."), 0);
+			kirim->do_kirim=false;
+		};
+		
+	}else if(identifikasi==0){
 		// Panji.
 		panji=START_FLAG;
 		
 		// Memastikan nama berkas ada.
-		if(!strlen(berkas)){
+		if(!strlen(nama_berkas)){
 			// Kesalahan.
 			FAIL(_("Gagal memperoleh nama berkas."), 0);
 			exit(EXIT_FAILURE_MEMORY);
@@ -72,21 +109,58 @@ void anak_kirim(
 			pesan,
 			CHUNK_MESSAGE_SIZE,
 			kirim->berkas_identifikasi,
-			basename(kirim->berkas),
+			nama_berkas,
 			kirim->ukuran_berkas
 			), CHUNK_MESSAGE_SIZE);
 	// Apakah hampir akhir.
 	}else if(identifikasi==MAX_CHUNK_ID){
 		// Panji.
+		DEBUG1(_("Mengirim panji '%1$s'."),_("Henti"));
+		panji=STOP_FLAG;
+	/*
+	}else if (kirim->ukuran_kirim>kirim->ukuran_berkas){
+		// Panji STOP.
+		DEBUG1(_("Mengirim panji '%1$s'."), _("Henti"));
 		panji=STOP_FLAG;
 		
+		// Hentikan perulangan.
+		// Keluar dari perulangan.
+		DEBUG1(_("Menghentikan pengulangan pengiriman."), 0);
+		kirim->do_kirim=false;
+		*/
 	}else{
 		// Panji.
 		panji=INTRANSFER_FLAG;
 		
+		// Mendapatkan posisi berkas.
+		penunjuk_berkas=0
+			+((long)(kelompok_kirim-1)*(MAX_CHUNK_ID-1)*CHUNK_MESSAGE_SIZE)
+			+((long)identifikasi-1)*(long)CHUNK_MESSAGE_SIZE;
+		
 		// Menggeser penunjuk berkas.
-		penunjuk_berkas=kelompok_kirim*(identifikasi-1)*CHUNK_MESSAGE_SIZE;
-		fseek(pberkas, penunjuk_berkas, SEEK_SET);
+		status=fseek(pberkas, penunjuk_berkas, SEEK_SET);
+		
+		// Memeriksa posisi.
+		if(status<0){
+			FAIL(_("Gagal memindah posisi penunjuk berkas '%1$s': %2$s (%3$i)."), nama_berkas, strerror(errno), errno);
+			exit(EXIT_FAILURE_IO);
+		}else{
+			long posisi_sekarang=ftell(pberkas);
+			if(posisi_sekarang<0){
+				FAIL(_("Gagal mendapatkan posisi penunjuk berkas '%1$s': %2$s (%3$i)."), nama_berkas, strerror(errno), errno);
+				exit(EXIT_FAILURE_IO);
+			}else if(posisi_sekarang!=penunjuk_berkas){
+				FAIL(_("Posisi penunjuk berkas '%1$s' (%2$li) tidak sesuai. Diharapkan: %2$li."), nama_berkas, posisi_sekarang, errno);
+				exit(EXIT_FAILURE_IO);
+			}else{
+				// Berhasil.
+				if(kelompok_kirim>1){
+					DEBUG3(_("Mulai membaca di bita %1$i untuk pesan %2$i kelompok %3$i."), penunjuk_berkas, identifikasi, kelompok_kirim);
+				}else{
+					DEBUG3(_("Mulai membaca di bita %1$i untuk pesan %2$i."), penunjuk_berkas, identifikasi);
+				};
+			};
+		};
 		
 		// Baca berkas untuk pesan.
 		panjang_pesan=fread(pesan, 1, CHUNK_MESSAGE_SIZE, pberkas);
@@ -109,23 +183,24 @@ void anak_kirim(
 				char penyangga_feof[ukuberkas_panjang];
 				INFO(
 					_("Berkas '%1$s' dengan ukuran %2$s (%3$.0lf bita) telah selesai dikirim."),
-					basename(kirim->berkas), readable_fs(kirim->ukuran_berkas, penyangga_feof), kirim->ukuran_berkas
+					nama_berkas, readable_fs(kirim->ukuran_berkas, penyangga_feof), kirim->ukuran_berkas
 					);
 				memset(penyangga_feof, 0, ukuberkas_panjang);
 				
 			}else if(ferror(pberkas)!=0){
-				WARN(_("Gagal membaca berkas '%1$s': %2$s (%3$i)."), basename(kirim->berkas), strerror(errno), errno);
+				WARN(_("Gagal membaca berkas '%1$s': %2$s (%3$i)."), nama_berkas, strerror(errno), errno);
 			}else{
 				WARN(_("Kesalahan berkas yang tidak diketahui: %1$s (%2$i)."), strerror(errno), errno);
 			};
 			
 			// Pesan.
 			DEBUG1(_("Mengirim panji '%1$s'."),_("Henti"));
+			panji=STOP_FLAG;
 			
 			// Mengirim panji STOP
 			// dan keluar dari perulangan.
+			DEBUG1(_("Menghentikan pengulangan pengiriman."), 0);
 			kirim->do_kirim=false;
-			panji=STOP_FLAG;
 		};
 	};
 	
@@ -151,7 +226,7 @@ void anak_kirim(
 	// Pesan.
 	if(kelompok_kirim>1){
 		DEBUG1(
-			_("Mengirim pesan %1$i kelompok %2$i ."),
+			_("Mengirim pesan %1$i kelompok %2$i."),
 			identifikasi, kelompok_kirim);
 	}else{
 		DEBUG1(
@@ -182,6 +257,8 @@ void anak_kirim(
 	
 	// Pesan mentah.
 	DEBUG5(_("Pesan mentah dikirim tersandikan"), tujuan_ency, 0, MAX_CHUNK_SIZE);
+	
+	// ============ /Enkripsi  =======
 	
 	// int panjang_pecahan=0;
 	// Kirim.
@@ -239,6 +316,8 @@ void anak_kirim(
 	memset(pesan, 0, CHUNK_MESSAGE_SIZE);
 	memcpy(pesan, ambil_pesan(pecahan), CHUNK_MESSAGE_SIZE);
 	
+	// ============ /Dekripsi  =======
+	
 	// Periksa.
 	// print_unsigned_array(tujuan_deco, 100);
 	
@@ -260,6 +339,47 @@ void anak_kirim(
 		&r_status_peladen
 		);
 	
+	// Mendapatkan pesan.
+	memcpy(pesan, ambil_pesan(pecahan), CHUNK_MESSAGE_SIZE);
+	
+	// Mendapatkan informasi peladen.
+	char* r_berkas_id;
+	char* berkas_ukuran_str;
+	char* berkas_diterima_str;
+	char* unix_time_str;
+	
+	// Alikasi memori.
+	r_berkas_id=malloc(sizeof(r_berkas_id)* (CHUNK_MESSAGE_SIZE/2));
+	berkas_ukuran_str=malloc(sizeof(berkas_ukuran_str)* (CHUNK_MESSAGE_SIZE/2));
+	berkas_diterima_str=malloc(sizeof(berkas_diterima_str)* (CHUNK_MESSAGE_SIZE/2));
+	unix_time_str=malloc(sizeof(unix_time_str)* (CHUNK_MESSAGE_SIZE/2));
+	
+	// Ambil informasi.
+	status=ambil_pesan_peladen(
+		pesan,
+		CHUNK_MESSAGE_SIZE,
+		&r_berkas_id,
+		&berkas_ukuran_str,
+		&berkas_diterima_str,
+		&unix_time_str
+	);
+	
+	
+	// Ubah nilai.
+	double r_berkas_ukuran=0;
+	double r_berkas_diterima=0;
+	double r_unixtime=0;
+	
+	if(status>0){
+		// Tidak menerima.
+		DEBUG1(_("Tidak memahami Peladen di pecahan %1$i (Status %2$i)."), r_identifikasi, status);
+	}else{
+		// Ubah nilai.
+		r_berkas_ukuran=strtod(berkas_ukuran_str, NULL);
+		r_berkas_diterima=strtod(berkas_diterima_str, NULL);
+		r_unixtime=strtod(unix_time_str, NULL);
+	};
+	
 	// Balasan
 	DEBUG2(_("Balasan: Versi: %1$i."), r_versi);
 	DEBUG2(_("Balasan: Identifikasi: %1$i."), r_identifikasi);
@@ -267,6 +387,32 @@ void anak_kirim(
 	DEBUG2(_("Balasan: Paritas: %1$i."), r_paritas);
 	DEBUG2(_("Balasan: Status Gerbang: %1$s."), arti_status(r_status_gerbang));
 	DEBUG2(_("Balasan: Status Peladen: %1$s."), arti_status(r_status_peladen));
+	DEBUG2(_("Balasan: Identifikasi berkas: %1$s."), r_berkas_id);
+	DEBUG2(_("Balasan: Ukuran berkas: %1$.0f."), r_berkas_ukuran);
+	DEBUG2(_("Balasan: Berkas diterima: %1$.0f."), r_berkas_diterima);
+	DEBUG2(_("Balasan: Waktu Peladen: %1$.06f."), r_unixtime);
+	
+	// Bila berkas yang diterima
+	// telah sama atau lebih besar dari ukuran.
+	if(r_berkas_diterima>=kirim->ukuran_berkas){
+		// Pesan.
+		if(
+			(r_berkas_diterima-kirim->ukuran_berkas) > (double)CHUNK_MESSAGE_SIZE * (aturan.parallel)
+		){
+			WARN("Peladen telah menerima berkas melebihi %1$.0f bita.", r_berkas_diterima-kirim->ukuran_berkas);
+		}else if(r_berkas_diterima>kirim->ukuran_berkas){
+			DEBUG1("Peladen telah menerima berkas melebihi %1$.0f bita.", r_berkas_diterima-kirim->ukuran_berkas);
+		}else{
+			DEBUG1("Peladen telah menerima keseluruhan berkas.", 0);
+		};
+		
+		// Ubah nilai.
+		kirim->ukuran_kirim=r_berkas_diterima;
+		kirim->paksa_panji=STOP_FLAG;
+		
+		// Keluar.
+		return identifikasi;
+	};
 	
 	// Memeriksa hasil.
 	// Bila status gerbang atau peladen adalah NOL.
@@ -292,9 +438,9 @@ void anak_kirim(
 			NOTICE(_("Menunggu %1$i detik untuk mengirim ulang."), ulang_tunggu);
 			sleep(ulang_tunggu);
 		}else if(r_panji==START_FLAG){
-			// Tunggu berkas
-			// adalah seperempat ulang tunggu.
-			int tunggu=ulang_tunggu/2;
+			// Mengunlang pengiriman
+			// informasi berkas.
+			int tunggu=ulang_tunggu;
 			NOTICE(_("Meminta pengiriman ulang informasi berkas."), 0);
 			NOTICE(_("Menunggu %1$i detik untuk mengirim ulang."), tunggu);
 			sleep(tunggu);
@@ -306,14 +452,14 @@ void anak_kirim(
 			// berkas berdasarkan identifikasi.
 			NOTICE(_("Meminta pengiriman ulang pecahan identifikasi '%1$i'."), r_identifikasi);
 			
-			// Mengatur ulang ukuran berkas terkirim.
-			// kirim->ukuran_kirim=0;
+			// Mengatur ulang ukuran berkas terkirim
+			// sesuai dengan ukuran peladen.
+			kirim->ukuran_kirim=r_berkas_diterima;
 		};
 		
 		// Mengirim ulang.
 		NOTICE(_("Percobaan ke-%1$i. Mengulangi pengiriman pecahan %2$i."),kirim->coba, r_identifikasi);
 		identifikasi=r_identifikasi;
-		kirim->identifikasi=identifikasi;
 		
 		// Menambah
 		// percobaan pengiriman.
@@ -323,67 +469,12 @@ void anak_kirim(
 		// Berhasil.
 		DEBUG2(_("Berhasil mengirim ke Gerbang dan Peladen."), 0);
 		
-		// Berhasil.
-		DEBUG4(_("Menghitung kecepatan."), 0);
-		
-		// Beda ukuran.
-		// Kecepatan.
-		double beda_ukuran=(kirim->ukuran_kirim)-(kirim->ukuran_kirim_sebelumnya);
-		double beda_waktu= (current_time(CURRENTTIME_MICROSECONDS) - kirim->waktu_terkirim );
-		double kecepatan = beda_ukuran / beda_waktu;
-		
-		// Pesan.
-		DEBUG4(_("Berhasil menghitung kecepatan."), 0);
-		
-		// Bila minus,
-		// tidak ditampilkan.
-		if(kecepatan<0){
-			DEBUG4(_("Kecepatan bernilai minus."), 0);
-		}else{
-			DEBUG4(_("Berhasil menghitung kecepatan."), 0);
-			
-			// Mendapat informasi.
-			double br_dikirim=kirim->ukuran_kirim;
-			
-			// Mempersiapkan tampilan ukuran.
-			char ukuberkas_dikirim[ukuberkas_panjang];
-			strcpy(ukuberkas_dikirim, readable_fs(br_dikirim, ukuberkas_dikirim));
-			
-			char ukukecepatan[ukuberkas_panjang];
-			if(kecepatan<1){
-				snprintf(ukukecepatan, ukuberkas_panjang, "%1$.04f B", kecepatan);
-			}else{
-				strcpy(ukukecepatan, readable_fs(kecepatan, ukukecepatan));
-			};
-			
-			// Tampilan.
-			PROGRESS(
-				_("Berhasil mengirim %1$s (%2$.0lf bita) (%3$s/s)."),
-				ukuberkas_dikirim, br_dikirim, ukukecepatan
-			);
-			
-			// Bersihkan.
-			DEBUG4(_("Membersihkan penyangga kecepatan."), 0);
-			memset(ukuberkas_dikirim, 0, ukuberkas_panjang);
-			memset(ukukecepatan, 0, ukuberkas_panjang);
-		
-		};
-		
-		// Menyimpan waktu sekarang.
-		DEBUG4(_("Menyimpan waktu sekarang."), 0);
-		kirim->waktu_terkirim=current_time(CURRENTTIME_MICROSECONDS);
-		DEBUG4(_("Selesai menyimpan waktu sekarang."), 0);
-		
-		// Menyimpan ukuran sekarang.
-		DEBUG4(_("Menyimpan ukuran sekarang."), 0);
-		kirim->ukuran_kirim_sebelumnya=kirim->ukuran_kirim;
-		DEBUG4(_("Selesai menyimpan ukuran sekarang."), 0);
+		// Menambahkan.
+		identifikasi++;
+		DEBUG2(_("Menambah identifikasi menjadi %1$i."), identifikasi);
 		
 		// Bila belum selesai.
 		if(kirim->ukuran_kirim<=kirim->ukuran_berkas){
-			// Menambahkan.
-			identifikasi++;
-			kirim->identifikasi=identifikasi;
 			
 			// Bila lebih dari spesifikasi,
 			// mengulangi dari NOL.
@@ -404,7 +495,7 @@ void anak_kirim(
 				kirim->kelompok_kirim=kelompok_kirim;
 				
 				// Pesan.
-				NOTICE(_("Menunggu %1$i detik untuk melanjutkan."), urut_tunggu);
+				DEBUG1(_("Menunggu %1$i detik untuk melanjutkan."), urut_tunggu);
 				DEBUG1(_("Kelompok pecahan selanjutnya adalah '%1$i'."), kelompok_kirim);
 				
 				// Tunggu.
@@ -412,14 +503,15 @@ void anak_kirim(
 				
 				// Mengulangi identifikasi.
 				identifikasi=0;
-				kirim->identifikasi=identifikasi;
 			};
 		}else{
-			kirim->do_kirim=false;
+			// DEBUG1(_("Menghentikan pengulangan pengiriman."), 0);
+			// kirim->do_kirim=false;
 		};
-		// kirim->coba=1;
+		kirim->coba=1;
 	};
 	
+	/*
 	// Bila lebih dari maksimal kali kirim,
 	// menunggu sebanyak waktu untuk mengirim ulang.
 	if(kirim->urut_kali>=urut_maksimal && !urut_jangan_tunggu){
@@ -438,9 +530,14 @@ void anak_kirim(
 		sleep(urut_tunggu);
 		kirim->urut_kali=0;
 	};
+	*/
 	
 	// Memastikan nilai kelompok benar.
 	kirim->kelompok_kirim=kelompok_kirim;
+	
+	// Mengembalikan nilai identifikasi.
+	return identifikasi;
+			// kirim->identifikasi=identifikasi;
 	
 	// Mengembalikan data.
 	// kirim->berkas=berkas;

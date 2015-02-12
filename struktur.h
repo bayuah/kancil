@@ -1,6 +1,6 @@
 /*
  * `struktur.h`
- * Definisi struktur kancil.
+ * Definisi struktur data Kancil.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
  * HakCipta: 2014
  * Lisensi: lihat LICENCE.txt
@@ -17,15 +17,14 @@ struct GLOBAL_KANCIL {
 	bool show_info;
 	bool show_debug1;
 	bool show_debug2;
-	bool show_debug3;
+	bool show_debug3; 
 	bool show_debug4;
 	bool show_debug5;
 	int tries;
 	int waitretry;
-	int maxqueue;
 	int waitqueue;
-	int rsa_datasize;
-	bool nowaitqueue;
+	int parallel;
+	char* completedir;
 	char* tempdir;
 } GLOBAL_KANCIL;
 #define kancil GLOBAL_KANCIL
@@ -55,15 +54,16 @@ struct GLOBAL_KANCIL {
 #endif
 
 struct INFOALAMAT{
-	char inang           [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_STR];
-	int ipcount          [INFOALAMAT_MAX_ID];
-	int ai_family        [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
-	int ai_socktype      [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
-	int ai_protocol      [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
-	unsigned int ai_addrlen [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
-	char ai_canonname    [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP][INFOALAMAT_MAX_STR];
-	unsigned short sockaddr_sa_family [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP];
-	char sockaddr_sa_data             [INFOALAMAT_MAX_ID][INFOALAMAT_MAX_IP][14];
+	char inang           [INFOALAMAT_MAX_ID+1][INFOALAMAT_MAX_STR];
+	int ipcount          [INFOALAMAT_MAX_ID+1];
+	int ai_family        [INFOALAMAT_MAX_ID+1][INFOALAMAT_MAX_IP];
+	int ai_socktype      [INFOALAMAT_MAX_ID+1][INFOALAMAT_MAX_IP];
+	int ai_protocol      [INFOALAMAT_MAX_ID+1][INFOALAMAT_MAX_IP];
+	unsigned int ai_addrlen [INFOALAMAT_MAX_ID+1][INFOALAMAT_MAX_IP];
+	char ai_canonname    [INFOALAMAT_MAX_ID+1][INFOALAMAT_MAX_IP][INFOALAMAT_MAX_STR];
+	unsigned short sockaddr_sa_family [INFOALAMAT_MAX_ID+1][INFOALAMAT_MAX_IP];
+	char sockaddr_sa_data             [INFOALAMAT_MAX_ID+1][INFOALAMAT_MAX_IP][14];
+	bool kunci;
 } INFOALAMAT;
 
 // Kancil.
@@ -77,12 +77,24 @@ struct INFOALAMAT{
 	#define BERKAS_MAX_STR 255
 #endif
 
+// Terkirim.
+#ifndef BERKAS_ID_NOTTRANSFERED
+	#define BERKAS_ID_NOTTRANSFERED 0
+#endif
+#ifndef BERKAS_ID_INTRANSFER
+	#define BERKAS_ID_INTRANSFER 1
+#endif
+#ifndef BERKAS_ID_TRANSFERED
+	#define BERKAS_ID_TRANSFERED 2
+#endif
+
 // Kirim.
 struct KIRIMBERKAS{
 	unsigned int identifikasi;
 	unsigned int identifikasi_sebelumnya;
 	unsigned int kelompok_kirim;
 	int urut_kali;
+	int paksa_panji;
 	double ukuran_berkas;
 	double ukuran_kirim;
 	double ukuran_kirim_sebelumnya;
@@ -90,10 +102,13 @@ struct KIRIMBERKAS{
 	char hostname[BERKAS_MAX_STR];
 	char portno[BERKAS_MAX_STR];
 	char berkas[BERKAS_MAX_STR];
+	char berkas_lajur[BERKAS_MAX_STR];
 	char berkas_identifikasi[BERKAS_MAX_STR];
-	bool data_terkirim[MAX_CHUNK_ID];
+	int data_terkirim[MAX_CHUNK_ID];
 	double waktu_terkirim;
+	double kecepatan;
 	int coba;
+	bool kunci;
 } KIRIMBERKAS;
 
 // Berkas.

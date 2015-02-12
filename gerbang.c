@@ -31,10 +31,7 @@ int main(int argc, char *argv[]){
 	aturan.tempdir="tmp";
 	aturan.tries=5;
 	aturan.waitretry=5;
-	aturan.maxqueue=15000;
 	aturan.waitqueue=30;
-	aturan.rsa_datasize=204;
-	aturan.nowaitqueue=true;
 	
 	// Informasi Kancil.
 	info_kancil();

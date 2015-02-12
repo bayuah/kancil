@@ -109,76 +109,106 @@ void throw_error(int type, const char * file, const int line,
 	strcpy(filestr, file);
 	// filestr = remove_ext (filestr, '.', DIR_SEPARATOR);
 	
+	int pid=getpid();
+	
 	// Pilih.
 	switch(type){
 		case 0:
 			printf(
-				"%s:%d %s: %s\r\n",
-				filestr,
+				"PID%i %s:%d %s: %s\r\n",
+				pid, filestr,
 				line, _("TES"), penyangga
 				);
 		break;
 		case 1:
-			if(boleh[1])
-			fprintf(
-				stderr, "%s:%d %s: %s\r\n",
-				filestr,
-				line, _("GALAT"), penyangga
-				);
+			if(boleh[1]){
+				fprintf(
+					stderr, "%s:%d %s: %s\r\n",
+					filestr,
+					line, _("GALAT"), penyangga
+					);
+				printf(
+					"PID%i %s:%d %s: %s\r\n",
+					pid, filestr,
+					line, _("GALAT"), penyangga
+					);
+			};
 		break;
 		case 2:
-			if(boleh[2])
-			fprintf(
-				stderr, "%s: %s: %s\r\n",
-				filestr,
-				_("PERINGATAN"), penyangga
-				);
+			if(boleh[2]){
+				fprintf(
+					stderr, "%s: %s: %s\r\n",
+					filestr,
+					_("PERINGATAN"), penyangga
+					);
+				// printf(
+					// "%s: %s: %s\r\n",
+					// filestr,
+					// _("PERINGATAN"), penyangga
+					// );
+				printf(
+					"PID%i %s: %s: %s\r\n",
+					pid, filestr,
+					_("PERINGATAN"), penyangga
+					);
+			};
 		break;
 		case 3:
 			if(boleh[3])
+			// printf(
+				// "%s: %s: %s\r\n",
+				// filestr,
+				// _("MAKLUMAT"),
+				// penyangga
+				// );
 			printf(
-				"%s: %s: %s\r\n",
-				filestr,
+				"PID%i %s: %s: %s\r\n",
+				pid, filestr,
 				_("MAKLUMAT"),
 				penyangga
 				);
 		break;
 		case 4:
 			if(boleh[4])
+			// printf(
+				// "%s\r\n",
+				// penyangga
+				// );
 			printf(
-				"%s\r\n",
-				penyangga
+				"PID%i %s:%d %s: %s\r\n",
+				pid, filestr,
+				line, _("INFO"), penyangga
 				);
 		break;
 		case 5:
 			if(boleh[5])
 			printf(
-				"%s:%d %s: %s\r\n",
-				filestr,
+				"PID%i %s:%d %s: %s\r\n",
+				pid, filestr,
 				line, _("KEKUTU 1"), penyangga
 				);
 		break;
 		case 6:
 			if(boleh[6])
 			printf(
-				"%s:%d %s: %s\r\n",
-				filestr,
+				"PID%i %s:%d %s: %s\r\n",
+				pid, filestr,
 				line, _("KEKUTU 2"), penyangga
 				);
 		break;
 		case 7:
 			if(boleh[7])
 			printf(
-				"%s:%d %s: %s\r\n",
-				filestr,
+				"PID%i %s:%d %s: %s\r\n",
+				pid, filestr,
 				line, _("KEKUTU 3"), penyangga
 				);
 		break;
 		case 8:
 			if(boleh[8])
 			printf(
-				"%s:%d %s: %s\r\n",
-				filestr,
+				"PID%i %s:%d %s: %s\r\n",
+				pid, filestr,
 				line, _("KEKUTU 4"), penyangga
 				);
 		break;
