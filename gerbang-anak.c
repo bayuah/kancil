@@ -77,26 +77,33 @@ void anak_gerbang(
 	DEBUG4(_("Panjang pesan mentah diterima: %1$i."), diterima);
 	DEBUG5(_("Pesan mentah diterima"), penyangga, 0, diterima);
 	
-	// Memecahkan pesan.
-	memcpy(pesan_deco, penyangga, ENCRYPTED_CONTAINER_SIZE);
-	memset(tujuan_deco, 0, MAX_CHUNK_SIZE+1);
-	diterima=rsa_decrypt(
-		pesan_deco,
-		diterima,
-		default_rsa_privatekey(),
-		tujuan_deco,
-		RSA_PKCS1_OAEP_PADDING
-	);
+	// Dekripsi.
+	if(!aturan.rawtransfer){
 	
-	// Buang.
-	memset(pesan_deco, 0, ENCRYPTED_CONTAINER_SIZE);
-	
-	// Pesan mentah.
-	DEBUG4(_("Panjang terpecahkan: %1$i."), diterima);
-	DEBUG5(_("Pesan mentah diterima terpecahkan"), tujuan_deco, 0, diterima);
-	
-	// Penugasan.
-	memcpy(penyangga, tujuan_deco, MAX_CHUNK_SIZE);
+		// Memecahkan pesan.
+		memcpy(pesan_deco, penyangga, ENCRYPTED_CONTAINER_SIZE);
+		memset(tujuan_deco, 0, MAX_CHUNK_SIZE+1);
+		diterima=rsa_decrypt(
+			pesan_deco,
+			diterima,
+			default_rsa_privatekey(),
+			tujuan_deco,
+			RSA_PKCS1_OAEP_PADDING
+		);
+		
+		// Buang.
+		memset(pesan_deco, 0, ENCRYPTED_CONTAINER_SIZE);
+		
+		// Pesan mentah.
+		DEBUG4(_("Panjang terpecahkan: %1$i."), diterima);
+		DEBUG5(_("Pesan mentah diterima terpecahkan"), tujuan_deco, 0, diterima);
+		
+		// Penugasan.
+		memcpy(penyangga, tujuan_deco, MAX_CHUNK_SIZE);
+		
+		// Buang.
+		memset(tujuan_deco, 0, MAX_CHUNK_SIZE+1);
+	};
 	
 	// Membaca pesan.
 	// Mendapatkan pengepala.
@@ -158,42 +165,48 @@ void anak_gerbang(
 			
 			int panjang_penyangga;
 			
-			// Pesan mentah.
-			DEBUG5(_("Pesan mentah dikirim"), penyangga, 0, MAX_CHUNK_SIZE);
 			
-			// Penyandian.
-			memset(pesan_ency, 0, MAX_CHUNK_SIZE+1);
-			memcpy(pesan_ency, penyangga, MAX_CHUNK_SIZE);
-			memset(tujuan_ency, 0, ENCRYPTED_CONTAINER_SIZE+1);
-			panjang_penyangga=rsa_encrypt(
-				pesan_ency,
-				MAX_CHUNK_SIZE+1,
-				default_rsa_pubkey(),
-				tujuan_ency,
-				RSA_PKCS1_OAEP_PADDING
-			);
-			
-			// Pesan mentah.
-			DEBUG5(_("Pesan mentah dikirim tersandikan"), tujuan_ency, 0, panjang_penyangga);
+			// Enkripsi.
+			if(!aturan.rawtransfer){
+				// Pesan mentah.
+				DEBUG5(_("Pesan mentah dikirim"), penyangga, 0, MAX_CHUNK_SIZE);
+				
+				// Penyandian.
+				memset(pesan_ency, 0, MAX_CHUNK_SIZE+1);
+				memcpy(pesan_ency, penyangga, MAX_CHUNK_SIZE);
+				memset(tujuan_ency, 0, ENCRYPTED_CONTAINER_SIZE+1);
+				panjang_penyangga=rsa_encrypt(
+					pesan_ency,
+					MAX_CHUNK_SIZE+1,
+					default_rsa_pubkey(),
+					tujuan_ency,
+					RSA_PKCS1_OAEP_PADDING
+				);
+				
+				// Pesan mentah.
+				DEBUG5(_("Pesan mentah dikirim tersandikan"), tujuan_ency, 0, panjang_penyangga);
+				
+				// Salin.
+				memcpy(penyangga, tujuan_ency, panjang_penyangga);
+				
+			}else{
+				panjang_penyangga=MAX_CHUNK_SIZE;
+			};
 			
 			// Kirim.
 			INFO(_("Menghubungi Peladen."), 0);
 			int panjang_diterima;
-			memcpy(penyangga, kirimdata(
-				(char*)tujuan_ency,
+			char *kirim_data=kirimdata(
+				penyangga,
 				panjang_penyangga,
 				hostname,
 				portno,
 				infoalamat,
 				&panjang_diterima
-			), ENCRYPTED_CONTAINER_SIZE);
-			
-			// Pesan mentah.
-			DEBUG4(_("Panjang pesan mentah diterima: %1$i"), panjang_penyangga);
-			DEBUG5(_("Pesan mentah diterima"), penyangga, 0, panjang_penyangga);
+			);
 			
 			// Bila terjadi kesalahan.
-			if(penyangga == NULL){
+			if(kirim_data == NULL){
 				// Pesan kesalahan.
 				FAIL(_("Kegagalan %1$s."), _("Soket"));
 				strcpy(pesan, "Gerbang");
@@ -209,34 +222,45 @@ void anak_gerbang(
 				break;
 			};
 			
-			// ============= Dekripsi  =======
-			
-			// Pemecah sandi.
-			memcpy(pesan_deco, penyangga, ENCRYPTED_CONTAINER_SIZE);
-			memset(tujuan_deco, 0, MAX_CHUNK_SIZE+1);
-			panjang_penyangga=rsa_decrypt(
-				pesan_deco,
-				panjang_diterima,
-				default_rsa_privatekey(),
-				tujuan_deco,
-				RSA_PKCS1_OAEP_PADDING
-			);
-			
-			// Buang.
-			memset(pesan_deco, 0, ENCRYPTED_CONTAINER_SIZE);
-			
-			// Periksa.
-			// print_unsigned_array(tujuan_deco, 100);
+			// Salin.
+			memcpy(penyangga, kirim_data, ENCRYPTED_CONTAINER_SIZE);
 			
 			// Pesan mentah.
-			DEBUG4(_("Panjang pesan mentah diterima terpecahkan: %1$i"), panjang_penyangga);
-			DEBUG5(_("Pesan mentah diterima terpecahkan"), tujuan_deco, 0, panjang_penyangga);
+			DEBUG4(_("Panjang pesan mentah diterima: %1$i"), panjang_penyangga);
+			DEBUG5(_("Pesan mentah diterima"), penyangga, 0, panjang_penyangga);
 			
-			// Ubah.
-			memcpy(penyangga, tujuan_deco, MAX_CHUNK_SIZE);
 			
-			// Buang.
-			memset(tujuan_deco, 0, MAX_CHUNK_SIZE+1);
+			// ============= Dekripsi  =======
+			
+			// Dekripsi.
+			if(!aturan.rawtransfer){
+				// Pemecah sandi.
+				memcpy(pesan_deco, penyangga, ENCRYPTED_CONTAINER_SIZE);
+				memset(tujuan_deco, 0, MAX_CHUNK_SIZE+1);
+				panjang_penyangga=rsa_decrypt(
+					pesan_deco,
+					panjang_diterima,
+					default_rsa_privatekey(),
+					tujuan_deco,
+					RSA_PKCS1_OAEP_PADDING
+				);
+				
+				// Buang.
+				memset(pesan_deco, 0, ENCRYPTED_CONTAINER_SIZE);
+				
+				// Periksa.
+				// print_unsigned_array(tujuan_deco, 100);
+				
+				// Pesan mentah.
+				DEBUG4(_("Panjang pesan mentah diterima terpecahkan: %1$i"), panjang_penyangga);
+				DEBUG5(_("Pesan mentah diterima terpecahkan"), tujuan_deco, 0, panjang_penyangga);
+				
+				// Ubah.
+				memcpy(penyangga, tujuan_deco, MAX_CHUNK_SIZE);
+				
+				// Buang.
+				memset(tujuan_deco, 0, MAX_CHUNK_SIZE+1);
+			};
 			
 			// Mendapatkan pengepala.
 			// Respons.
@@ -354,28 +378,37 @@ void anak_gerbang(
 	DEBUG5(_("Pesan mentah dikirim"), penyangga, 0, CHUNK_HEADER_SIZE);
 	
 	// ============= Enkripsi  =======
-	memset(pesan_ency, 0, MAX_CHUNK_SIZE+1);
-	memcpy(pesan_ency, penyangga, MAX_CHUNK_SIZE);
-	
-	// Pesan mentah.
-	DEBUG5(_("Pesan mentah dikirim terenkripsi"), pesan_ency, 0, MAX_CHUNK_SIZE);
-	
-	// Enkripsi.
-	memset(tujuan_ency, 0, ENCRYPTED_CONTAINER_SIZE+1);
-	int panjang_penyangga=rsa_encrypt(
-		pesan_ency,
-		MAX_CHUNK_SIZE,
-		default_rsa_pubkey(),
-		tujuan_ency,
-		RSA_PKCS1_OAEP_PADDING
-	);
-	
-	// Pesan mentah.
-	DEBUG4(_("Panjang pesan mentah dikirim tersandikan: %1$i."), panjang_penyangga);
-	DEBUG5(_("Pesan mentah dikirim tersandikan"), tujuan_ency, 0, panjang_penyangga);
+	int panjang_penyangga;
+	if(!aturan.rawtransfer){
+		memset(pesan_ency, 0, MAX_CHUNK_SIZE+1);
+		memcpy(pesan_ency, penyangga, MAX_CHUNK_SIZE);
+		memset(penyangga, 0, MAX_CHUNK_SIZE+1);
+		
+		// Pesan mentah.
+		DEBUG5(_("Pesan mentah dikirim terenkripsi"), pesan_ency, 0, MAX_CHUNK_SIZE);
+		
+		// Enkripsi.
+		memset(tujuan_ency, 0, ENCRYPTED_CONTAINER_SIZE+1);
+		panjang_penyangga=rsa_encrypt(
+			pesan_ency,
+			MAX_CHUNK_SIZE,
+			default_rsa_pubkey(),
+			tujuan_ency,
+			RSA_PKCS1_OAEP_PADDING
+		);
+		
+		// Pesan mentah.
+		DEBUG4(_("Panjang pesan mentah dikirim tersandikan: %1$i."), panjang_penyangga);
+		DEBUG5(_("Pesan mentah dikirim tersandikan"), tujuan_ency, 0, panjang_penyangga);
+		
+		// Salin.
+		memcpy(penyangga, tujuan_ency, panjang_penyangga);
+	}else{
+		panjang_penyangga=MAX_CHUNK_SIZE;
+	};
 	
 	// Balasan.
-	if (!sendall(sock, (char*)tujuan_ency, &panjang_penyangga)){
+	if (!sendall(sock, penyangga, &panjang_penyangga)){
 	// if (!sendall(sock, "peladen", &len)){
 		FAIL(_("Kesalahan dalam menulis ke soket: %1$s (%2$i)."),strerror(errno), errno);
 		exit(EXIT_FAILURE_SOCKET);

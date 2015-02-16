@@ -11,6 +11,8 @@
 
 // Fungsi.
 bool sendall(int s, char *buf, int *len);
+int getaddrfamily(const char *addr);
+bool is_ipaddrs(char *str);
 char *kirimdata(
 	char* pesan,
 	int panjang_pesan,

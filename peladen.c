@@ -8,7 +8,7 @@
 
 #include "peladen.h"
 
-int main(/*int argc, char *argv[]*/){
+int main(int argc, char *argv[]){
 	// Menugaskan penangan sinyal.
 	signal(SIGINT, signal_callback_handler);
 	int status;
@@ -17,6 +17,20 @@ int main(/*int argc, char *argv[]*/){
 	setlocale(LC_ALL,"");
 	bindtextdomain("kancil", "./locale");
 	textdomain("kancil");
+	
+	// Info kancil.
+	infokancil.executable=basename(argv[0]);
+	infokancil.progname=PROGNAME;
+	infokancil.progcode=PROGCODE;
+	infokancil.version_major=__VERSION_MAJOR,
+	infokancil.version_minor=__VERSION_MINOR,
+	infokancil.version_patch=__VERSION_PATCH,
+	infokancil.built_number=__BUILT_NUMBER,
+	infokancil.built_time=__BUILT_TIME;
+	infokancil.compile_mode=COMPILE_MODE;
+	infokancil.compiler_machine=STRINGIZE_VALUE_OF(COMPILER_MACHINE);
+	infokancil.compiler_version=STRINGIZE_VALUE_OF(COMPILER_VERSION);
+	infokancil.compiler_flags=STRINGIZE_VALUE_OF(COMPILER_FLAGS);
 	
 	// Aturan umum.
 	aturan.show_error=true;
@@ -29,11 +43,15 @@ int main(/*int argc, char *argv[]*/){
 	aturan.show_debug3=false;
 	aturan.show_debug4=false;
 	aturan.show_debug5=false;
-	aturan.completedir="complete";
-	aturan.tempdir="tmp";
+	strcpy(aturan.completedir, "complete");
+	strcpy(aturan.tempdir, "tmp");
+	aturan.rawtransfer=true;
 	
-	// Informasi Kancil.
-	info_kancil();
+	// Urai argumen.
+	urai_argumen(argc, argv);
+	
+	// Informasi versi.
+	info_versi();
 	
 	// Berbagi memori.
 	int berbagi_ukuran = 1024 * 1024 * 256; //256 mb
@@ -269,49 +287,6 @@ void signal_callback_handler(int signum){
 	
 	// Mematikan.
 	exit(signum);
-}
-/*
- * Informasi kancil.
- */
-void info_kancil(){
-	char* BUILT_VERSION;
-	BUILT_VERSION=malloc(sizeof(BUILT_VERSION)*12);
-	snprintf(BUILT_VERSION, sizeof(BUILT_VERSION)*12,
-		"%1$i.%2$i.%3$i.%4$i-%5$s",
-		__VERSION_MAJOR,
-		__VERSION_MINOR,
-		__VERSION_PATCH,
-		__BUILT_NUMBER,
-		COMPILE_MODE
-	);
-	
-	time_t BUILT_TIME;
-	char BUILT_TIME_STR[50];
-	struct tm *lcltime;
-	BUILT_TIME=__BUILT_TIME;
-	lcltime = localtime ( &BUILT_TIME );
-	strftime(BUILT_TIME_STR, sizeof(BUILT_TIME_STR), "%c", lcltime);
-	
-	// Awal tampil.
-	printf("%1$s (%2$s).\n", PROGNAME, BUILT_VERSION);
-	printf(_("Dibangun pada %1$s. Protokol versi %2$i."), BUILT_TIME_STR, PROTOCOL_VERSION );
-	printf("\n");
-	
-	// Informasi pembangun.
-	#ifdef COMPILER_MACHINE
-		printf(_("Dibuat di %1$s."), STRINGIZE_VALUE_OF(COMPILER_MACHINE));
-		#ifdef COMPILER_MACHINE
-			printf(" ");
-			printf(_("Versi pembangun %1$s."), STRINGIZE_VALUE_OF(COMPILER_VERSION));
-		#endif
-		printf("\n");
-	#endif
-	#ifdef COMPILER_FLAGS
-		printf(_("Panji pembangun:"));
-		printf(_("\n%1$s\n"), STRINGIZE_VALUE_OF(COMPILER_FLAGS));
-	#endif
-	
-	free(BUILT_VERSION);
 }
 
 /*

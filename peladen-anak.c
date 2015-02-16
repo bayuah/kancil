@@ -58,28 +58,32 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 			DEBUG4(_("Panjang pesan mentah diterima: %1$i."), diterima);
 			DEBUG5(_("Pesan mentah diterima"), penyangga, 0, diterima);
 			
-			// Memecahkan pesan.
-			unsigned char pesan_deco[ENCRYPTED_CONTAINER_SIZE+1];
-			memcpy(pesan_deco, penyangga, ENCRYPTED_CONTAINER_SIZE);
-			unsigned char tujuan_deco[MAX_CHUNK_SIZE+1];
-			diterima=rsa_decrypt(
-				pesan_deco,
-				diterima,
-				default_rsa_privatekey(),
-				tujuan_deco,
-				RSA_PKCS1_OAEP_PADDING
-			);
+			// Bila terenkripsi.
+			if(!aturan.rawtransfer){
 			
-			// Buang.
-			memset(pesan_deco, 0, ENCRYPTED_CONTAINER_SIZE);
+				// Memecahkan pesan.
+				unsigned char pesan_deco[ENCRYPTED_CONTAINER_SIZE+1];
+				memcpy(pesan_deco, penyangga, ENCRYPTED_CONTAINER_SIZE);
+				unsigned char tujuan_deco[MAX_CHUNK_SIZE+1];
+				diterima=rsa_decrypt(
+					pesan_deco,
+					diterima,
+					default_rsa_privatekey(),
+					tujuan_deco,
+					RSA_PKCS1_OAEP_PADDING
+				);
+				
+				// Buang.
+				memset(pesan_deco, 0, ENCRYPTED_CONTAINER_SIZE);
+				
+				// Pesan mentah.
+				DEBUG4(_("Panjang terpecahkan: %1$i."), diterima);
+				DEBUG5(_("Pesan mentah diterima terpecahkan"), tujuan_deco, 0, diterima);
 			
-			// Pesan mentah.
-			DEBUG4(_("Panjang terpecahkan: %1$i."), diterima);
-			DEBUG5(_("Pesan mentah diterima terpecahkan"), tujuan_deco, 0, diterima);
-			
-			// print_unsigned_array(tujuan_deco, 20);
-			// Penugasan.
-			memcpy(penyangga, tujuan_deco, MAX_CHUNK_SIZE);
+				// print_unsigned_array(tujuan_deco, 20);
+				// Penugasan.
+				memcpy(penyangga, tujuan_deco, MAX_CHUNK_SIZE);
+			};
 			
 			// Membaca pesan.
 			// Mendapatkan pengepala.
@@ -166,11 +170,15 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 						if(file_exist(berkas_lajur_tmp)){
 							// Memeriksa ukuran.
 							berkas->ofset=fsize(berkas_lajur_tmp);
-							TEST(_("Berkas '%1$s' ditemukan dengan ukuran %2$.0f bita."), berkas_id, berkas->ofset);
+							DEBUG1(_("Berkas '%1$s' ditemukan dengan ukuran %2$.0f bita."), berkas_id, berkas->ofset);
 						}else{
 							berkas->ofset=0;
-							TEST(_("Berkas '%1$s' tidak ditemukan."), 0);
+							DEBUG1(_("Berkas '%1$s' tidak ditemukan."), 0);
 						};
+						
+						// Atur ulang isi.
+						memset(berkas->data_pesan, 0, sizeof(berkas->data_pesan[0][0])*MAX_CHUNK_ID*(CHUNK_MESSAGE_SIZE+1));
+						memset(berkas->data_terima, 0, sizeof(berkas->data_terima[0])*MAX_CHUNK_ID);
 						
 						// Pesan.
 						char ukuberkas[ukuberkas_panjang];
@@ -507,28 +515,36 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 	// Pesan.
 	DEBUG5(_("Pesan mentah dikirim"), penyangga, 0, CHUNK_HEADER_SIZE);
 	
-	// Penyandian.
-	unsigned char* pesan_ency=(unsigned char*)penyangga;
-	
-	// Pesan mentah.
-	DEBUG5(_("Pesan mentah dikirim terenkripsi"), pesan_ency, 0, MAX_CHUNK_SIZE);
-	
-	unsigned char tujuan_ency[ENCRYPTED_CONTAINER_SIZE];
+	// Enkripsi.
 	int panjang_pecahan;
-	panjang_pecahan=rsa_encrypt(
-		pesan_ency,
-		MAX_CHUNK_SIZE,
-		default_rsa_pubkey(),
-		tujuan_ency,
-		RSA_PKCS1_OAEP_PADDING
-	);
-	
-	// Pesan mentah.
-	DEBUG4(_("Panjang pesan mentah dikirim tersandikan: %1$i."), panjang_pecahan);
-	DEBUG5(_("Pesan mentah dikirim tersandikan"), tujuan_ency, 0, panjang_pecahan);
+	if(!aturan.rawtransfer){
+		unsigned char pesan_ency[MAX_CHUNK_SIZE+1];
+		memset(pesan_ency, 0, MAX_CHUNK_SIZE+1);
+		memcpy(pesan_ency, penyangga, MAX_CHUNK_SIZE);
+		
+		// Penyandian.
+		unsigned char tujuan_ency[ENCRYPTED_CONTAINER_SIZE];
+		panjang_pecahan=rsa_encrypt(
+			pesan_ency,
+			MAX_CHUNK_SIZE,
+			default_rsa_pubkey(),
+			tujuan_ency,
+			RSA_PKCS1_OAEP_PADDING
+		);
+		
+		// Pesan mentah.
+		DEBUG4(_("Panjang pesan mentah dikirim tersandikan: %1$i."), panjang_pecahan);
+		DEBUG5(_("Pesan mentah dikirim tersandikan"), tujuan_ency, 0, panjang_pecahan);
+		
+		// Salin.
+		memcpy(penyangga, tujuan_ency, panjang_pecahan);
+		
+	}else{
+		panjang_pecahan=MAX_CHUNK_SIZE;
+	};
 	
 	// Balasan.
-	if (!sendall(sock, (char*)tujuan_ency, &panjang_pecahan)){
+	if (!sendall(sock, penyangga, &panjang_pecahan)){
 	// if (!sendall(sock, "peladen", &len)){
 		FAIL(_("Kesalahan dalam menulis ke soket: %1$s (%2$i)."),strerror(errno), errno);
 		exit(EXIT_FAILURE_SOCKET);

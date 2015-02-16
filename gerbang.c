@@ -18,6 +18,20 @@ int main(int argc, char *argv[]){
 	bindtextdomain("kancil", "./locale");
 	textdomain("kancil");
 	
+	// Info kancil.
+	infokancil.executable=basename(argv[0]);
+	infokancil.progname=PROGNAME;
+	infokancil.progcode=PROGCODE;
+	infokancil.version_major=__VERSION_MAJOR,
+	infokancil.version_minor=__VERSION_MINOR,
+	infokancil.version_patch=__VERSION_PATCH,
+	infokancil.built_number=__BUILT_NUMBER,
+	infokancil.built_time=__BUILT_TIME;
+	infokancil.compile_mode=COMPILE_MODE;
+	infokancil.compiler_machine=STRINGIZE_VALUE_OF(COMPILER_MACHINE);
+	infokancil.compiler_version=STRINGIZE_VALUE_OF(COMPILER_VERSION);
+	infokancil.compiler_flags=STRINGIZE_VALUE_OF(COMPILER_FLAGS);
+	
 	// Aturan umum.
 	aturan.show_error=true;
 	aturan.show_warning=true;
@@ -28,19 +42,18 @@ int main(int argc, char *argv[]){
 	aturan.show_debug3=false;
 	aturan.show_debug4=false;
 	aturan.show_debug5=false;
-	aturan.tempdir="tmp";
+	strcpy(aturan.tempdir, "tmp");
 	aturan.tries=5;
 	aturan.waitretry=5;
 	aturan.waitqueue=30;
+	aturan.rawtransfer=true;
+	strcpy(aturan.listening,"5001");
 	
-	// Informasi Kancil.
-	info_kancil();
+	// Urai argumen.
+	urai_argumen(argc, argv);
 	
-	// Mendapatkan argumen.
-	if (argc < 4) {
-		printf(_("Gunakan %s <porta> <inang> <porta>.\n"), argv[0]);
-		exit(EXIT_FAILURE_ARGS);
-	};
+	// Informasi versi.
+	info_versi();
 	
 	// Pengirim.
 	// Berbagi memori.
@@ -119,7 +132,7 @@ int main(int argc, char *argv[]){
 	
 	// Membangun struktur soket.
 	memset((char *) &serv_addr, 0, sizeof(serv_addr));
-	portno = atoi(argv[1]);
+	portno = atoi(aturan.listening);
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(portno);
@@ -157,10 +170,6 @@ int main(int argc, char *argv[]){
 	clilen = sizeof(cli_addr);
 	INFO(_("Mendengarkan porta %1$i."), portno);
 	
-	// Nama inang dan porta.
-	char *inang_peladen=argv[2];
-	char *porta_peladen=argv[3];
-	
 	// Inisiasi isi kirim.
 	kirim_mmap->identifikasi=0;
 	kirim_mmap->identifikasi_sebelumnya=0;
@@ -169,10 +178,30 @@ int main(int argc, char *argv[]){
 	// kirim_mmap->ukuran_berkas;
 	kirim_mmap->ukuran_kirim=0;
 	kirim_mmap->do_kirim=true;
-	strncpy(kirim_mmap->hostname, inang_peladen, BERKAS_MAX_STR);
-	strncpy(kirim_mmap->portno, porta_peladen, BERKAS_MAX_STR);
 	// strncpy(kirim_mmap->berkas, berkas, BERKAS_MAX_STR);
 	kirim_mmap->coba=1;
+	
+	// Pilih inang.
+	int pilih_inang=0;
+	
+	// Memecah nama inang.
+	char porta_inang[BERKAS_MAX_STR];
+	char nama_inang[BERKAS_MAX_STR];
+	status=sscanf(aturan.hostname[pilih_inang], "%[^:]:%s", nama_inang, &porta_inang);
+	if(status==1 && !strlen(porta_inang)){
+		// Bila porta kosong.
+		strcpy(porta_inang, aturan.defaultport);
+		
+	}else if (status > 2|| status <=0){
+		// Gagal.
+		FAIL(_("Gagal mengurai inang %1$s."), aturan.hostname);
+		exit(EXIT_FAILURE_ARGS);
+		
+	};
+	
+	// Menyalin.
+	strncpy(kirim_mmap->hostname, nama_inang, BERKAS_MAX_STR);
+	strncpy(kirim_mmap->portno, porta_inang, BERKAS_MAX_STR);
 	
 	while (1){
 		newsockfd = accept(sockfd, 
@@ -249,7 +278,7 @@ int main(int argc, char *argv[]){
 				_("Selesai menangani Klien %1$s:%2$i untuk Peladen %3$s:%4$i."),
 				inet_ntoa(cli_addr.sin_addr),
 				(int) ntohs(cli_addr.sin_port),
-				inang_peladen, atoi(porta_peladen)
+				nama_inang, atoi(porta_inang)
 				);
 			
 			// Menutup.
@@ -268,50 +297,6 @@ int main(int argc, char *argv[]){
 	free_shm();
 	
 	return 0;
-}
-
-/*
- * Informasi kancil.
- */
-void info_kancil(){
-	char* BUILT_VERSION;
-	BUILT_VERSION=malloc(sizeof(BUILT_VERSION)*12);
-	snprintf(BUILT_VERSION, sizeof(BUILT_VERSION)*12,
-		"%1$i.%2$i.%3$i.%4$i-%5$s",
-		__VERSION_MAJOR,
-		__VERSION_MINOR,
-		__VERSION_PATCH,
-		__BUILT_NUMBER,
-		COMPILE_MODE
-	);
-	
-	time_t BUILT_TIME;
-	char BUILT_TIME_STR[50];
-	struct tm *lcltime;
-	BUILT_TIME=__BUILT_TIME;
-	lcltime = localtime ( &BUILT_TIME );
-	strftime(BUILT_TIME_STR, sizeof(BUILT_TIME_STR), "%c", lcltime);
-	
-	// Awal tampil.
-	printf("%1$s (%2$s).\n", PROGNAME, BUILT_VERSION);
-	printf(_("Dibangun pada %1$s. Protokol versi %2$i."), BUILT_TIME_STR, PROTOCOL_VERSION );
-	printf("\n");
-	
-	// Informasi pembangun.
-	#ifdef COMPILER_MACHINE
-		printf(_("Dibuat di %1$s."), STRINGIZE_VALUE_OF(COMPILER_MACHINE));
-		#ifdef COMPILER_MACHINE
-			printf(" ");
-			printf(_("Versi pembangun %1$s."), STRINGIZE_VALUE_OF(COMPILER_VERSION));
-		#endif
-		printf("\n");
-	#endif
-	#ifdef COMPILER_FLAGS
-		printf(_("Panji pembangun:"));
-		printf(_("\n%1$s\n"), STRINGIZE_VALUE_OF(COMPILER_FLAGS));
-	#endif
-	
-	free(BUILT_VERSION);
 }
 
 /*

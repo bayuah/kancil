@@ -19,6 +19,7 @@
 #include "soket.h"
 #include "pesan.h"
 #include "tampilan.h"
+#include "argumen.h"
 
 // Fungsi lokal.
 void info_kancil();

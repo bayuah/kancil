@@ -30,6 +30,9 @@
 void dec2bin(int num, char *str);
 double current_time(int select);
 int mod_int (int a, int b);
+char *b2s(bool s);
+bool s2b(char *s);
+bool is_nonascii(char *s);
 int int_tak_min(int nilai, int pengganti);
 char *remove_ext (char* str, char dot, char sep);
 void set_null(char **str, size_t length);

@@ -9,27 +9,6 @@
 #ifndef _KANCIL_STRUKTUR_H_
 #define _KANCIL_STRUKTUR_H_
 
-// Variabel global.
-struct GLOBAL_KANCIL {
-	bool show_error;
-	bool show_warning;
-	bool show_notice;
-	bool show_info;
-	bool show_debug1;
-	bool show_debug2;
-	bool show_debug3; 
-	bool show_debug4;
-	bool show_debug5;
-	int tries;
-	int waitretry;
-	int waitqueue;
-	int parallel;
-	char* completedir;
-	char* tempdir;
-} GLOBAL_KANCIL;
-#define kancil GLOBAL_KANCIL
-#define aturan GLOBAL_KANCIL
-
 // Alamat.
 #ifndef INET_ADDRSTRLEN
 	#define INET_ADDRSTRLEN 16
@@ -124,4 +103,55 @@ struct TERIMABERKAS{
 	char data_pesan[MAX_CHUNK_ID][CHUNK_MESSAGE_SIZE+1];
 	bool data_terima[MAX_CHUNK_ID];
 } TERIMABERKAS;
+
+
+#ifndef MAX_GATE
+	#define MAX_GATE 256
+#endif
+
+// Variabel global.
+struct GLOBAL_CONFIG {
+	bool show_error;
+	bool show_warning;
+	bool show_notice;
+	bool show_info;
+	bool show_debug1;
+	bool show_debug2;
+	bool show_debug3; 
+	bool show_debug4;
+	bool show_debug5;
+	bool rawtransfer;
+	int tries;
+	int waitretry;
+	int waitqueue;
+	int parallel;
+	char completedir[BERKAS_MAX_STR];
+	char tempdir[BERKAS_MAX_STR];
+	char config[BERKAS_MAX_STR];
+	int  gateid;
+	int  hostname_c;
+	char hostname[MAX_GATE][INFOALAMAT_MAX_STR];
+	char listening[INFOALAMAT_MAX_STR];
+	char defaultport[INFOALAMAT_MAX_STR];
+	char inputfile[BERKAS_MAX_STR];
+} GLOBAL_CONFIG;
+#define aturan GLOBAL_CONFIG
+
+// Informasi kancil.
+struct GLOBAL_KANCIL {
+	int version_major;
+	int version_minor;
+	int version_patch;
+	int built_number;
+	char* progname;
+	char* progcode;
+	char* compile_mode;
+	char* compiler_machine;
+	char* compiler_version;
+	char* compiler_flags;
+	long built_time;
+	char* executable;
+} GLOBAL_KANCIL;
+#define infokancil GLOBAL_KANCIL
+
 #endif /* _KANCIL_STRUKTUR_H_ */

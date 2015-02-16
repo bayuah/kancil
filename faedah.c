@@ -23,6 +23,8 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <ctype.h>
+
 
 // Soket.
 // #include <sys/socket.h>
@@ -250,6 +252,31 @@ void dec2bin(int num, char *str){
 	while(mask >>= 1)
 	*str++ = !!(mask & num) + '0';
 }
+
+// bool to string
+char *b2s(bool s){
+	return (s)?"true":"false";
+}
+// string to bool.
+// Bila mengandung kata true maka benar.
+bool s2b(char *s){
+	char *f=strstr(s, "true");
+	return f!=NULL;
+}
+
+/*
+ * Memeriksa pakaha terdapat non-ascii.
+ */
+bool is_nonascii(char *s){
+	int i=0;
+	while(s[i++]!='\0'){
+		unsigned char c = s[i];
+		if(!isascii(c))
+			return true;
+	};
+	return false;
+}
+
 
 /*
  * `current_time()`

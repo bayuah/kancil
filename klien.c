@@ -26,14 +26,19 @@ int main(int argc, char *argv[]){
 	bindtextdomain("kancil", "./locale");
 	textdomain("kancil");
 	
-	// Informasi Kancil.
-	info_kancil();
-	
-	// Mendapatkan argumen.
-	if (argc < 4) {
-		printf(_("Gunakan %s <inang> <porta> <berkas>.\n"), argv[0]);
-		exit(EXIT_FAILURE_ARGS);
-	};
+	// Info kancil.
+	infokancil.executable=basename(argv[0]);
+	infokancil.progname=PROGNAME;
+	infokancil.progcode=PROGCODE;
+	infokancil.version_major=__VERSION_MAJOR,
+	infokancil.version_minor=__VERSION_MINOR,
+	infokancil.version_patch=__VERSION_PATCH,
+	infokancil.built_number=__BUILT_NUMBER,
+	infokancil.built_time=__BUILT_TIME;
+	infokancil.compile_mode=COMPILE_MODE;
+	infokancil.compiler_machine=STRINGIZE_VALUE_OF(COMPILER_MACHINE);
+	infokancil.compiler_version=STRINGIZE_VALUE_OF(COMPILER_VERSION);
+	infokancil.compiler_flags=STRINGIZE_VALUE_OF(COMPILER_FLAGS);
 	
 	// Aturan umum.
 	aturan.show_error=true;
@@ -45,11 +50,25 @@ int main(int argc, char *argv[]){
 	aturan.show_debug3=false;
 	aturan.show_debug4=false;
 	aturan.show_debug5=false;
-	aturan.tempdir="tmp";
+	strcpy(aturan.tempdir, "tmp");
+	strcpy(aturan.config, "kancil-klien.cfg");
 	aturan.tries=20;
 	aturan.waitretry=15;
 	aturan.waitqueue=5;
-	aturan.parallel=20;
+	aturan.parallel=1;
+	strcpy(aturan.defaultport, "5001");
+	aturan.rawtransfer=true;
+	aturan.hostname_c=0;
+	memset(aturan.hostname, 0, sizeof(aturan.hostname[0][0])*MAX_GATE*INFOALAMAT_MAX_STR);
+	
+	// Informasi versi.
+	info_versi();
+	
+	// Urai argumen.
+	urai_argumen(argc, argv);
+	
+	// Konfigurasi.
+	baca_konfigurasi();
 	
 	// Berbagi memori.
 	int berbagi_ukuran = 1024 * 1024 * 128; //128 MiB
@@ -114,10 +133,16 @@ int main(int argc, char *argv[]){
 	memset(alamat_mmap->sockaddr_sa_data, 0, sizeof(alamat_mmap->sockaddr_sa_data[0][0][0]) * mxid * mxip * 14);
 	
 	// Berkas.
-	berkas = argv[3];
+	berkas = aturan.inputfile;
 	
 	// Buang STDOUT.
 	fflush(stdout);
+	
+	// Bila inang kosong.
+	if(!aturan.hostname_c){
+		FAIL(_("Inang kosong."), 0);
+		exit(EXIT_FAILURE_ARGS);
+	}
 	
 	// Bila berkas tidak ada.
 	if (!file_exist(berkas)){
@@ -139,13 +164,13 @@ int main(int argc, char *argv[]){
 		// Jumlah sambungan.
 		int sambungan_maksimal=aturan.parallel;
 		int sambungan_maksimal_sekarang=sambungan_maksimal;
-		FILE *pberkas[sambungan_maksimal];
+		FILE *pberkas[sambungan_maksimal+1];
 		
 		// Membuka berkas
 		// sebanyak maksimal sambungan.
-		for(int ib=0; ib<sambungan_maksimal;ib++){
-			pberkas[ib]=fopen(berkas, "rb");
-			if(pberkas[ib]==NULL){
+		for(int ibo=0; ibo<=sambungan_maksimal;ibo++){
+			pberkas[ibo]=fopen(berkas, "rb");
+			if(pberkas[ibo]==NULL){
 				// Gagal.
 				FAIL ( 
 					_("Gagal membuka berkas '%1$s': %2$s (%1$i)."),
@@ -164,8 +189,6 @@ int main(int argc, char *argv[]){
 		kirim_mmap->ukuran_kirim=0;
 		kirim_mmap->ukuran_kirim_sebelumnya=0;
 		kirim_mmap->do_kirim=true;
-		strncpy(kirim_mmap->hostname, argv[1], BERKAS_MAX_STR);
-		strncpy(kirim_mmap->portno, argv[2], BERKAS_MAX_STR);
 		strncpy(kirim_mmap->berkas_lajur, berkas, BERKAS_MAX_STR);
 		strncpy(kirim_mmap->berkas, basename(berkas), BERKAS_MAX_STR);
 		memset(kirim_mmap->data_terkirim, 0, sizeof(kirim_mmap->data_terkirim[0])*MAX_CHUNK_ID);
@@ -305,6 +328,17 @@ int main(int argc, char *argv[]){
 					sambungan_maksimal_sekarang=1;
 					
 				}else if(
+					(kirim_mmap->ukuran_kirim+(sambungan_maksimal*CHUNK_MESSAGE_SIZE*10))
+					> kirim_mmap->ukuran_berkas
+				){
+					// Bila medekati ukuran berkas.
+					DEBUG3(
+						_("Berkas terkirim (%1$.0f bita) hampir mendekati ukuran berkas (%2$.0f bita)."),
+						kirim_mmap->ukuran_kirim, kirim_mmap->ukuran_berkas
+						);
+					sambungan_maksimal_sekarang=1;
+					
+				}else if(
 					kirim_mmap->ukuran_berkas-kirim_mmap->ukuran_kirim
 					<=  kec_rendah_minimal
 					&& sambungan_maksimal > sambungan_maksimal_kec_rendah
@@ -350,7 +384,7 @@ int main(int argc, char *argv[]){
 				// HakCipta (c) 2009 M.T. Tham
 				// Berkas dimodifikasi: Jumat, 21 Agustus 2009, 06:22:02 WIB
 				// Berkas diakses: Sabtu, 07 Februari 2015, 00:40:40 WIB
-				double konstanta=0.5;
+				double konstanta=0.9;
 				double kecepatan_rerata=konstanta* kecepatan + (1 - konstanta) * kecepatan_sebelumnya;
 				
 				// Bila kurang dari NOL.
@@ -442,6 +476,32 @@ int main(int argc, char *argv[]){
 			
 			if (pids[sambungan] == 0){
 				// Proses anak.	
+				
+				int pilih_inang=0;
+				
+				if(!strlen(aturan.hostname[pilih_inang])){
+					FAIL(_("Inang ke-%1$i kosong."), pilih_inang);
+					exit(EXIT_FAILURE_ARGS);
+				};
+				
+				// Memecah nama inang.
+				char porta_inang[BERKAS_MAX_STR];
+				char nama_inang[BERKAS_MAX_STR];
+				status=sscanf(aturan.hostname[pilih_inang], "%[^:]:%s", nama_inang, &porta_inang);
+				if(status==1 && !strlen(porta_inang)){
+					// Bila porta kosong.
+					strcpy(porta_inang, aturan.defaultport);
+					
+				}else if (status > 2|| status <=0){
+					// Gagal.
+					FAIL(_("Gagal mengurai inang %1$s."), aturan.hostname);
+					exit(EXIT_FAILURE_ARGS);
+					
+				};
+				
+				// Menyalin.
+				strncpy(kirim_mmap->hostname, nama_inang, BERKAS_MAX_STR);
+				strncpy(kirim_mmap->portno, porta_inang, BERKAS_MAX_STR);
 				
 				// Panggil anak.
 				identifikasi=anak_kirim(
@@ -587,11 +647,11 @@ int main(int argc, char *argv[]){
 		);
 		
 		// Menutup.
-		for(int ibc=0; ibc<sambungan_maksimal;ibc++){
+		for(int ibc=0; ibc<=sambungan_maksimal;ibc++){
 			if(fclose(pberkas[ibc])!=0){
 				// Gagal.
 				FAIL ( 
-					_("Gagal membuka berkas '%1$s': %2$s (%1$i)."),
+					_("Gagal menutup berkas '%1$s': %2$s (%1$i)."),
 					berkas, strerror(errno), errno
 					);
 				exit(EXIT_FAILURE_IO);
@@ -603,50 +663,6 @@ int main(int argc, char *argv[]){
 	free_shm();
 	
 	exit(EXIT_SUCCESS);
-}
-
-/*
- * Informasi kancil.
- */
-void info_kancil(){
-	char* BUILT_VERSION;
-	BUILT_VERSION=malloc(sizeof(BUILT_VERSION)*12);
-	snprintf(BUILT_VERSION, sizeof(BUILT_VERSION)*12,
-		"%1$i.%2$i.%3$i.%4$i-%5$s",
-		__VERSION_MAJOR,
-		__VERSION_MINOR,
-		__VERSION_PATCH,
-		__BUILT_NUMBER,
-		COMPILE_MODE
-	);
-	
-	time_t BUILT_TIME;
-	char BUILT_TIME_STR[50];
-	struct tm *lcltime;
-	BUILT_TIME=__BUILT_TIME;
-	lcltime = localtime ( &BUILT_TIME );
-	strftime(BUILT_TIME_STR, sizeof(BUILT_TIME_STR), "%c", lcltime);
-	
-	// Awal tampil.
-	printf("%1$s (%2$s).\n", PROGNAME, BUILT_VERSION);
-	printf(_("Dibangun pada %1$s. Protokol versi %2$i."), BUILT_TIME_STR, PROTOCOL_VERSION );
-	printf("\n");
-	
-	// Informasi pembangun.
-	#ifdef COMPILER_MACHINE
-		printf(_("Dibuat di %1$s."), STRINGIZE_VALUE_OF(COMPILER_MACHINE));
-		#ifdef COMPILER_MACHINE
-			printf(" ");
-			printf(_("Versi pembangun %1$s."), STRINGIZE_VALUE_OF(COMPILER_VERSION));
-		#endif
-		printf("\n");
-	#endif
-	#ifdef COMPILER_FLAGS
-		printf(_("Panji pembangun:"));
-		printf(_("\n%1$s\n"), STRINGIZE_VALUE_OF(COMPILER_FLAGS));
-	#endif
-	
-	free(BUILT_VERSION);
 }
 
 /*

@@ -12,7 +12,7 @@ VER_MINOR=1
 VER_PATCH=0
 
 # Componen.
-UTILITY_OBJ=faedah.o rsa.o tampilan.o soket.o pesan.o
+UTILITY_OBJ=faedah.o rsa.o tampilan.o soket.o pesan.o argumen.o
 
 # Compiler flags.
 CFLAGS =-std=c99
@@ -151,8 +151,8 @@ built-peladen:peladen.c $(UTILITY_OBJ) peladen-tulis.o peladen-anak.o
 		-D__COMPILER_MACHINE="$(CC_MACHINE)" \
 		-D__COMPILER_VERSION="$(CC_VERSION)" 
 
-# coba-rsa:coba-rsa.c $(UTILITY_OBJ)
-# 	@$(CCF) $(UTILITY_OBJ)  $< -o $@ $(CCLIBS)
+coba-rsa:coba-rsa.c $(UTILITY_OBJ)
+	@$(CCF) $(UTILITY_OBJ)  $< -o $@ $(CCLIBS)
 
 klien-anak.o:klien-anak.c
 	@echo "Build $@..."
@@ -169,6 +169,10 @@ peladen-anak.o:peladen-anak.c
 peladen-tulis.o:peladen-tulis.c
 	@echo "Build $@..."
 	@$(CCF) -c peladen-tulis.c -o $@ $(CCLIBS)
+
+argumen.o:argumen.c
+	@echo "Build $@..."
+	@$(CCF) -c $< -o $@ $(CCLIBS)
 
 pesan.o:pesan.c
 	@echo "Build $@..."

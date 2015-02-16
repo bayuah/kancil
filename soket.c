@@ -34,6 +34,32 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+bool is_ipaddrs(char *str){
+	struct sockaddr_in  sa;
+	struct sockaddr_in6 sa6;
+	int result;
+	
+	// Mulai memeriksa.
+	DEBUG4(_("Memeriksa apakah %1$s merupakan alamat %2$s."), str, "IPV4");
+	result = inet_pton(AF_INET, str, &(sa.sin_addr));
+	if(result){
+		DEBUG4(_("Nama '%1$s' adalah %2$s."), str, "IPV4");
+	}else{
+		DEBUG4(_("Nama '%1$s' bukan %2$s."), str, "IPV4");
+		DEBUG4(_("Memeriksa apakah %1$s merupakan alamat %2$s."), str, "IPV6");
+		result = inet_pton(AF_INET6, str, &(sa6.sin6_addr));
+		if(result){
+			DEBUG4(_("Nama '%1$s' adalah %2$s."), str, "IPV6");
+		}else{
+			DEBUG4(_("Nama '%1$s' bukan %2$s."), str, "IPV6");
+			DEBUG4(_("Nama '%1$s' bukan alamat IP."), str);
+		}
+	};
+	
+	// Hasil.
+	return (result!=0);
+}
+
 /*
  * getaddrfamily()
  * Menentukan keluarga alamat IP
@@ -164,17 +190,6 @@ char *kirimdata(
 			};
 		};
 		
-		// Buat titik soket.
-		// DEBUG3(_("Mulai membuka soket."), 0);
-		// sockfd = socket(AF_INET, SOCK_STREAM, 0);
-		// if (sockfd < 0){
-			// FAIL(_("Gagal membuka soket: %2$s (%3$i)."), strerror(errno), errno);
-			// exit(EXIT_FAILURE_SOCKET);
-		// }else{
-			// Pesan.
-			// DEBUG3(_("Berhasil membuka soket."), 0);
-		// };
-		
 		// Menemukan alamat.
 		// Alokasi memori.
 		memset(&set, 0, sizeof(struct addrinfo));
@@ -182,257 +197,290 @@ char *kirimdata(
 		set.ai_socktype = SOCK_STREAM; // Aliran. Komunikasi dua arah.
 		set.ai_protocol = 0; // Semua porta.
 		
-		// Mencari alamat.
-		DEBUG3(_("Mulai mencari informasi alamat '%1$s'."), hostname);
-		
-		// Bila dikunci.
-		if(alamat->kunci==true){
-			// Menunggu.
-			do{
-				DEBUG4(_("Informasi alamat terkunci."), 0);
-				sleep(1);
-			}while(alamat->kunci==true);
-			alamat->kunci=true;
-		};
-		
-		// Mencoba di tembolok.
+		// Bila alamat IP,
+		// jangan cari di tembolok.
 		serv_addrinfo_result=NULL;
-		for(i=1; i<INFOALAMAT_MAX_ID; i++){
-			DEBUG4(_("Mencoba tembolok identifikasi '%1$i'."), i);
-			if(!strlen(alamat->inang[i])){
-				// Tidak ditemukan.
-				DEBUG4(_("Alamat tidak ditemukan."), 0);
-				
-				// Lanjut.
-				continue;
+		if(is_ipaddrs(hostname)){
+			// Mencari di jaringan.
+			DEBUG3(_("Mulai mencari informasi alamat inang '%1$s' di jaringan."), hostname);
+			status = getaddrinfo(hostname, portno, &set, &serv_addrinfo_result);
+			if (!status){
+				// Pesan.
+				DEBUG3(_("Menemukan informasi alamat inang '%1$s' di jaringan."), hostname);
+			}else if(
+				status == -8
+				|| status == -2
+			){
+				// Pesan.
+				FAIL(_("Kesalahan untuk alamat '%1$s': %2$s (%3$i)"), hostname, gai_strerror(status), status);
+				return NULL;
 			}else{
-				// Ditemukan alamat.
-				DEBUG4(_("Ditemukan alamat '%1$s'."), alamat->inang[i]);
-				
-				// Membandingkan.
-				if(strcmp(hostname, alamat->inang[i])!=0){
-					// Tidak sesuai.
-					DEBUG4(_("Alamat tidak sesuai."), 0);
+				// Pesan.
+				WARN(_("Gagal mendapatkan alamat '%1$s': %2$s (%3$i)."), hostname, gai_strerror(status), status);
+				ulangi=true;
+				continue;
+			};
+		}else{
+		
+			// Mencari alamat.
+			DEBUG3(_("Mulai mencari informasi alamat '%1$s'."), hostname);
+			
+			// Bila dikunci.
+			if(alamat->kunci==true){
+				// Menunggu.
+				do{
+					DEBUG4(_("Informasi alamat terkunci."), 0);
+					sleep(1);
+				}while(alamat->kunci==true);
+				alamat->kunci=true;
+			};
+			
+			// Mencoba di tembolok.
+			for(i=1; i<INFOALAMAT_MAX_ID; i++){
+				DEBUG4(_("Mencoba tembolok identifikasi '%1$i'."), i);
+				if(!strlen(alamat->inang[i])){
+					// Tidak ditemukan.
+					DEBUG4(_("Alamat tidak ditemukan."), 0);
 					
 					// Lanjut.
 					continue;
 				}else{
-					// Ditemukan.
-					DEBUG4(_("Alamat sesuai."), 0);
+					// Ditemukan alamat.
+					DEBUG4(_("Ditemukan alamat '%1$s'."), alamat->inang[i]);
 					
-					// Membangun struktur.
-					struct addrinfo *tmp_addrinfo_utm;
-					struct addrinfo *tmp_addrinfo;
-					
-					// Inisiasi.
-					tmp_addrinfo_utm=malloc(sizeof (struct addrinfo *));
-					tmp_addrinfo=malloc(sizeof (struct tmp_addrinfo *));
-					
-					// Perulangan.
-					for(j=0;j<alamat->ipcount[i];j++){
-						DEBUG4(_("Memasukkan %1$s dari tembolok identifikasi '%2$i'."), _("Informasi Jaringan"), i);
-						tmp_addrinfo=malloc(sizeof(struct addrinfo)+1);
-						DEBUG4(_("Memasukkan %1$s (%2$s) dari tembolok identifikasi '%3$i'."), _("Keluarga Alamat"), keterangan_soket(1, alamat->ai_family[i][j]), i);
-						tmp_addrinfo->ai_family=alamat->ai_family[i][j];
-						DEBUG4(_("Memasukkan %1$s (%2$s) dari tembolok identifikasi '%3$i'."), _("Jenis Soket"), keterangan_soket(2, alamat->ai_socktype[i][j]), i);
-						tmp_addrinfo->ai_socktype=alamat->ai_socktype[i][j];
-						DEBUG4(_("Memasukkan %1$s (%2$s) dari tembolok identifikasi '%3$i'."), _("Jenis Protokol"), keterangan_soket(3, alamat->ai_protocol[i][j]), i);
-						tmp_addrinfo->ai_protocol=alamat->ai_protocol[i][j];
-						DEBUG4(_("Memasukkan %1$s (%2$i) dari tembolok identifikasi '%3$i'."), _("Panjang Alamat"), alamat->ai_addrlen[i][j], i);
-						tmp_addrinfo->ai_addrlen=alamat->ai_addrlen[i][j];
-						DEBUG4(_("Memasukkan %1$s dari tembolok identifikasi '%2$i'."), _("Nama Alias"), i);
-						if(strlen(alamat->ai_canonname[i][j])){
-							memcpy(tmp_addrinfo->ai_canonname, alamat->ai_canonname[i][j], INFOALAMAT_MAX_STR);
-						};
+					// Membandingkan.
+					if(strcmp(hostname, alamat->inang[i])!=0){
+						// Tidak sesuai.
+						DEBUG4(_("Alamat tidak sesuai."), 0);
 						
-						// Sockaddr.
-						DEBUG4(_("Memasukkan %1$s dari tembolok identifikasi '%2$i'."), _("Informasi Alamat"), i);
-						struct sockaddr *tmp_sockaddr;
-						tmp_sockaddr=malloc(sizeof(struct sockaddr)+1);
-						DEBUG4(_("Memasukkan %1$s (%2$s) dari tembolok identifikasi '%3$i'."), _("Keluarga Alamat"), keterangan_soket(1, alamat->sockaddr_sa_family[i][j]), i);
-						tmp_sockaddr->sa_family=alamat->sockaddr_sa_family[i][j];
-						DEBUG4(_("Memasukkan %1$s dari tembolok identifikasi '%2$i'."), _("Data Alamat"), i);
-						memcpy(tmp_sockaddr->sa_data, alamat->sockaddr_sa_data[i][j], 14);
+						// Lanjut.
+						continue;
+					}else{
+						// Ditemukan.
+						DEBUG4(_("Alamat sesuai."), 0);
 						
-						// Menyalin Sockaddr.
-						DEBUG4(_("Menyalin %1$s dari tembolok identifikasi '%2$i'."), _("Informasi"), i);
-						tmp_addrinfo->ai_addr=tmp_sockaddr;
+						// Membangun struktur.
+						struct addrinfo *tmp_addrinfo_utm;
+						struct addrinfo *tmp_addrinfo;
 						
-						// Bila masih kurang.
-						if(j==0){
-							// Bila pertama.
-							DEBUG4(_("Menyalin ke alamat sementara pertama."), 0);
+						// Inisiasi.
+						tmp_addrinfo_utm=malloc(sizeof (struct addrinfo *));
+						tmp_addrinfo=malloc(sizeof (struct tmp_addrinfo *));
+						
+						// Perulangan.
+						for(j=0;j<alamat->ipcount[i];j++){
+							DEBUG4(_("Memasukkan %1$s dari tembolok identifikasi '%2$i'."), _("Informasi Jaringan"), i);
+							tmp_addrinfo=malloc(sizeof(struct addrinfo)+1);
+							DEBUG4(_("Memasukkan %1$s (%2$s) dari tembolok identifikasi '%3$i'."), _("Keluarga Alamat"), keterangan_soket(1, alamat->ai_family[i][j]), i);
+							tmp_addrinfo->ai_family=alamat->ai_family[i][j];
+							DEBUG4(_("Memasukkan %1$s (%2$s) dari tembolok identifikasi '%3$i'."), _("Jenis Soket"), keterangan_soket(2, alamat->ai_socktype[i][j]), i);
+							tmp_addrinfo->ai_socktype=alamat->ai_socktype[i][j];
+							DEBUG4(_("Memasukkan %1$s (%2$s) dari tembolok identifikasi '%3$i'."), _("Jenis Protokol"), keterangan_soket(3, alamat->ai_protocol[i][j]), i);
+							tmp_addrinfo->ai_protocol=alamat->ai_protocol[i][j];
+							DEBUG4(_("Memasukkan %1$s (%2$i) dari tembolok identifikasi '%3$i'."), _("Panjang Alamat"), alamat->ai_addrlen[i][j], i);
+							tmp_addrinfo->ai_addrlen=alamat->ai_addrlen[i][j];
+							DEBUG4(_("Memasukkan %1$s dari tembolok identifikasi '%2$i'."), _("Nama Alias"), i);
+							if(strlen(alamat->ai_canonname[i][j])){
+								memcpy(tmp_addrinfo->ai_canonname, alamat->ai_canonname[i][j], INFOALAMAT_MAX_STR);
+							};
 							
-							// Meletakkan di awal.
-							tmp_addrinfo_utm=tmp_addrinfo;
-							tmp_addrinfo_utm->ai_next=NULL;
-						}else{
-							// Bila masih berlanjut.
-							DEBUG4(_("Menyalin ke alamat sementara lama."), 0);
+							// Sockaddr.
+							DEBUG4(_("Memasukkan %1$s dari tembolok identifikasi '%2$i'."), _("Informasi Alamat"), i);
+							struct sockaddr *tmp_sockaddr;
+							tmp_sockaddr=malloc(sizeof(struct sockaddr)+1);
+							DEBUG4(_("Memasukkan %1$s (%2$s) dari tembolok identifikasi '%3$i'."), _("Keluarga Alamat"), keterangan_soket(1, alamat->sockaddr_sa_family[i][j]), i);
+							tmp_sockaddr->sa_family=alamat->sockaddr_sa_family[i][j];
+							DEBUG4(_("Memasukkan %1$s dari tembolok identifikasi '%2$i'."), _("Data Alamat"), i);
+							memcpy(tmp_sockaddr->sa_data, alamat->sockaddr_sa_data[i][j], 14);
 							
-							// Meletakkan di akhir.
-							tmp_addrinfo->ai_next=NULL;
-							tmp_addrinfo_utm->ai_next=tmp_addrinfo;
+							// Menyalin Sockaddr.
+							DEBUG4(_("Menyalin %1$s dari tembolok identifikasi '%2$i'."), _("Informasi"), i);
+							tmp_addrinfo->ai_addr=tmp_sockaddr;
+							
+							// Bila masih kurang.
+							if(j==0){
+								// Bila pertama.
+								DEBUG4(_("Menyalin ke alamat sementara pertama."), 0);
+								
+								// Meletakkan di awal.
+								tmp_addrinfo_utm=tmp_addrinfo;
+								tmp_addrinfo_utm->ai_next=NULL;
+							}else{
+								// Bila masih berlanjut.
+								DEBUG4(_("Menyalin ke alamat sementara lama."), 0);
+								
+								// Meletakkan di akhir.
+								tmp_addrinfo->ai_next=NULL;
+								tmp_addrinfo_utm->ai_next=tmp_addrinfo;
+							};
+							
+							// Membersihkan.
+							// DEBUG4(_("Membersihkan %1$s."), _("Soket Sementara"));
+							// free(tmp_sockaddr);
 						};
+						// Memindahkan hasil.
+						DEBUG4(_("Menyalin hasil tembolok."), 0);
+						serv_addrinfo_result=tmp_addrinfo_utm;
 						
-						// Membersihkan.
-						// DEBUG4(_("Membersihkan %1$s."), _("Soket Sementara"));
-						// free(tmp_sockaddr);
+						// Keluar.
+						DEBUG4(_("Berhenti mencari alamat tembolok."), 0);
+						break;
 					};
-					// Memindahkan hasil.
-					DEBUG4(_("Menyalin hasil tembolok."), 0);
-					serv_addrinfo_result=tmp_addrinfo_utm;
-					
-					// Keluar.
-					DEBUG4(_("Berhenti mencari alamat tembolok."), 0);
-					break;
 				};
 			};
-		};
-		
-		// Bila hasil kosong.
-		if(serv_addrinfo_result==NULL){
 			
-			// Mencari di jaringan.
-			DEBUG3(_("Mulai mencari informasi alamat inang '%1$s' di jaringan."), hostname);
-			status = getaddrinfo(hostname, portno, &set, &serv_addrinfo_result);
-			if (status != 0) {
-			   // fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
-				WARN(_("Gagal mendapatkan alamat '%1$s': %2$s (%3$i)."), hostname, gai_strerror(status), status);
-				ulangi=true;
-				continue;
-			}else{
-				// Pesan.
-				DEBUG3(_("Menemukan informasi alamat inang '%1$s' di jaringan."), hostname);
-			};
-			
-			// Memasukkan ke tembolok.
-			DEBUG3(_("Mulai memasukkan informasi alamat inang '%1$s' ke tembolok."), hostname);
-			
-			// Perulangan.
-			bool ulang=false;
-			bool jangan_tanya_alamat=false;
-			int coba=1;
-			int id=1;
-			// for(i=0; i<INFOALAMAT_MAX_ID; i++)
-			// Mengunci.
-			DEBUG4(_("Mengunci informasi alamat."), 0);
-			alamat->kunci=true;
-			do{
-				// Pesan.
-				DEBUG4(_("Mencoba memasukkan ke tembolok identifikasi '%1$i'."), id);
+			// Bila hasil kosong.
+			if(serv_addrinfo_result==NULL){
 				
-				
-				// Bila alamat tidak kosong.
-				if(!jangan_tanya_alamat && strlen(alamat->inang[id])){
-					coba++;
-					
-					// Ditemukan alamat.
-					DEBUG4(_("Ditemukan alamat '%1$s'."), alamat->inang[id]);
-					
-					// Memeriksa apakah alamat benar-benar ada
-					// dengan memeriksa apakah ada isi.
-					if(alamat->ipcount[id]<=0){
-						// Masih kosong.
-						DEBUG4(_("Jumlah IP adalah nol."), 0);
-						DEBUG4(_("Kemungkinan alamat masih kosong."), 0);
-						DEBUG4(_("Tetap melanjutkan."), 0);
-						
-						// Muat ulang.
-						coba=0;
-						jangan_tanya_alamat=true;
-						ulang=true;
-					}else if(strcmp(hostname, alamat->inang[id])==0){
-						
-						// Masih kosong.
-						DEBUG4(_("Alamat IP adalah sama."), 0);
-						DEBUG4(_("Isi ditimpa."), 0);
-						DEBUG4(_("Tetap melanjutkan."), 0);
-						
-						// Muat ulang.
-						coba=0;
-						jangan_tanya_alamat=true;
-						ulang=true;
-						
-					}else if(coba>INFOALAMAT_MAX_ID){
-						// Pesan.
-						DEBUG4(_("Telah mencoba sebanyak %1$i kali."), coba);
-						DEBUG4(_("Tetap melanjutkan."), 0);
-						
-						// Muat ulang.
-						id=0;coba=0;
-						jangan_tanya_alamat=true;
-						ulang=true;
-					}else{
-						// Pesan.
-						DEBUG4(_("Identifikasi selanjutnya."), 0);
-						ulang=true;
-						id++;
-					};
-					continue;
+				// Mencari di jaringan.
+				DEBUG3(_("Mulai mencari informasi alamat inang '%1$s' di jaringan."), hostname);
+				status = getaddrinfo(hostname, portno, &set, &serv_addrinfo_result);
+				if (!status){
+					// Pesan.
+					DEBUG3(_("Menemukan informasi alamat inang '%1$s' di jaringan."), hostname);
+				}else if(
+					status == -8
+					|| status == -2
+				){
+					// Pesan.
+					FAIL(_("Kesalahan untuk alamat '%1$s': %2$s (%3$i)"), hostname, gai_strerror(status), status);
+					return NULL;
 				}else{
 					// Pesan.
-					DEBUG4(_("Tembolok identifikasi '%1$i' dapat digunakan."), id);
-					
-					// Memasukkan.
-					DEBUG4(_("Memasukkan %1$s ke tembolok identifikasi '%2$i'."), _("Nama Inang"), id);
-					strcpy(alamat->inang[id], hostname);
-					
-					// Multidimensi
-					j=0;
-					for (
-						serv_addrinfo = serv_addrinfo_result;
-						serv_addrinfo != NULL;
-						serv_addrinfo = serv_addrinfo->ai_next
-					){
-						// Memasukkan.
-						DEBUG4(_("Memasukkan %1$s ke tembolok identifikasi '%2$i'."), _("Informasi Jaringan"), id);
-						DEBUG4(_("Memasukkan %1$s (%2$s) ke tembolok identifikasi '%3$i'."), _("Keluarga Alamat"), keterangan_soket(1, serv_addrinfo->ai_family), id);
-						alamat->ai_family[id][j]=serv_addrinfo->ai_family;
-						DEBUG4(_("Memasukkan %1$s (%2$s) ke tembolok identifikasi '%3$i'."), _("Jenis Soket"), keterangan_soket(2, serv_addrinfo->ai_socktype), id);
-						alamat->ai_socktype[id][j]=serv_addrinfo->ai_socktype;
-						DEBUG4(_("Memasukkan %1$s (%2$s) ke tembolok identifikasi '%3$i'."), _("Protokol"), keterangan_soket(3, serv_addrinfo->ai_protocol), id);
-						alamat->ai_protocol[id][j]=serv_addrinfo->ai_protocol;
-						DEBUG4(_("Memasukkan %1$s (%2$i) ke tembolok identifikasi '%3$i'."), _("Panjang Alamat"), serv_addrinfo->ai_addrlen, id);
-						alamat->ai_addrlen[id][j]=serv_addrinfo->ai_addrlen;
-						DEBUG4(_("Memasukkan %1$s ke tembolok identifikasi '%2$i'."), _("Nama Alias"), id);
-						if(serv_addrinfo->ai_canonname!=NULL){
-						memcpy(
-							alamat->ai_canonname[id][j], serv_addrinfo->ai_canonname,
-							INFOALAMAT_MAX_STR
-							);
-						};//else
-							// alamat->ai_canonname[id][j];
-							
-						DEBUG4(_("Memasukkan %1$s (%2$s) ke tembolok identifikasi '%3$i'."), _("Keluarga Alamat"), keterangan_soket(1, serv_addrinfo->ai_addr->sa_family), id);
-						alamat->sockaddr_sa_family[id][j]=serv_addrinfo->ai_addr->sa_family;
-						DEBUG4(_("Memasukkan %1$s ke tembolok identifikasi '%2$i'."), _("Data Alamat"), id);
-						memcpy(alamat->sockaddr_sa_data[id][j], serv_addrinfo->ai_addr->sa_data, 14);
-						
-						// BIla lebih dari maksimal IP.
-						if(j>=INFOALAMAT_MAX_IP){
-							// Berhenti.
-							break;
-						}else{
-							// Meningkat.
-							j++;
-						}
-					};
-					
-					// Maksimal IP.
-					alamat->ipcount[id]=j;
-					
-					// Ukuran memori bersama.
-					// munmap(alamat, sizeof *alamat);
-					
-					// Berhenti.
-					jangan_tanya_alamat=true;
-					ulang=false;
+					WARN(_("Gagal mendapatkan alamat '%1$s': %2$s (%3$i)."), hostname, gai_strerror(status), status);
+					ulangi=true;
+					continue;
 				};
-			}while(ulang);
-			
-			// Membuka kunci.
-			alamat->kunci=false;
+				
+				// Memasukkan ke tembolok.
+				DEBUG3(_("Mulai memasukkan informasi alamat inang '%1$s' ke tembolok."), hostname);
+				
+				// Perulangan.
+				bool ulang=false;
+				bool jangan_tanya_alamat=false;
+				int coba=1;
+				int id=1;
+				// for(i=0; i<INFOALAMAT_MAX_ID; i++)
+				// Mengunci.
+				DEBUG4(_("Mengunci informasi alamat."), 0);
+				alamat->kunci=true;
+				do{
+					// Pesan.
+					DEBUG4(_("Mencoba memasukkan ke tembolok identifikasi '%1$i'."), id);
+					
+					
+					// Bila alamat tidak kosong.
+					if(!jangan_tanya_alamat && strlen(alamat->inang[id])){
+						coba++;
+						
+						// Ditemukan alamat.
+						DEBUG4(_("Ditemukan alamat '%1$s'."), alamat->inang[id]);
+						
+						// Memeriksa apakah alamat benar-benar ada
+						// dengan memeriksa apakah ada isi.
+						if(alamat->ipcount[id]<=0){
+							// Masih kosong.
+							DEBUG4(_("Jumlah IP adalah nol."), 0);
+							DEBUG4(_("Kemungkinan alamat masih kosong."), 0);
+							DEBUG4(_("Tetap melanjutkan."), 0);
+							
+							// Muat ulang.
+							coba=0;
+							jangan_tanya_alamat=true;
+							ulang=true;
+						}else if(strcmp(hostname, alamat->inang[id])==0){
+							
+							// Masih kosong.
+							DEBUG4(_("Alamat IP adalah sama."), 0);
+							DEBUG4(_("Isi ditimpa."), 0);
+							DEBUG4(_("Tetap melanjutkan."), 0);
+							
+							// Muat ulang.
+							coba=0;
+							jangan_tanya_alamat=true;
+							ulang=true;
+							
+						}else if(coba>INFOALAMAT_MAX_ID){
+							// Pesan.
+							DEBUG4(_("Telah mencoba sebanyak %1$i kali."), coba);
+							DEBUG4(_("Tetap melanjutkan."), 0);
+							
+							// Muat ulang.
+							id=0;coba=0;
+							jangan_tanya_alamat=true;
+							ulang=true;
+						}else{
+							// Pesan.
+							DEBUG4(_("Identifikasi selanjutnya."), 0);
+							ulang=true;
+							id++;
+						};
+						continue;
+					}else{
+						// Pesan.
+						DEBUG4(_("Tembolok identifikasi '%1$i' dapat digunakan."), id);
+						
+						// Memasukkan.
+						DEBUG4(_("Memasukkan %1$s ke tembolok identifikasi '%2$i'."), _("Nama Inang"), id);
+						strcpy(alamat->inang[id], hostname);
+						
+						// Multidimensi
+						j=0;
+						for (
+							serv_addrinfo = serv_addrinfo_result;
+							serv_addrinfo != NULL;
+							serv_addrinfo = serv_addrinfo->ai_next
+						){
+							// Memasukkan.
+							DEBUG4(_("Memasukkan %1$s ke tembolok identifikasi '%2$i'."), _("Informasi Jaringan"), id);
+							DEBUG4(_("Memasukkan %1$s (%2$s) ke tembolok identifikasi '%3$i'."), _("Keluarga Alamat"), keterangan_soket(1, serv_addrinfo->ai_family), id);
+							alamat->ai_family[id][j]=serv_addrinfo->ai_family;
+							DEBUG4(_("Memasukkan %1$s (%2$s) ke tembolok identifikasi '%3$i'."), _("Jenis Soket"), keterangan_soket(2, serv_addrinfo->ai_socktype), id);
+							alamat->ai_socktype[id][j]=serv_addrinfo->ai_socktype;
+							DEBUG4(_("Memasukkan %1$s (%2$s) ke tembolok identifikasi '%3$i'."), _("Protokol"), keterangan_soket(3, serv_addrinfo->ai_protocol), id);
+							alamat->ai_protocol[id][j]=serv_addrinfo->ai_protocol;
+							DEBUG4(_("Memasukkan %1$s (%2$i) ke tembolok identifikasi '%3$i'."), _("Panjang Alamat"), serv_addrinfo->ai_addrlen, id);
+							alamat->ai_addrlen[id][j]=serv_addrinfo->ai_addrlen;
+							DEBUG4(_("Memasukkan %1$s ke tembolok identifikasi '%2$i'."), _("Nama Alias"), id);
+							if(serv_addrinfo->ai_canonname!=NULL){
+							memcpy(
+								alamat->ai_canonname[id][j], serv_addrinfo->ai_canonname,
+								INFOALAMAT_MAX_STR
+								);
+							};//else
+								// alamat->ai_canonname[id][j];
+								
+							DEBUG4(_("Memasukkan %1$s (%2$s) ke tembolok identifikasi '%3$i'."), _("Keluarga Alamat"), keterangan_soket(1, serv_addrinfo->ai_addr->sa_family), id);
+							alamat->sockaddr_sa_family[id][j]=serv_addrinfo->ai_addr->sa_family;
+							DEBUG4(_("Memasukkan %1$s ke tembolok identifikasi '%2$i'."), _("Data Alamat"), id);
+							memcpy(alamat->sockaddr_sa_data[id][j], serv_addrinfo->ai_addr->sa_data, 14);
+							
+							// BIla lebih dari maksimal IP.
+							if(j>=INFOALAMAT_MAX_IP){
+								// Berhenti.
+								break;
+							}else{
+								// Meningkat.
+								j++;
+							}
+						};
+						
+						// Maksimal IP.
+						alamat->ipcount[id]=j;
+						
+						// Ukuran memori bersama.
+						// munmap(alamat, sizeof *alamat);
+						
+						// Berhenti.
+						jangan_tanya_alamat=true;
+						ulang=false;
+					};
+				}while(ulang);
+				
+				// Membuka kunci.
+				alamat->kunci=false;
+			};
+		
 		};
 		
 		// Pengaturan.
@@ -539,7 +587,7 @@ char *kirimdata(
 			};
 			
 			// Membuka soket.
-			DEBUG3(_("Mulai menghubungi '%1$s' (%2$s)."), hostname, ipstr);
+			DEBUG3(_("Mulai menghubungi '%1$s' (%2$s:%3$s)."), hostname, ipstr, portno);
 			if (connect(sockfd, serv_addrinfo->ai_addr, serv_addrinfo->ai_addrlen) != -1){
 				// Berhasil.
 				DEBUG3(_("Berhasil menghubungi alamat '%1$s'."), ipstr);
@@ -556,12 +604,12 @@ char *kirimdata(
 		// Bila menemukan kesalahan.
 		if (serv_addrinfo == NULL) {
 			// Tidak berhasil.
-			WARN(_("Gagal menghubungi inang '%1$s' (%2$s)."), hostname, ipstr);
+			WARN(_("Gagal menghubungi inang '%1$s' (%2$s:%3$s)."), hostname, ipstr, portno);
 			close(sockfd);
 			ulangi=true;
 			continue;
 		}else{
-			DEBUG3(_("Berhasil menghubungi inang '%1$s' (%2$s)."), hostname, ipstr);
+			DEBUG3(_("Berhasil menghubungi inang '%1$s' (%2$s:%3$s)."), hostname, ipstr,portno);
 		};
 		
 		// Bersihkan.
@@ -570,18 +618,18 @@ char *kirimdata(
 		
 		// Kirim pesan.
 		len=panjang_pesan;
-		DEBUG3(_("Mulai menulis soket ke '%1$s' (%2$s)."), hostname, ipstr);
+		DEBUG3(_("Mulai menulis soket ke '%1$s' (%2$s:%3$s)."), hostname, ipstr, portno);
 		if (!sendall(sockfd, pesan, &len)){
 			FAIL(_("Kesalahan dalam menulis ke soket: %1$s (%2$i)."),strerror(errno), errno);
 			return NULL;
 		}else{
 			// Pesan.
-			DEBUG3(_("Berhasil menulis soket ke '%1$s' (%2$s)."), hostname, ipstr);
+			DEBUG3(_("Berhasil menulis soket ke '%1$s' (%2$s:%3$s)."), hostname, ipstr, portno);
 		};
 		
 		// Baca respons.
 		int diterima;
-		DEBUG3(_("Menunggu balasan dari '%1$s' (%2$s)."), hostname, ipstr);
+		DEBUG3(_("Menunggu balasan dari '%1$s' (%2$s:%3$s)."), hostname, ipstr, portno);
 		respons=malloc(sizeof(respons) * panjang_pesan);
 		memset(respons, 0, panjang_pesan);
 		diterima = recv(sockfd, respons, panjang_pesan, MSG_WAITALL);
@@ -601,7 +649,7 @@ char *kirimdata(
 			*panjang_diterima=diterima;
 			
 			// Pesan.
-			DEBUG3(_("Berhasil mendapatkan jawaban dari '%1$s' (%2$s)."), hostname, ipstr);
+			DEBUG3(_("Berhasil mendapatkan jawaban dari '%1$s' (%2$s:%3$s)."), hostname, ipstr, portno);
 		};
 		
 		// Selesai.
