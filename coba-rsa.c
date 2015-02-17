@@ -19,8 +19,8 @@ int main(){
 	aturan.show_debug2=false;
 	aturan.show_debug3=false;
 	aturan.show_debug4=false;
-	aturan.show_debug5=false;
-	aturan.tempdir="tmp";
+	aturan.show_debug5=true;
+	strcpy(aturan.tempdir, "tmp");
 	aturan.tries=20;
 	aturan.waitretry=30;
 	aturan.waitqueue=30;
@@ -41,9 +41,9 @@ int main(){
 		panjang,
 		default_rsa_pubkey(),
 		tujuan_ency,
-		RSA_PKCS1_OAEP_PADDING
+		RSA_NO_PADDING
 	);
-	// 
+	DEBUG5(_("Tes"), tujuan_ency, 0, 200);
 	unsigned char *tujuan_deco;
 	tujuan_deco=malloc((sizeof tujuan_deco)*ENCRYPTED_CONTAINER_SIZE);
 	panjang=rsa_decrypt(
@@ -51,7 +51,7 @@ int main(){
 		panjang,
 		default_rsa_privatekey(),
 		tujuan_deco,
-		RSA_PKCS1_OAEP_PADDING
+		RSA_NO_PADDING
 	);
 	// 
 	printf("Dekripsi, ukuran: %i\n", panjang);

@@ -50,16 +50,19 @@ int main(int argc, char *argv[]){
 	aturan.show_debug3=false;
 	aturan.show_debug4=false;
 	aturan.show_debug5=false;
+	aturan.shifteof=false;
 	strcpy(aturan.tempdir, "tmp");
 	strcpy(aturan.config, "kancil-klien.cfg");
 	aturan.tries=20;
 	aturan.waitretry=15;
 	aturan.waitqueue=5;
 	aturan.parallel=1;
+	aturan.debuglevel=MINI_DEBUG;
 	strcpy(aturan.defaultport, "5001");
 	aturan.rawtransfer=true;
 	aturan.hostname_c=0;
 	memset(aturan.hostname, 0, sizeof(aturan.hostname[0][0])*MAX_GATE*INFOALAMAT_MAX_STR);
+	aturan.rsa_padding=RSA_PKCS1_OAEP_PADDING;
 	
 	// Informasi versi.
 	info_versi();
@@ -69,6 +72,12 @@ int main(int argc, char *argv[]){
 	
 	// Konfigurasi.
 	baca_konfigurasi();
+	
+	// Bila inang kosong.
+	if(!aturan.hostname_c){
+		FAIL(_("Inang kosong."), 0);
+		exit(EXIT_FAILURE_ARGS);
+	}
 	
 	// Berbagi memori.
 	int berbagi_ukuran = 1024 * 1024 * 128; //128 MiB
@@ -137,12 +146,6 @@ int main(int argc, char *argv[]){
 	
 	// Buang STDOUT.
 	fflush(stdout);
-	
-	// Bila inang kosong.
-	if(!aturan.hostname_c){
-		FAIL(_("Inang kosong."), 0);
-		exit(EXIT_FAILURE_ARGS);
-	}
 	
 	// Bila berkas tidak ada.
 	if (!file_exist(berkas)){
@@ -488,8 +491,9 @@ int main(int argc, char *argv[]){
 				char porta_inang[BERKAS_MAX_STR];
 				char nama_inang[BERKAS_MAX_STR];
 				status=sscanf(aturan.hostname[pilih_inang], "%[^:]:%s", nama_inang, &porta_inang);
-				if(status==1 && !strlen(porta_inang)){
+				if(status==1 || (status == 2 && !strlen(porta_inang))){
 					// Bila porta kosong.
+					DEBUG3(_("Porta inang kosong. Menggunakan nilai asali: %1$s."), aturan.defaultport);
 					strcpy(porta_inang, aturan.defaultport);
 					
 				}else if (status > 2|| status <=0){

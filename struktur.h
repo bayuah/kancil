@@ -120,7 +120,9 @@ struct GLOBAL_CONFIG {
 	bool show_debug3; 
 	bool show_debug4;
 	bool show_debug5;
+	int debuglevel;
 	bool rawtransfer;
+	bool shifteof;
 	int tries;
 	int waitretry;
 	int waitqueue;
@@ -134,6 +136,7 @@ struct GLOBAL_CONFIG {
 	char listening[INFOALAMAT_MAX_STR];
 	char defaultport[INFOALAMAT_MAX_STR];
 	char inputfile[BERKAS_MAX_STR];
+	int rsa_padding;
 } GLOBAL_CONFIG;
 #define aturan GLOBAL_CONFIG
 

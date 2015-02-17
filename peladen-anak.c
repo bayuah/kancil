@@ -70,7 +70,7 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 					diterima,
 					default_rsa_privatekey(),
 					tujuan_deco,
-					RSA_PKCS1_OAEP_PADDING
+					aturan.rsa_padding
 				);
 				
 				// Buang.
@@ -529,7 +529,7 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 			MAX_CHUNK_SIZE,
 			default_rsa_pubkey(),
 			tujuan_ency,
-			RSA_PKCS1_OAEP_PADDING
+			aturan.rsa_padding
 		);
 		
 		// Pesan mentah.

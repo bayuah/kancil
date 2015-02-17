@@ -148,10 +148,12 @@ unsigned int anak_kirim(
 		// Bila mendekati dan pecahan transfer terakhir,
 		// maka penunjuk merupakan
 		// panjang berkas dikurangi CHUNK_MESSAGE_SIZE.
+		// Aktifkan dengan aturan.shifteof=true.
 		int panjang_geser_akhir=0;
 		size_t panjang_baca=CHUNK_MESSAGE_SIZE;
 		if (
-			kirim->ukuran_kirim + (double)CHUNK_MESSAGE_SIZE
+			aturan.shifteof
+			&& kirim->ukuran_kirim + (double)CHUNK_MESSAGE_SIZE
 				>= kirim->ukuran_berkas
 			&& kirim->ukuran_berkas - kirim->ukuran_kirim
 				<= (double)CHUNK_MESSAGE_SIZE
@@ -182,7 +184,6 @@ unsigned int anak_kirim(
 			// Panjang baca.
 			panjang_baca=CHUNK_MESSAGE_SIZE;
 		};
-		
 		
 		// Menggeser penunjuk berkas.
 		status=fseek(pberkas, penunjuk_berkas, SEEK_SET);
@@ -349,7 +350,7 @@ unsigned int anak_kirim(
 			MAX_CHUNK_SIZE+1,
 			default_rsa_pubkey(),
 			tujuan_ency,
-			RSA_PKCS1_OAEP_PADDING
+			aturan.rsa_padding
 		);
 		
 		// Bersihkan.
@@ -403,7 +404,7 @@ unsigned int anak_kirim(
 			panjang_diterima,
 			default_rsa_privatekey(),
 			tujuan_deco,
-			RSA_PKCS1_OAEP_PADDING
+			aturan.rsa_padding
 		);
 		
 		// Periksa.

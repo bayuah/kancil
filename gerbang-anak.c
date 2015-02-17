@@ -88,7 +88,7 @@ void anak_gerbang(
 			diterima,
 			default_rsa_privatekey(),
 			tujuan_deco,
-			RSA_PKCS1_OAEP_PADDING
+			aturan.rsa_padding
 		);
 		
 		// Buang.
@@ -180,7 +180,7 @@ void anak_gerbang(
 					MAX_CHUNK_SIZE+1,
 					default_rsa_pubkey(),
 					tujuan_ency,
-					RSA_PKCS1_OAEP_PADDING
+					aturan.rsa_padding
 				);
 				
 				// Pesan mentah.
@@ -242,7 +242,7 @@ void anak_gerbang(
 					panjang_diterima,
 					default_rsa_privatekey(),
 					tujuan_deco,
-					RSA_PKCS1_OAEP_PADDING
+					aturan.rsa_padding
 				);
 				
 				// Buang.
@@ -394,7 +394,7 @@ void anak_gerbang(
 			MAX_CHUNK_SIZE,
 			default_rsa_pubkey(),
 			tujuan_ency,
-			RSA_PKCS1_OAEP_PADDING
+			aturan.rsa_padding
 		);
 		
 		// Pesan mentah.

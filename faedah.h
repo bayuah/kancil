@@ -24,6 +24,12 @@
 	# define __off64_t_defined
 #endif
 
+// Tingkat kekutu.
+#define MINI_DEBUG 1
+#define MEDIUM_DEBUG 2
+#define FULL_DEBUG 3
+
+// Ubtuk waktu.
 #define CURRENTTIME_SECONDS 0
 #define CURRENTTIME_MICROSECONDS 1
 

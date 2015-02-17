@@ -40,15 +40,15 @@ bool is_ipaddrs(char *str){
 	int result;
 	
 	// Mulai memeriksa.
-	DEBUG4(_("Memeriksa apakah %1$s merupakan alamat %2$s."), str, "IPV4");
+	DEBUG4(_("Memeriksa apakah '%1$s' merupakan alamat %2$s."), str, "IPV4");
 	result = inet_pton(AF_INET, str, &(sa.sin_addr));
-	if(result){
+	if(result==1){
 		DEBUG4(_("Nama '%1$s' adalah %2$s."), str, "IPV4");
 	}else{
 		DEBUG4(_("Nama '%1$s' bukan %2$s."), str, "IPV4");
-		DEBUG4(_("Memeriksa apakah %1$s merupakan alamat %2$s."), str, "IPV6");
+		DEBUG4(_("Memeriksa apakah '%1$s' merupakan alamat %2$s."), str, "IPV6");
 		result = inet_pton(AF_INET6, str, &(sa6.sin6_addr));
-		if(result){
+		if(result==1){
 			DEBUG4(_("Nama '%1$s' adalah %2$s."), str, "IPV6");
 		}else{
 			DEBUG4(_("Nama '%1$s' bukan %2$s."), str, "IPV6");
@@ -57,7 +57,7 @@ bool is_ipaddrs(char *str){
 	};
 	
 	// Hasil.
-	return (result!=0);
+	return (result==1);
 }
 
 /*
@@ -333,7 +333,7 @@ char *kirimdata(
 			if(serv_addrinfo_result==NULL){
 				
 				// Mencari di jaringan.
-				DEBUG3(_("Mulai mencari informasi alamat inang '%1$s' di jaringan."), hostname);
+				DEBUG3(_("Mulai mencari informasi alamat inang '%1$s:%2$s' di jaringan."), hostname, portno);
 				status = getaddrinfo(hostname, portno, &set, &serv_addrinfo_result);
 				if (!status){
 					// Pesan.

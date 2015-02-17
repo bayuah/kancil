@@ -11,11 +11,21 @@
 #ifndef _KANCIL_H_
 #define _KANCIL_H_
 
-#define __USE_LARGEFILE64
-#define _BSD_SOURCE
-#define _LARGEFILE_SOURCE
-#define _LARGEFILE64_SOURCE
-#define _POSIX_SOURCE
+#ifndef __USE_LARGEFILE64
+	#define __USE_LARGEFILE64
+#endif
+#ifndef _BSD_SOURCE
+	#define _BSD_SOURCE
+#endif
+#ifndef _LARGEFILE_SOURCE
+	#define _LARGEFILE_SOURCE
+#endif
+#ifndef _LARGEFILE64_SOURCE
+	#define _LARGEFILE64_SOURCE
+#endif
+#ifndef _POSIX_SOURCE
+	#define _POSIX_SOURCE
+#endif
 
 // Standar.
 #include <stdio.h>

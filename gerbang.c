@@ -42,18 +42,30 @@ int main(int argc, char *argv[]){
 	aturan.show_debug3=false;
 	aturan.show_debug4=false;
 	aturan.show_debug5=false;
+	aturan.debuglevel=MINI_DEBUG;
 	strcpy(aturan.tempdir, "tmp");
+	strcpy(aturan.config, "kancil-gerbang.cfg");
 	aturan.tries=5;
 	aturan.waitretry=5;
 	aturan.waitqueue=30;
 	aturan.rawtransfer=true;
 	strcpy(aturan.listening,"5001");
+	aturan.rsa_padding=RSA_PKCS1_OAEP_PADDING;
+	
+	// Informasi versi.
+	info_versi();
 	
 	// Urai argumen.
 	urai_argumen(argc, argv);
 	
-	// Informasi versi.
-	info_versi();
+	// Konfigurasi.
+	baca_konfigurasi();
+	
+	// Bila inang kosong.
+	if(!aturan.hostname_c){
+		FAIL(_("Inang kosong."), 0);
+		exit(EXIT_FAILURE_ARGS);
+	}
 	
 	// Pengirim.
 	// Berbagi memori.
@@ -102,7 +114,6 @@ int main(int argc, char *argv[]){
 		(((float)(float)persen_ukuran/(float)100)*berbagi_ukuran)-1024, 
 		PROT_WRITE | PROT_READ, berbagi_panji, 
 		shm_berkas, 0 );
-	
 	
 	// Inisiasi isi.
 	int mxid=INFOALAMAT_MAX_ID;

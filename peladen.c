@@ -38,20 +38,24 @@ int main(int argc, char *argv[]){
 	aturan.show_warning=true;
 	aturan.show_notice=true;
 	aturan.show_info=true;
-	aturan.show_debug1=true;
-	aturan.show_debug2=true;
+	aturan.show_debug1=false;
+	aturan.show_debug2=false;
 	aturan.show_debug3=false;
 	aturan.show_debug4=false;
 	aturan.show_debug5=false;
+	aturan.debuglevel=MINI_DEBUG;
 	strcpy(aturan.completedir, "complete");
 	strcpy(aturan.tempdir, "tmp");
 	aturan.rawtransfer=true;
+	strcpy(aturan.listening,"5001");
+	aturan.rsa_padding=RSA_PKCS1_OAEP_PADDING;
+	
+	// Informasi versi.
+	info_versi();
 	
 	// Urai argumen.
 	urai_argumen(argc, argv);
 	
-	// Informasi versi.
-	info_versi();
 	
 	// Berbagi memori.
 	int berbagi_ukuran = 1024 * 1024 * 256; //256 mb

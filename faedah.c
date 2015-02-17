@@ -15,6 +15,7 @@
 #define _LARGEFILE_SOURCE
 #define _LARGEFILE64_SOURCE
 #define _FILE_OFFSET_BITS 64
+#define _GNU_SOURCE // Untuk strcasestr()
 
 // Standar.
 #include <string.h>
@@ -25,12 +26,11 @@
 #include <errno.h>
 #include <ctype.h>
 
-
 // Soket.
 // #include <sys/socket.h>
 
 // Posix.
-#define _POSIX_SOURCE
+// #define _POSIX_SOURCE
 #include <sys/types.h>
 #include <signal.h>
 #include <unistd.h>
@@ -50,6 +50,12 @@
 // Ambil struktur.
 #include "struktur.h"
 
+// Tingkat kekutu.
+#define MINI_DEBUG 1
+#define MEDIUM_DEBUG 2
+#define FULL_DEBUG 3
+
+// Ubtuk waktu.
 #define CURRENTTIME_SECONDS 0
 #define CURRENTTIME_MICROSECONDS 1
 
@@ -105,113 +111,110 @@ void throw_error(int type, const char * file, const int line,
 		va_end(args);
 	};
 	
+	// PID.
+	int pid=getpid();
+	
 	// Berkas.
 	char filestr[strlen(file)];
-	// filestr=malloc(sizeof(filestr)*strlen(file));
 	strcpy(filestr, file);
 	// filestr = remove_ext (filestr, '.', DIR_SEPARATOR);
 	
-	int pid=getpid();
+	// Tingkat kekutu.
+	char tingkat_kekuktu[penyangga_ukuran];
+	tingkat_kekuktu[0]=0;
+	if(aturan.debuglevel==FULL_DEBUG){
+		snprintf(tingkat_kekuktu, penyangga_ukuran, "PID%i %s:%d ", pid, filestr, line);
+	}else if(aturan.debuglevel==MEDIUM_DEBUG){
+		snprintf(tingkat_kekuktu, penyangga_ukuran, "%s:%d ", filestr, line);
+	}else if(aturan.debuglevel==MINI_DEBUG){
+		// Takada
+	};
 	
 	// Pilih.
 	switch(type){
 		case 0:
 			printf(
-				"PID%i %s:%d %s: %s\r\n",
-				pid, filestr,
-				line, _("TES"), penyangga
+				"%s%s: %s\r\n",
+				tingkat_kekuktu, _("TES"), penyangga
 				);
 		break;
 		case 1:
 			if(boleh[1]){
-				fprintf(
-					stderr, "%s:%d %s: %s\r\n",
-					filestr,
-					line, _("GALAT"), penyangga
-					);
+				// fprintf(
+					// stderr,
+					// "%s%s: %s\r\n",
+					// tingkat_kekuktu,
+					// _("GALAT"), penyangga
+					// );
 				printf(
-					"PID%i %s:%d %s: %s\r\n",
-					pid, filestr,
-					line, _("GALAT"), penyangga
+					"%s%s: %s\r\n",
+					tingkat_kekuktu,
+					_("GALAT"), penyangga
 					);
 			};
 		break;
 		case 2:
 			if(boleh[2]){
-				fprintf(
-					stderr, "%s: %s: %s\r\n",
-					filestr,
-					_("PERINGATAN"), penyangga
-					);
-				// printf(
-					// "%s: %s: %s\r\n",
-					// filestr,
+				// fprintf(
+					// stderr,
+					// "%s%s: %s\r\n",
+					// tingkat_kekuktu,
 					// _("PERINGATAN"), penyangga
 					// );
 				printf(
-					"PID%i %s: %s: %s\r\n",
-					pid, filestr,
+					"%s%s: %s\r\n",
+					tingkat_kekuktu,
 					_("PERINGATAN"), penyangga
 					);
 			};
 		break;
 		case 3:
 			if(boleh[3])
-			// printf(
-				// "%s: %s: %s\r\n",
-				// filestr,
-				// _("MAKLUMAT"),
-				// penyangga
-				// );
 			printf(
-				"PID%i %s: %s: %s\r\n",
-				pid, filestr,
+				"%s%s: %s\r\n",
+				tingkat_kekuktu,
 				_("MAKLUMAT"),
 				penyangga
 				);
 		break;
 		case 4:
 			if(boleh[4])
-			// printf(
-				// "%s\r\n",
-				// penyangga
-				// );
 			printf(
-				"PID%i %s:%d %s: %s\r\n",
-				pid, filestr,
-				line, _("INFO"), penyangga
+				"%s%s: %s\r\n",
+				tingkat_kekuktu,
+				_("INFO"), penyangga
 				);
 		break;
 		case 5:
 			if(boleh[5])
 			printf(
-				"PID%i %s:%d %s: %s\r\n",
-				pid, filestr,
-				line, _("KEKUTU 1"), penyangga
+				"%s%s: %s\r\n",
+				tingkat_kekuktu,
+				_("KEKUTU 1"), penyangga
 				);
 		break;
 		case 6:
 			if(boleh[6])
 			printf(
-				"PID%i %s:%d %s: %s\r\n",
-				pid, filestr,
-				line, _("KEKUTU 2"), penyangga
+				"%s%s: %s\r\n",
+				tingkat_kekuktu,
+				_("KEKUTU 2"), penyangga
 				);
 		break;
 		case 7:
 			if(boleh[7])
 			printf(
-				"PID%i %s:%d %s: %s\r\n",
-				pid, filestr,
-				line, _("KEKUTU 3"), penyangga
+				"%s%s: %s\r\n",
+				tingkat_kekuktu,
+				_("KEKUTU 3"), penyangga
 				);
 		break;
 		case 8:
 			if(boleh[8])
 			printf(
-				"PID%i %s:%d %s: %s\r\n",
-				pid, filestr,
-				line, _("KEKUTU 4"), penyangga
+				"%s%s: %s\r\n",
+				tingkat_kekuktu,
+				_("KEKUTU 4"), penyangga
 				);
 		break;
 		case 9:
@@ -225,9 +228,9 @@ void throw_error(int type, const char * file, const int line,
 				va_argmax   = va_arg(args, int);
 				va_end(args);
 				printf(
-					"%s:%d %s: %s: %i-%i ",
-					filestr,
-					line, _("KEKUTU 5"),
+					"%s%s: %s %i-%i",
+					tingkat_kekuktu,
+					_("KEKUTU 5"),
 					msg, va_argstart, va_argmax
 				);
 				printf("{");
@@ -260,7 +263,7 @@ char *b2s(bool s){
 // string to bool.
 // Bila mengandung kata true maka benar.
 bool s2b(char *s){
-	char *f=strstr(s, "true");
+	char *f=strcasestr(s, "true");
 	return f!=NULL;
 }
 

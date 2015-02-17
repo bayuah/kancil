@@ -143,7 +143,7 @@ built-gerbang:gerbang.c $(UTILITY_OBJ) gerbang-anak.o
 
 built-peladen:peladen.c $(UTILITY_OBJ) peladen-tulis.o peladen-anak.o
 	@echo "Build peladen with built number $(BUILT_PELADEN)..."
-	@ld -r $(UTILITY_OBJ) peladen-tulis.o peladen-anak.o -o peladen.o
+	@ld -r $(UTILITY_OBJ) peladen-tulis.o peladen-anak.o -o peladen.o 
 	@$(CCF) $(VERSIONING) \
 		-D__BUILT_NUMBER=$(BUILT_PELADEN) \
 		peladen.o peladen.c -o peladen $(CCLIBS) \
