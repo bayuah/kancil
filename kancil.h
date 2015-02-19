@@ -2,7 +2,7 @@
  * `kancil.h`
  * Pengepala standar untuk kancil.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt
  */
  
@@ -26,6 +26,12 @@
 #ifndef _POSIX_SOURCE
 	#define _POSIX_SOURCE
 #endif
+
+// Sebuah lelucon.
+// Atau alat bantu. :D
+// Digunakan di perulangan for
+// sehingga menjadi for ever{}
+#define ever (;;)
 
 // Standar.
 #include <stdio.h>
@@ -158,6 +164,9 @@
 #ifndef MAX_CHUNK_ID
 	#define MAX_CHUNK_ID 65025 // 16-bit.
 	// #define MAX_CHUNK_ID 10 // 16-bit.
+#endif
+#ifndef GATE_MAX_KEYSIZE
+	#define GATE_MAX_KEYSIZE 64
 #endif
 
 // Nilai panji.

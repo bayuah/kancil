@@ -2,7 +2,7 @@
  * `faedah.c`
  * Alat bantu kemanfaatan dalam program kancil.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt
  */
 
@@ -179,10 +179,15 @@ void throw_error(int type, const char * file, const int line,
 		break;
 		case 4:
 			if(boleh[4])
+			// printf(
+				// "%s%s: %s\r\n",
+				// tingkat_kekuktu,
+				// _("INFO"), penyangga
+				// );
 			printf(
-				"%s%s: %s\r\n",
+				"%s%s\r\n",
 				tingkat_kekuktu,
-				_("INFO"), penyangga
+				penyangga
 				);
 		break;
 		case 5:
@@ -228,7 +233,7 @@ void throw_error(int type, const char * file, const int line,
 				va_argmax   = va_arg(args, int);
 				va_end(args);
 				printf(
-					"%s%s: %s %i-%i",
+					"%s%s: %s: %i-%i ",
 					tingkat_kekuktu,
 					_("KEKUTU 5"),
 					msg, va_argstart, va_argmax
@@ -279,7 +284,6 @@ bool is_nonascii(char *s){
 	};
 	return false;
 }
-
 
 /*
  * `current_time()`

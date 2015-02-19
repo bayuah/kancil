@@ -2,7 +2,7 @@
  * `peladen-anak.c`
  * Sebagai anak peladen dari Kancil.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt
  */
 
@@ -194,28 +194,38 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 					free(berkas_nama);
 					free(berkas_ukuran);
 				}else if(panji==INTRANSFER_FLAG){
-					
-					// Memeriksa apakah berkas telah diketahui.
-					if(!strlen(berkas->nama) || berkas->ukuran <=0){
-						// Kesalahan.
-						WARN(_("Nama dan ukuran berkas tidak diketahui."), 0);
-						NOTICE(_("Meminta Klien mengulang pengiriman."), 0);
+					// Kesalahan.
+					if(
+						!strlen(berkas->nama) || berkas->ukuran <=0
+						|| !strlen(berkas->nama)
+					){
 						
-						// Meminta mengulang ke identifikasi 0.
-						identifikasi=0;
-						panji=START_FLAG;
-						status_peladen=0;
+						// Identifikasi berkas.
+						memset(
+							berkas->identifikasi, 0,
+							sizeof(berkas->identifikasi)*BERKAS_MAX_STR);
 						
-					}else if(!strlen(berkas->nama)){
-						// Kesalahan.
-						WARN(_("Nama berkas tidak diketahui."), 0);
-						NOTICE(_("Meminta Klien mengulang pengiriman."), 0);
-						
-						// Meminta mengulang ke identifikasi 0.
-						identifikasi=0;
-						panji=START_FLAG;
-						status_peladen=0;
-						
+						// Memeriksa apakah berkas telah diketahui.
+						if(!strlen(berkas->nama) || berkas->ukuran <=0){
+							// Kesalahan.
+							WARN(_("Nama dan ukuran berkas tidak diketahui."), 0);
+							NOTICE(_("Meminta Klien mengulang pengiriman."), 0);
+							
+							// Meminta mengulang ke identifikasi 0.
+							identifikasi=0;
+							panji=START_FLAG;
+							status_peladen=0;
+							
+						}else if(!strlen(berkas->nama)){
+							// Kesalahan.
+							WARN(_("Nama berkas tidak diketahui."), 0);
+							NOTICE(_("Meminta Klien mengulang pengiriman."), 0);
+							
+							// Meminta mengulang ke identifikasi 0.
+							identifikasi=0;
+							panji=START_FLAG;
+							status_peladen=0;
+						};
 					}else if(berkas->ukuran <=0){
 						// Kesalahan.
 						WARN(_("Ukuran berkas tidak diketahui."), 0);

@@ -2,7 +2,7 @@
  * `gerbang.c`
  * Sebagai gerbang dari kancil.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt
  */
 
@@ -51,6 +51,10 @@ int main(int argc, char *argv[]){
 	aturan.rawtransfer=true;
 	strcpy(aturan.listening,"5001");
 	aturan.rsa_padding=RSA_PKCS1_OAEP_PADDING;
+	aturan.gates_c=1;
+	aturan.gateid=0;
+	aturan.timebase=10;
+	aturan.timetollerance=1;
 	
 	// Informasi versi.
 	info_versi();
@@ -119,15 +123,26 @@ int main(int argc, char *argv[]){
 	int mxid=INFOALAMAT_MAX_ID;
 	int mxip=INFOALAMAT_MAX_IP;
 	int mxst=INFOALAMAT_MAX_STR;
-	memset(alamat_mmap->inang, 0, sizeof(alamat_mmap->inang[0][0]) * mxid * mxst);
-	memset(alamat_mmap->ipcount, 0, sizeof(alamat_mmap->ipcount[0]) * mxid);
-	memset(alamat_mmap->ai_family, 0, sizeof(alamat_mmap->ai_family[0][0]) * mxid * mxip);
-	memset(alamat_mmap->ai_socktype, 0, sizeof(alamat_mmap->ai_socktype[0][0]) * mxid * mxip);
-	memset(alamat_mmap->ai_protocol, 0, sizeof(alamat_mmap->ai_protocol[0][0]) * mxid * mxip);
-	memset(alamat_mmap->ai_addrlen, 0, sizeof(alamat_mmap->ai_addrlen[0][0]) * mxid * mxip);
-	memset(alamat_mmap->ai_canonname, 0, sizeof(alamat_mmap->ai_canonname[0][0]) * mxid * mxip * mxst);
-	memset(alamat_mmap->sockaddr_sa_family, 0, sizeof(alamat_mmap->sockaddr_sa_family[0][0]) * mxid * mxip);
-	memset(alamat_mmap->sockaddr_sa_data, 0, sizeof(alamat_mmap->sockaddr_sa_data[0][0][0]) * mxid * mxip * 14);
+	memset(alamat_mmap->inang, 0,
+		sizeof(alamat_mmap->inang[0][0]) * mxid * mxst);
+	memset(alamat_mmap->ipcount, 0,
+		sizeof(alamat_mmap->ipcount[0]) * mxid);
+	memset(alamat_mmap->ai_family, 0,
+		sizeof(alamat_mmap->ai_family[0][0]) * mxid * mxip);
+	memset(alamat_mmap->ai_socktype, 0,
+		sizeof(alamat_mmap->ai_socktype[0][0]) * mxid * mxip);
+	memset(alamat_mmap->ai_protocol, 0,
+		sizeof(alamat_mmap->ai_protocol[0][0]) * mxid * mxip);
+	memset(alamat_mmap->ai_addrlen, 0,
+		sizeof(alamat_mmap->ai_addrlen[0][0]) * mxid * mxip);
+	memset(alamat_mmap->ai_canonname, 0,
+		sizeof(alamat_mmap->ai_canonname[0][0]) * mxid * mxip * mxst);
+	memset(
+		alamat_mmap->sockaddr_sa_family, 0,
+		sizeof(alamat_mmap->sockaddr_sa_family[0][0]) * mxid * mxip);
+	memset(
+		alamat_mmap->sockaddr_sa_data, 0,
+		sizeof(alamat_mmap->sockaddr_sa_data[0][0][0]) * mxid * mxip * 14);
 	
 	// Penerima.
 	// Soket.
@@ -152,14 +167,20 @@ int main(int argc, char *argv[]){
 	int reuse_addr=1;
 	if (setsockopt((socklen_t)sockfd, SOL_SOCKET, SO_REUSEADDR,
 		&reuse_addr, sizeof(int)) == -1 ){
-		FAIL(_("Kegagalan '%1$s': %2$s (%3$i)."), "setsockopt", strerror(errno), errno);
+		FAIL(
+			_("Kegagalan '%1$s': %2$s (%3$i)."),
+			"setsockopt", strerror(errno), errno
+		);
 		exit(EXIT_FAILURE_SOCKET);
 	}
 	
 	/* Now bind the host address using bind() call.*/
 	if (bind(sockfd, (struct sockaddr *) &serv_addr,
 						  sizeof(serv_addr)) < 0){
-		FAIL(_("Kegagalan '%1$s': %2$s (%3$i)."), "bind", strerror(errno), errno);
+		FAIL(
+			_("Kegagalan '%1$s': %2$s (%3$i)."),
+			"bind", strerror(errno), errno
+		);
 		exit(EXIT_FAILURE_SOCKET);
 	}
 	
@@ -169,7 +190,7 @@ int main(int argc, char *argv[]){
 	 * dan menunggu sambungan masuk.
 	 */
 	socklen_t clilen;
-	int max_connection=5000;
+	int max_connection=5;
 	int pids[max_connection+1];
 	int pid_status;
 	int connection;
@@ -198,7 +219,9 @@ int main(int argc, char *argv[]){
 	// Memecah nama inang.
 	char porta_inang[BERKAS_MAX_STR];
 	char nama_inang[BERKAS_MAX_STR];
-	status=sscanf(aturan.hostname[pilih_inang], "%[^:]:%s", nama_inang, &porta_inang);
+	status=sscanf(
+		aturan.hostname[pilih_inang], "%[^:]:%s", nama_inang, &porta_inang
+		);
 	if(status==1 && !strlen(porta_inang)){
 		// Bila porta kosong.
 		strcpy(porta_inang, aturan.defaultport);
@@ -214,10 +237,22 @@ int main(int argc, char *argv[]){
 	strncpy(kirim_mmap->hostname, nama_inang, BERKAS_MAX_STR);
 	strncpy(kirim_mmap->portno, porta_inang, BERKAS_MAX_STR);
 	
-	while (1){
+	// Bila minus.
+	if(aturan.timetollerance<0)
+		aturan.timetollerance=0;
+	
+	// Pilih inang
+	unsigned char *kunci=(unsigned char*)" Sate atau satai";
+	double waktu_unix;
+	bool inang_sama=false;
+	
+	// Perilaku.
+	int tunggu=0;
+	int coba=0;
+	bool pengawas=false;
+	for ever{
 		newsockfd = accept(sockfd, 
 				(struct sockaddr *) &cli_addr, &clilen);
-		connection++;
 		
 		// Mendapatkan klien.
 		// Lebih cepat dari pada getnameinfo();
@@ -228,30 +263,36 @@ int main(int argc, char *argv[]){
 			);
 		
 		if (newsockfd < 0){
-			FAIL(_("Kegagalan '%1$s': %2$s (%3$i)."), "accept", strerror(errno), errno);
+			FAIL(
+				_("Kegagalan '%1$s': %2$s (%3$i)."),
+				"accept", strerror(errno), errno
+			);
 			exit(EXIT_FAILURE_SOCKET);
 		};
 		
-		if(connection>=max_connection){
-			for (i = 1; i < max_connection; ++i) {
-				
-				DEBUG2(_("Menunggu proses %1$i (%2$i)."), i, pids[i]);
-				while (-1 == waitpid(pids[i], &pid_status, WNOHANG)){
-					sleep(1);
-					killpid(pids[i], SIGKILL);
-					WARN(_("Proses %1$i (%2$i) terlalu lama."), i, pids[i]);
+		// Pengawas prose anak.
+		if(pengawas){
+			pengawas=false;
+			if(connection>=max_connection){
+				for (i = 0; i < max_connection; ++i) {
+					
+					DEBUG2(_("Menunggu proses %1$i (%2$i)."), i, pids[i]);
+					while (-1 == waitpid(pids[i], &pid_status, WNOHANG)){
+						sleep(1);
+						killpid(pids[i], SIGKILL);
+						WARN(_("Proses %1$i (%2$i) terlalu lama."), i, pids[i]);
+					};
+					if (!WIFEXITED(pid_status) || WEXITSTATUS(pid_status) != 0) {
+						FAIL(_("Gagal mematikan proses %1$i (%2$i)."), i, pids[i]);
+						exit(EXIT_FAILURE_FORK);
+					};
+					
+					// Menunggu milidetik.
+					// usleep(100);
 				};
-				if (!WIFEXITED(pid_status) || WEXITSTATUS(pid_status) != 0) {
-					FAIL(_("Gagal mematikan proses %1$i (%2$i)."), i, pids[i]);
-					exit(EXIT_FAILURE_FORK);
-				};
-				
-				// Menunggu milidetik.
-				// usleep(100);
+				connection=0;
 			};
-			connection=0;
 		};
-		
 		// Memecah tugas.
 		// Mencabangkan proses.
 		// 'KANCIL_NOFORK' berguna untuk melakukan pengutuan
@@ -265,9 +306,39 @@ int main(int argc, char *argv[]){
 		
 		// Bila terjadi kesalahan.
 		if (pids[connection] < 0){
-			FAIL(_("Kegagalan proses cabang: %1$s (%2$i)."), strerror(errno), errno);
-			exit(EXIT_FAILURE_FORK);
-		}else{
+			if(errno==11){
+				// Bila kegagalan karena
+				// sumber daya hilang.
+				close(newsockfd);
+				tunggu=5;
+				coba=0;
+				i=0;
+				WARN(_("Sumber daya tidak mencukupi."), 0);
+				while (waitpid(0,NULL,WNOHANG)!=-1){
+					DEBUG1(
+						_("Menunggu proses anak selama %1$i detik."),
+						tunggu
+					);
+					sleep(tunggu);
+					
+					// BIla terlalu banyak,
+					// maka berhenti.
+					if(coba++>(max_connection*10)){
+						FAIL(
+							_("Kegagalan proses cabang: %1$s (%2$i)."),
+							strerror(errno), errno
+						);
+						exit(EXIT_FAILURE_FORK);
+					};
+				};
+			}else{
+				// Lainnya.
+				FAIL(
+					_("Kegagalan proses cabang: %1$s (%2$i)."),
+					strerror(errno), errno
+				);
+				exit(EXIT_FAILURE_FORK);
+			};
 		};
 		
 		if (pids[connection] == 0){
@@ -277,20 +348,82 @@ int main(int argc, char *argv[]){
 				close(sockfd);
 			#endif
 			
-			// Panggil anak.
-			anak_gerbang(
-				newsockfd,
-				kirim_mmap,
-				alamat_mmap
-			);
-			
-			// Pesan.
-			INFO(
-				_("Selesai menangani Klien %1$s:%2$i untuk Peladen %3$s:%4$i."),
-				inet_ntoa(cli_addr.sin_addr),
-				(int) ntohs(cli_addr.sin_port),
-				nama_inang, atoi(porta_inang)
+			// Memeriksa inang.
+			waktu_unix=current_time(CURRENTTIME_SECONDS);
+			inang_sama=false;
+			if(aturan.timetollerance<=0){
+				// Bila tanpa toleransi.
+				pilih_inang=pilih_gerbang(
+					aturan.gates_c,
+					kunci,
+					aturan.timebase,
+					waktu_unix,
+					default_rsa_pubkey()
 				);
+				
+				// Pilih.
+				if(pilih_inang==(int)aturan.gateid){
+					inang_sama=true;
+				}else{
+					inang_sama=false;
+				};
+			}else{
+				// Memeriksa setiap toleransi.
+				inang_sama=false;
+				for(
+					i=0-aturan.timetollerance;
+					i<=(aturan.timetollerance);
+					i++
+				){
+					// Pilih.
+					pilih_inang=pilih_gerbang(
+						aturan.gates_c,
+						kunci,
+						aturan.timebase,
+						(waktu_unix+i),
+						default_rsa_pubkey()
+					);
+					// Pilih.
+					if(pilih_inang==(int)aturan.gateid){
+						inang_sama=true;
+						break;
+					}else{
+						inang_sama=false;
+					};
+				}
+			}
+			
+			// Memilih.
+			if(!inang_sama){
+				// Berhenti.
+				WARN(_("Menolak Klien %1$s:%2$i di waktu %3$.0f."),
+					inet_ntoa(cli_addr.sin_addr),
+					(int) ntohs(cli_addr.sin_port),
+					waktu_unix
+				);
+				// Pesan.
+				DEBUG1(
+					_("ID Gerbang adalah %1$i, sedangkan sekarang adalah %2$i."),
+					(int)aturan.gateid, pilih_inang
+				);
+				
+				// Menutup sambungan.
+				close(newsockfd);
+			}else{
+				// Panggil anak.
+				anak_gerbang(
+					newsockfd,
+					kirim_mmap,
+					alamat_mmap
+				);
+				
+				// Pesan.
+				INFO(
+_("Selesai menangani Klien %1$s:%2$i untuk Peladen %3$s:%4$i di waktu %5$.0f."),
+inet_ntoa(cli_addr.sin_addr),(int) ntohs(cli_addr.sin_port),
+nama_inang, atoi(porta_inang),waktu_unix
+					);
+			};
 			
 			// Menutup.
 			#ifndef KANCIL_NOFORK
@@ -298,7 +431,11 @@ int main(int argc, char *argv[]){
 			#endif
 		}else{
 			close(newsockfd);
+			pengawas=true;
 		};
+		
+		// Menambah sambungan.
+		connection++;
 	};
 	
 	// Menutup.
@@ -316,7 +453,11 @@ int main(int argc, char *argv[]){
  */
 void signal_callback_handler(int signum){
 	printf("\r\n");
-	NOTICE(_("Menangkap sinyal %1$s (%2$i)."), kancil_signal_code(signum), signum);
+	NOTICE(
+		_("Menangkap sinyal %1$s (%2$i)."),
+		kancil_signal_code(signum),
+		signum
+	);
 	
 	// Membersihkan berkas memori.
 	free_shm();
@@ -355,7 +496,10 @@ void free_shm(){
 		
 		// Status.
 		if(status && errno!=2){
-			FAIL(_("Gagal membersihkan berkas memori: %1$s (%2$i)."), strerror(errno), errno);
+			FAIL(
+				_("Gagal membersihkan berkas memori: %1$s (%2$i)."),
+				strerror(errno), errno
+			);
 			exit(EXIT_FAILURE_MEMORY);
 		};
 	#endif

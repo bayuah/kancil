@@ -2,14 +2,14 @@
  * `pesan.c`
  * Fungsi pesan.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt
  */
 
+#include <math.h>
 #include "kancil.h"
 #include "faedah.h"
-
-#include <math.h>
+#include "rsa.h"
 
 /*
  * arti_panji()
@@ -141,6 +141,15 @@ int ambil_pesan_start(
 	char **nama_berkas,
 	char **ukuran_berkas
 	){
+	
+	// Pesan.
+	DEBUG4(_("Panjang maksimal pesan: %1$i."), panjang_pesan);
+	
+	/*
+	Tidak digunakan
+	sebab sering menyebabkan kesalahan segmentasi memori
+	bila nilai adalah NOL.
+	
 	// Memeriksa panjang.
 	int panjang = strlen(pesan);
 	
@@ -154,6 +163,7 @@ int ambil_pesan_start(
 			);
 		return EXIT_FAILURE_CHUNK;
 	};
+	*/
 	
 	// Memecah nilai.
 	// Identifikasi||Nama||Ukuran||
@@ -166,7 +176,7 @@ int ambil_pesan_start(
 		char* tok;
 		int panjang_tok=0;
 		tok = strtok (pesan,"\r\n");
-		if (strchr(tok, 0)==NULL){
+		if (tok==NULL|| strchr(tok, 0)==NULL){
 			WARN(_("%1$s tidak sah."),_("Pesan"));
 			return EXIT_FAILURE_CHUNK;
 		}else{
@@ -174,7 +184,7 @@ int ambil_pesan_start(
 			strncpy(*identifikasi_berkas,tok,panjang_tok+1);
 			
 			tok = strtok (NULL, "\r\n");
-			if (strchr(tok, 0)==NULL){
+			if (tok==NULL|| strchr(tok, 0)==NULL){
 				WARN(_("%1$s tidak sah."),_("Pesan"));
 				return EXIT_FAILURE_CHUNK;
 			}else{
@@ -182,7 +192,7 @@ int ambil_pesan_start(
 				strncpy(*nama_berkas,tok,panjang_tok+1);
 				
 				tok = strtok (NULL, "\r\n");
-				if (strchr(tok, 0)==NULL){
+				if (tok==NULL|| strchr(tok, 0)==NULL){
 					WARN(_("%1$s tidak sah."),_("Pesan"));
 					return EXIT_FAILURE_CHUNK;
 				}else{
@@ -319,6 +329,14 @@ int ambil_pesan_peladen(
 	char** unix_time
 ){
 	
+	// Pesan.
+	DEBUG4(_("Panjang maksimal pesan: %1$i."), panjang_pesan);
+	
+	/*
+	Tidak digunakan
+	sebab sering menyebabkan kesalahan segmentasi memori
+	bila nilai adalah NOL.
+	
 	// Memeriksa panjang.
 	int panjang = strlen(pesan);
 	
@@ -328,54 +346,83 @@ int ambil_pesan_peladen(
 		// keluar dari program.
 		WARN(
 			_("Panjang %1$s (%2$i) terlalu besar. Maksimal %3$i."),
-			_("pesan peladen"),panjang, panjang_pesan
+			_("pecahan awal"),panjang, panjang_pesan
 			);
 		return EXIT_FAILURE_CHUNK;
 	};
+	*/
 	
 	// Memecah nilai.
 	// Identifikasi||Ukuran berkas||Ukuran diterima||
 	// Waktu UNIX detik[.]Waktu UNIX milidetik||
 	
 	// Memeriksa apakah ada [CR][LF]
+	DEBUG4(_("Memeriksa apakah terdapat simbol %1$s."), "[CR][LF]");
 	if (strstr(pesan, "\r\n") == NULL){
 		WARN(_("%1$s tidak sah."),_("Pesan"));
 		return EXIT_FAILURE_CHUNK;
 	}else{
+		// Pesan.
+		DEBUG4(_("Memecah pesan."), 0);
+		
 		char* tok;
 		int panjang_tok=0;
+		
+		DEBUG4(_("Memeriksa apakah kosong."), 0);
 		tok = strtok (pesan,"\r\n");
-		if (strchr(tok, 0)==NULL){
+		if (tok==NULL|| strchr(tok, 0)==NULL){
 			WARN(_("%1$s tidak sah."),_("Pesan"));
 			return EXIT_FAILURE_CHUNK;
 		}else{
+			DEBUG4(_("Tidak kosong."), 0);
+			
 			// Identifikasi.
 			panjang_tok=strlen(tok);
-			strncpy(*identifikasi_berkas,tok,panjang_tok+1);
+			DEBUG4(_("Mendapatkan identifikasi berkas dengan panjang %1$i bita."), panjang_tok);
+			strncpy(*identifikasi_berkas, tok, panjang_tok);
+			DEBUG4(_("Berhasil mendapatkan identifikasi berkas %i ."), strlen(*identifikasi_berkas));
 			tok = strtok (NULL, "\r\n");
-			if (strchr(tok, 0)==NULL){
+			
+			DEBUG4(_("Memeriksa apakah kosong."), 0);
+			if (tok==NULL|| strchr(tok, 0)==NULL){
 				WARN(_("%1$s tidak sah."),_("Pesan"));
 				return EXIT_FAILURE_CHUNK;
 			}else{
+				DEBUG4(_("Tidak kosong."), 0);
+				
 				// Ukuran berkas.
 				panjang_tok=strlen(tok);
-				strncpy(*ukuran_berkas,tok,panjang_tok+1);
+				DEBUG4(_("Mendapatkan ukuran berkas panjang %1$i bita."), panjang_tok);
+				strncpy(*ukuran_berkas,tok,panjang_tok);
+				DEBUG4(_("Berhasil mendapatkan ukuran berkas."), 0);
 				tok = strtok (NULL, "\r\n");
-				if (strchr(tok, 0)==NULL){
+				
+				DEBUG4(_("Memeriksa apakah kosong."), 0);
+				if (tok==NULL|| strchr(tok, 0)==NULL){
 					WARN(_("%1$s tidak sah."),_("Pesan"));
 					return EXIT_FAILURE_CHUNK;
 				}else{
+					DEBUG4(_("Tidak kosong."), 0);
+					
 					// Ukuran diterima.
 					panjang_tok=strlen(tok);
-					strncpy(*ukuran_diterima,tok,panjang_tok+1);
+					DEBUG4(_("Mendapatkan ukuran diterima panjang %1$i bita."), panjang_tok);
+					strncpy(*ukuran_diterima,tok,panjang_tok);
+					DEBUG4(_("Berhasil mendapatkan ukuran diterima."), 0);
 					tok = strtok (NULL, "\r\n");
-					if (strchr(tok, 0)==NULL){
+					
+					DEBUG4(_("Memeriksa apakah kosong."), 0);
+					if (tok==NULL|| strchr(tok, 0)==NULL){
 						WARN(_("%1$s tidak sah."),_("Pesan"));
 						return EXIT_FAILURE_CHUNK;
 					}else{
+						DEBUG4(_("Tidak kosong."), 0);
+						
 						// Waktu unix.
 						panjang_tok=strlen(tok);
-						strncpy(*unix_time,tok,panjang_tok+1);
+						DEBUG4(_("Mendapatkan waktu peladen panjang %1$i bita."), panjang_tok);
+						strncpy(*unix_time,tok,panjang_tok);
+						DEBUG4(_("Berhasil mendapatkan waktu peladen."), 0);
 					};
 				};
 			};
@@ -618,4 +665,104 @@ char *ambil_pesan(char* pecahan){
 	
 	// Hasil.
 	return penyangga;
+}
+
+/*
+ * `pilih_gerbang()`
+ * Memilih gerbang.
+ * @param: maksimal_gerbang (int) Jumlah maksimal gerbang;
+ * @param: kunci (unsigned char*) Kunci yang digunakan;
+ * @param: basis_waktu (int)      Basis waktu pemilihan gerbang;
+ */
+int pilih_gerbang(
+	int maksimal_gerbang,
+	unsigned char *kunci,
+	int basis_waktu,
+	double waktu_unix,
+	unsigned char *pubkey
+){
+	int rturn=-1;
+	
+	// Apakah basis waktu melebihi 60.
+	if(basis_waktu>60){
+		FAIL(_("Nilai basis waktu %1$i lebih besar dari nilai maksimal %2$i."), basis_waktu, 60);
+		return -1;
+	}
+	
+	// Mendapatkan panjang kunci.
+	int panjang_kunci=strlen((char *)kunci);
+	
+	if(panjang_kunci>GATE_MAX_KEYSIZE){
+		WARN(_("Panjang Kunci Gerbang (%1$i) terlalu besar. Maksimal: %2$i."), panjang_kunci, GATE_MAX_KEYSIZE);
+		DEBUG1(_("Memotong sehingga memiliki panjang %1$i."), GATE_MAX_KEYSIZE);
+		panjang_kunci=GATE_MAX_KEYSIZE;
+	};
+	
+	// Maksimal gerbang.
+	DEBUG4(_("Panjang kunci adalah %1$i bita."), panjang_kunci);
+	DEBUG4(_("Waktu UNIX adalah %1$.0f."), waktu_unix);
+	DEBUG4(_("Basis waktu adalah %1$i."), basis_waktu);
+	DEBUG4(_("Jumlah maksimal Gerbang adalah %1$i."), maksimal_gerbang);
+	
+	// Mencari nilai awal detik.
+	double waktu_detik=fmod(waktu_unix, 60);
+	DEBUG4(_("Waktu detik adalah %1$.0f."), waktu_detik);
+	double awal_detik=waktu_unix-waktu_detik;
+	double basis_detik=floor(waktu_detik/(double)basis_waktu)*basis_waktu;
+	DEBUG4(_("Basis detik adalah %1$.0f."), basis_detik);
+	
+	// Mengubah nilai UNIX
+	// sesuai dengan basis.
+	waktu_unix=(awal_detik+basis_detik);
+	DEBUG4(_("Waktu UNIX diubah menjadi %1$.0f."), waktu_unix);
+	
+	// Mengubah nilai Waktu UNIX
+	// ke untaian (string).
+	unsigned char waktu_unix_str[256];
+	memset(waktu_unix_str, 0, 256);
+	snprintf((char *)waktu_unix_str, 256, "%.0f", waktu_unix);
+	
+	// Mendapatkan panjang waktu.
+	int panjang_waktu=strlen((char *)waktu_unix_str);
+	DEBUG4(_("Panjang waktu adalah %1$i bita."), panjang_waktu);
+	
+	// Pindahkan.
+	// unsigned char kunci_ency[panjang_kunci+1];
+	// memset(kunci_ency, 0, panjang_kunci+1);
+	// memcpy(kunci_ency, kunci, panjang_kunci);
+	// DEBUG4(_("Kunci adalah '%1$s'."), kunci_ency);
+	
+	// Mendapatkan hasil enkripsi.
+	DEBUG4(_("Mendapatkan nilai Kunci Gerbang."), 0);
+	unsigned char tujuan_ency[256];
+	rsa_encrypt(
+		// (unsigned char*)"Sate enak",
+		kunci,
+		panjang_kunci,
+		pubkey,
+		tujuan_ency,
+		RSA_NO_PADDING
+	);
+	DEBUG4(_("Berhasil mendapatkan nilai Kunci Gerbang."), 0);
+	DEBUG5(_("Kunci Gerbang"), tujuan_ency, 0, panjang_waktu);
+	DEBUG5(_("Waktu UNIX"), waktu_unix_str, 0, panjang_waktu);
+	
+	// Operasi XOR hasil dan waktu UNIX.
+	// Operasi mulai dari LSB.
+	int hasil=0;
+	int i, j;
+	DEBUG4(_("Mencari nilai XOR dari Kunci Gerbang dan Waktu UNIX."), 0);
+	for(i=(panjang_waktu-1),j=0;i>=0;i--,j++){
+		hasil+=(int)tujuan_ency[j]^waktu_unix_str[i];
+	};
+	DEBUG4(_("Nilai operasi XOR adalah %1$i."), hasil);
+	
+	// Mencari modulus
+	// dari hasil XOR dan jumlah Gerbang.
+	DEBUG4(_("Mencari nilai modulus dari nilai XOR dan jumlah Gerbang."), 0);
+	rturn=mod_int(hasil, maksimal_gerbang);
+	DEBUG4(_("Hasil adalah %1$i."), rturn);
+	
+	// Kembali.
+	return rturn;
 }

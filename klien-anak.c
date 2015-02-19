@@ -2,7 +2,7 @@
  * `kancil.h`
  * Sebagai klien dari kancil.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt 
  */
 
@@ -128,22 +128,6 @@ unsigned int anak_kirim(
 		long int penunjuk_berkas=0
 			+((long)(kelompok_kirim-1)*(MAX_CHUNK_ID-1)*CHUNK_MESSAGE_SIZE)
 			+((long)identifikasi-1)*(long)CHUNK_MESSAGE_SIZE;
-		
-		/*
-		// Panjang baca.
-		int panjang_akhir=(int)((0
-			+ (double)penunjuk_berkas
-			- ((double)kirim->ukuran_berkas+(double)CHUNK_MESSAGE_SIZE)
-			)*(double)-1);
-		
-		if( panjang_akhir>=0 && panjang_akhir<CHUNK_MESSAGE_SIZE){
-			DEBUG3(_("Menggunakan panjang akhir (%1$i bita)."), panjang_akhir);
-			panjang_baca=(size_t)panjang_akhir;
-		}else{
-			DEBUG3(_("Membaca sejumlah panjang pesan pecahan (%1$li bita)."), (long)CHUNK_MESSAGE_SIZE);
-			panjang_baca=(size_t)CHUNK_MESSAGE_SIZE;
-		}
-		*/
 		
 		// Bila mendekati dan pecahan transfer terakhir,
 		// maka penunjuk merupakan
@@ -380,7 +364,7 @@ unsigned int anak_kirim(
 	// Bila kosong.
 	if(kirim_data == NULL){
 		// Pesan kesalahan.
-		FAIL(_("Kegagalan %1$s."), _("Soket"));
+		DEBUG1(_("Kegagalan %1$s."), _("Soket"));
 		
 		// Keluar.
 		exit(EXIT_FAILURE_SOCKET);
@@ -421,11 +405,15 @@ unsigned int anak_kirim(
 		memcpy(pecahan, tujuan_deco, MAX_CHUNK_SIZE);
 		
 	};
+	// ============ /Dekripsi  =======
 	
 	// Mendapatkan pesan.
+	DEBUG4(_("Membersihkan penampung pesan."), 0);
 	memset(pesan, 0, CHUNK_MESSAGE_SIZE);
+	
+	DEBUG4(_("Menyalin pesan."), 0);
 	memcpy(pesan, ambil_pesan(pecahan), CHUNK_MESSAGE_SIZE);
-	// ============ /Dekripsi  =======
+	DEBUG4(_("Selesai menyalin pesan."), 0);
 	
 	// Periksa.
 	// print_unsigned_array(tujuan_deco, 100);
@@ -438,6 +426,7 @@ unsigned int anak_kirim(
 	int r_status_gerbang;
 	int r_status_peladen;
 	unsigned int r_identifikasi;
+	DEBUG4(_("Mendapatkan pengepala."), 0);
 	ambil_pengepala(
 		pecahan,
 		&r_versi,
@@ -447,9 +436,7 @@ unsigned int anak_kirim(
 		&r_status_gerbang,
 		&r_status_peladen
 		);
-	
-	// Mendapatkan pesan.
-	memcpy(pesan, ambil_pesan(pecahan), CHUNK_MESSAGE_SIZE);
+	DEBUG4(_("Selesai mendapatkan pengepala."), 0);
 	
 	// Mendapatkan informasi peladen.
 	char* r_berkas_id;
@@ -463,7 +450,15 @@ unsigned int anak_kirim(
 	berkas_diterima_str=malloc(sizeof(berkas_diterima_str)* (CHUNK_MESSAGE_SIZE/2));
 	unix_time_str=malloc(sizeof(unix_time_str)* (CHUNK_MESSAGE_SIZE/2));
 	
+	// Membersihkan isi.
+	memset(r_berkas_id, 0, sizeof(r_berkas_id)* (CHUNK_MESSAGE_SIZE/2));
+	memset(berkas_ukuran_str, 0, sizeof(berkas_ukuran_str)* (CHUNK_MESSAGE_SIZE/2));
+	memset(berkas_diterima_str, 0, sizeof(berkas_diterima_str)* (CHUNK_MESSAGE_SIZE/2));
+	memset(unix_time_str, 0, sizeof(unix_time_str)* (CHUNK_MESSAGE_SIZE/2));
+	
 	// Ambil informasi.
+	DEBUG4(_("Mendapatkan informasi peladen."), 0);
+	DEBUG5(_("Pesan"), pesan, 0, CHUNK_MESSAGE_SIZE);
 	status=ambil_pesan_peladen(
 		pesan,
 		CHUNK_MESSAGE_SIZE,
@@ -472,6 +467,7 @@ unsigned int anak_kirim(
 		&berkas_diterima_str,
 		&unix_time_str
 	);
+	DEBUG4(_("Selesai mendapatkan informasi peladen."), 0);
 	
 	// Ubah nilai.
 	double r_berkas_ukuran=0;
@@ -503,7 +499,7 @@ unsigned int anak_kirim(
 	
 	// Menyimpan.
 	if(r_berkas_diterima<=0){
-		DEBUG2(_("Berkas terterima berukuran %1$.0f bita. %2$s"), r_berkas_diterima, berkas_diterima_str);
+		DEBUG2(_("Berkas terterima berukuran %1$.0f bita."), r_berkas_diterima);
 	}else{
 		kirim->ukuran_kirim=r_berkas_diterima;
 	};

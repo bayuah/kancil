@@ -2,7 +2,7 @@
  * `soket.h`
  * Fungsi komunikasi soket.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt
  */
 

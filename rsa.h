@@ -2,7 +2,7 @@
  * `rsa.h`
  * Penangan algoritma RSA untuk kancil.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt
  */
 #ifndef _KANCIL_RSA_H_

@@ -2,7 +2,7 @@
  * `struktur.h`
  * Definisi struktur data Kancil.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt
  */
 
@@ -120,6 +120,7 @@ struct GLOBAL_CONFIG {
 	bool show_debug3; 
 	bool show_debug4;
 	bool show_debug5;
+	bool quiet;
 	int debuglevel;
 	bool rawtransfer;
 	bool shifteof;
@@ -130,7 +131,10 @@ struct GLOBAL_CONFIG {
 	char completedir[BERKAS_MAX_STR];
 	char tempdir[BERKAS_MAX_STR];
 	char config[BERKAS_MAX_STR];
+	int  timebase;
+	int  timetollerance;
 	int  gateid;
+	int  gates_c;
 	int  hostname_c;
 	char hostname[MAX_GATE][INFOALAMAT_MAX_STR];
 	char listening[INFOALAMAT_MAX_STR];

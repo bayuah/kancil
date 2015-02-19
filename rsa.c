@@ -2,7 +2,7 @@
  * `rsa.c`
  * Penangan algoritma RSA untuk kancil.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt
  */
 
@@ -166,7 +166,7 @@ int rsa_encrypt(
 	};
 	
 	// RSA.
-	RSA * rsa = create_rsa(key, CREATE_RSA_FROM_PUBKEY);
+	RSA *rsa = create_rsa(key, CREATE_RSA_FROM_PUBKEY);
 	
 	// Mendapatkan ukuran.
 	int ukuran_data_rsa=rsa_data_size(rsa, bantalan);
@@ -178,6 +178,7 @@ int rsa_encrypt(
 	// Enkripsi.
 	int awal=0;
 	int result=0;
+	int tambalan=0;
 	int rsa_result=0;
 	int ukuran_enkripsi=0;
 	int ukuran_data_tersisa=data_len;
@@ -193,7 +194,6 @@ int rsa_encrypt(
 		// tiap ukuran data RSA.
 		DEBUG4(_("Menentukan ukuran blok enkripsi."), 0);
 		if(ukuran_data_tersisa>ukuran_data_rsa){
-			
 			// Pesan.
 			DEBUG4(_("Ukuran blok enkripsi (%1$i) lebih dari ukuran blok RSA (%2$i)."), ukuran_data_tersisa, ukuran_data_rsa);
 			
@@ -216,10 +216,35 @@ int rsa_encrypt(
 			
 		};
 		
-		// Enkripsi.
+		// Pesan.
 		DEBUG4(_("Panjang data tersisa: %1$i"), ukuran_data_tersisa);
-		DEBUG4(_("Panjang blok enkripsi: %1$i"), ukuran_enkripsi);
-		rsa_result = RSA_public_encrypt(ukuran_enkripsi, data+awal, target+result, rsa, bantalan);
+		
+		// Bila RSA_NO_PADDING
+		// dan ukuran terlalu kecil.
+		if(bantalan==RSA_NO_PADDING && ukuran_enkripsi<ukuran_data_rsa){
+			tambalan +=ukuran_data_rsa-ukuran_enkripsi;
+			DEBUG4(_("Menambah tambalan di akhiran blok enkripsi sebanyak %1$i bita."), (ukuran_data_rsa-ukuran_enkripsi));
+			ukuran_enkripsi+=tambalan;
+			
+			// Menyalin isi.
+			unsigned char *data_tambalan;
+			data_tambalan=malloc(sizeof(data_tambalan)*(ukuran_data_rsa+1));
+			memset(data_tambalan, 0, sizeof(data_tambalan)*(ukuran_data_rsa+1));
+			memcpy(data_tambalan, data+awal, ukuran_data_tersisa);
+			
+			// Mengosongkan isi
+			for(int it=ukuran_data_tersisa;it<=ukuran_data_rsa;it++){
+				data_tambalan[it]=0;
+			};
+			
+			// Enkripsi.
+			DEBUG4(_("Panjang blok enkripsi: %1$i"), ukuran_enkripsi);
+			rsa_result = RSA_public_encrypt(ukuran_data_rsa, data_tambalan, target+result, rsa, bantalan);
+		}else{
+			// Enkripsi.
+			DEBUG4(_("Panjang blok enkripsi: %1$i"), ukuran_enkripsi);
+			rsa_result = RSA_public_encrypt(ukuran_enkripsi, data+awal, target+result, rsa, bantalan);
+		};
 		
 		// Bila ada kesalahan.
 		if(rsa_result<0){

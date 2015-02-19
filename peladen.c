@@ -2,7 +2,7 @@
  * `peladen.c`
  * Sebagai peladen dari kancil.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt
  */
 
@@ -142,10 +142,13 @@ int main(int argc, char *argv[]){
 	 * dan menunggu sambungan masuk.
 	 */
 	socklen_t clilen;
-	int max_connection=5000;
+	int max_connection=5;
 	int pids[max_connection+1];
 	int pid_status;
+	int tunggu=0;
+	int coba=0;
 	int connection;
+	bool pengawas=false;
 	int i;
 	
 	// char cli_name[INET6_ADDRSTRLEN];
@@ -155,10 +158,9 @@ int main(int argc, char *argv[]){
 	listen(sockfd, 5);
 	clilen = sizeof(cli_addr);
 	INFO(_("Mendengarkan porta %1$i."), portno);
-	while (1){
+	for ever{
 		newsockfd = accept(sockfd, 
 				(struct sockaddr *) &cli_addr, &clilen);
-		connection++;
 		
 		// Mendapatkan klien.
 		// Lebih cepat dari pada getnameinfo();
@@ -183,24 +185,28 @@ int main(int argc, char *argv[]){
 			exit(EXIT_FAILURE_SOCKET);
 		};
 		
-		if(connection>=max_connection){
-			for (i = 1; i < max_connection; ++i) {
-				
-				DEBUG2(_("Menunggu proses %1$i (%2$i)."), i, pids[i]);
-				while (-1 == waitpid(pids[i], &pid_status, WNOHANG)){
-					sleep(1);
-					killpid(pids[i], SIGKILL);
-					WARN(_("Proses %1$i (%2$i) terlalu lama."), i, pids[i]);
+		// Pengawas proses anak.
+		if(pengawas){
+			pengawas=false;
+			if(connection>=max_connection){
+				for (i = 0; i < max_connection; ++i) {
+					
+					DEBUG2(_("Menunggu proses %1$i (%2$i)."), i, pids[i]);
+					while (-1 == waitpid(pids[i], &pid_status, WNOHANG)){
+						sleep(1);
+						killpid(pids[i], SIGKILL);
+						WARN(_("Proses %1$i (%2$i) terlalu lama."), i, pids[i]);
+					};
+					if (!WIFEXITED(pid_status) || WEXITSTATUS(pid_status) != 0) {
+						FAIL(_("Gagal mematikan proses %1$i (%2$i)."), i, pids[i]);
+						exit(EXIT_FAILURE_FORK);
+					};
+					
+					// Menunggu milidetik.
+					// usleep(100);
 				};
-				if (!WIFEXITED(pid_status) || WEXITSTATUS(pid_status) != 0) {
-					FAIL(_("Gagal mematikan proses %1$i (%2$i)."), i, pids[i]);
-					exit(EXIT_FAILURE_FORK);
-				};
-				
-				// Menunggu milidetik.
-				// usleep(100);
+				connection=0;
 			};
-			connection=0;
 		};
 		
 		// Memecah tugas.
@@ -216,9 +222,39 @@ int main(int argc, char *argv[]){
 		
 		// Bila terjadi kesalahan.
 		if (pids[connection] < 0){
-			FAIL(_("Kegagalan proses cabang: %1$s (%2$i)."), strerror(errno), errno);
-			exit(EXIT_FAILURE_FORK);
-		}else{
+			if(errno==11){
+				// Bila kegagalan karena
+				// sumber daya hilang.
+				close(newsockfd);
+				tunggu=5;
+				coba=0;
+				i=0;
+				WARN(_("Sumber daya tidak mencukupi."), 0);
+				while (waitpid(0,NULL,WNOHANG)!=-1){
+					DEBUG1(
+						_("Menunggu proses anak selama %1$i detik."),
+						tunggu
+					);
+					sleep(tunggu);
+					
+					// BIla terlalu banyak,
+					// maka berhenti.
+					if(coba++>(max_connection*10)){
+						FAIL(
+							_("Kegagalan proses cabang: %1$s (%2$i)."),
+							strerror(errno), errno
+						);
+						exit(EXIT_FAILURE_FORK);
+					};
+				};
+			}else{
+				// Lainnya.
+				FAIL(
+					_("Kegagalan proses cabang: %1$s (%2$i)."),
+					strerror(errno), errno
+				);
+				exit(EXIT_FAILURE_FORK);
+			};
 		};
 		
 		if (pids[connection] == 0){
@@ -243,12 +279,16 @@ int main(int argc, char *argv[]){
 			#endif
 		}else{
 			close(newsockfd);
+			pengawas=true;
 		};
+		
+		// Menambah sambungan.
+		connection++;
 	};
 	
 	// Menutup.
 	// stop_listening(newsockfd);
-	
+		
 	exit(EXIT_SUCCESS);
 }
 

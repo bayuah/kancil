@@ -2,7 +2,7 @@
  * `argumen.c`
  * Pengurai argumen dari kancil.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt
  */
 
@@ -40,6 +40,7 @@ void bantuan();
 bool is_klien();
 bool is_gerbang();
 bool is_peladen();
+bool info_sudah_tampil;
 
 // Memeriksa jenis program.
 bool is_klien(){
@@ -50,6 +51,9 @@ bool is_gerbang(){
 }
 bool is_peladen(){
 	return !strcasecmp(infokancil.progcode, "KANCIL_PELADEN");
+}
+bool is_kanciltest(){
+	return !strcasecmp(infokancil.progcode, "KANCIL_TEST");
 }
 
 /*
@@ -68,36 +72,46 @@ void urai_argumen(int argc, char *argv[]){
 		// int this_option_optind = optind ? optind : 1;
 		int option_index = 0;
 		static struct option long_options[] = {
-			{"host",       required_argument, 0, 'H'},
-			{"config",     required_argument, 0, 'c'},
-			{"logfile",    required_argument, 0, 'l'},
-			{"debug",      required_argument, 0, 'd'},
-			{"debug1",     no_argument,       0, '1'},
-			{"debug2",     no_argument,       0, '2'},
-			{"debug3",     no_argument,       0, '3'},
-			{"debug4",     no_argument,       0, '4'},
-			{"debug5",     no_argument,       0, '5'},
-			{"debuglevel", required_argument, 0, 'D'},
-			{"show-error",      no_argument,  0, 'E'},
-			{"show-warning",    no_argument,  0, 'W'},
-			{"show-notice",     no_argument,  0, 'N'},
-			{"show-info",       no_argument,  0, 'I'},
-			{"verbose",    no_argument,       0, 'v'},
-			{"quiet",      no_argument,       0, 'q'},
-			{"tries",      no_argument,       0, 't'},
-			{"parallel",    no_argument,      0, 'p'},
-			{"shifteof",    no_argument,      0, 'S'},
-			{"rsapadding",     no_argument,   0, 'P'},
-			{"version",    no_argument,       0, 'V'},
-			{"help",       no_argument,       0, 'h'},
-			{0,            0,                 0,  0 }
+			{"host",         required_argument, 0, 'H'},
+			{"config",       required_argument, 0, 'c'},
+			{"logfile",      required_argument, 0, 'l'},
+			{"listening",    required_argument, 0, 'L'},
+			{"debug",        required_argument, 0, 'd'},
+			{"debug1",       no_argument,       0, '1'},
+			{"debug2",       no_argument,       0, '2'},
+			{"debug3",       no_argument,       0, '3'},
+			{"debug4",       no_argument,       0, '4'},
+			{"debug5",       no_argument,       0, '5'},
+			{"debuglevel",   required_argument, 0, 'D'},
+			{"show-error",   no_argument,       0, 'E'},
+			{"show-warning", no_argument,       0, 'W'},
+			{"show-notice",  no_argument,       0, 'N'},
+			{"show-info",    no_argument,       0, 'I'},
+			{"verbose",      no_argument,       0, 'v'},
+			{"quiet",        no_argument,       0, 'q'},
+			{"gateid",       required_argument, 0, 'G'},
+			{"gatesnum",     required_argument, 0, 'g'},
+			{"timebase",     required_argument, 0, 'B'},
+			{"tries",        no_argument,       0, 't'},
+			{"parallel",     no_argument,       0, 'p'},
+			{"shifteof",     no_argument,       0, 'S'},
+			{"rsapadding",   no_argument,       0, 'P'},
+			{"version",      no_argument,       0, 'V'},
+			{"help",         no_argument,       0, 'h'},
+			{0,              0,                 0,  0 }
 		};
 		
 		// Mendapatkan argumen.
-		int c = getopt_long(argc, argv, "12345c:d:D:H:hl:p:P:RrSvVq?",
+		int c = getopt_long(argc, argv, "12345B:c:d:D:g:G:H:hl:L:p:P:RrSvVq?",
 				 long_options, &option_index);
 		if (c == -1)
 			break;
+		
+		// Informasi.
+		if(
+			!info_sudah_tampil
+			&& c!='q'
+		)info_versi();
 		
 		switch (c) {
 		case '1':
@@ -185,15 +199,24 @@ void urai_argumen(int argc, char *argv[]){
 				switch(atoi(optarg)){
 					case MINI_DEBUG:
 						status=MINI_DEBUG;
-						DEBUG1(_("Argumen: Tampilan kekutu %s."), "MINI_DEBUG");
+						DEBUG1(
+							_("Argumen: Tampilan kekutu %s."),
+							"MINI_DEBUG"
+						);
 					break;
 					case MEDIUM_DEBUG:
 						status=MEDIUM_DEBUG;
-						DEBUG1(_("Argumen: Tampilan kekutu %s."), "MEDIUM_DEBUG");
+						DEBUG1(
+							_("Argumen: Tampilan kekutu %s."),
+							"MEDIUM_DEBUG"
+						);
 					break;
 					case FULL_DEBUG:
 						status=FULL_DEBUG;
-						DEBUG1(_("Argumen: Tampilan kekutu %s."), "FULL_DEBUG");
+						DEBUG1(
+							_("Argumen: Tampilan kekutu %s."),
+							"FULL_DEBUG"
+						);
 					break;
 				}
 			};
@@ -201,6 +224,7 @@ void urai_argumen(int argc, char *argv[]){
 			aturan.debuglevel=status;
 			break;
 		case 'q':
+			aturan.quiet=true;
 			aturan.show_error=false;
 			aturan.show_warning=false;
 			aturan.show_notice=false;
@@ -219,6 +243,38 @@ void urai_argumen(int argc, char *argv[]){
 				aturan.hostname_c++;
 			};
 			break;
+		case 'B':
+			// Menambah inang tujuan.
+			status=atoi(optarg);
+			if(status){
+				DEBUG1(
+					_("Argumen: Basis waktu pemilihan gerbang adalah %1$i detik."),
+					status
+				);
+				aturan.timebase=status;
+			};
+			break;
+		case 'g':
+			status=atoi(optarg);
+			if(status){
+				DEBUG1(_("Argumen: Jumlah gerbang adalah %1$i."), status);
+				aturan.gates_c=status;
+			};
+			break;
+		case 'G':
+			if(!is_nonascii(optarg) && strlen(optarg)){
+				status=atoi(optarg);
+				DEBUG1(_("Argumen: ID gerbang adalah %1$i."), status);
+				aturan.gateid=status;
+			};
+			break;
+		case 'L':
+			status=atoi(optarg);
+			if(status){
+				DEBUG1(_("Argumen: Mendengarkan di porta %1$i."), status);
+				strcpy(aturan.listening, optarg);
+			};
+			break;
 		case 'p':
 			DEBUG1(_("Paralel sebanyak %s sambungan."), optarg);
 			aturan.parallel=atoi(optarg);
@@ -227,33 +283,57 @@ void urai_argumen(int argc, char *argv[]){
 			status=aturan.rsa_padding;
 			if(!strcasecmp("RSA_PKCS1_PADDING",optarg)){
 				status=RSA_PKCS1_PADDING;
-				DEBUG1(_("Argumen: RSA menggunakan bantalan %s."), "RSA_PKCS1_PADDING");
+				DEBUG1(
+					_("Argumen: RSA menggunakan bantalan %s."),
+					"RSA_PKCS1_PADDING"
+				);
 			}else if(!strcasecmp("RSA_SSLV23_PADDING",optarg)){
 				status=RSA_SSLV23_PADDING;
-				DEBUG1(_("Argumen: RSA menggunakan bantalan %s."), "RSA_SSLV23_PADDING");
+				DEBUG1(
+					_("Argumen: RSA menggunakan bantalan %s."),
+					"RSA_SSLV23_PADDING"
+				);
 			}else if(!strcasecmp("RSA_PKCS1_OAEP_PADDING",optarg)){
 				status=RSA_PKCS1_OAEP_PADDING;
-				DEBUG1(_("Argumen: RSA menggunakan bantalan %s."), "RSA_PKCS1_OAEP_PADDING");
+				DEBUG1(
+					_("Argumen: RSA menggunakan bantalan %s."),
+					"RSA_PKCS1_OAEP_PADDING"
+				);
 			}else if(!strcasecmp("RSA_NO_PADDING",optarg)){
 				status=RSA_NO_PADDING;
-				DEBUG1(_("Argumen: RSA menggunakan bantalan %s."), "RSA_NO_PADDING");
+				DEBUG1(
+					_("Argumen: RSA menggunakan bantalan %s."),
+					"RSA_NO_PADDING"
+				);
 			}else{
 				switch(atoi(optarg)){
 					case RSA_PKCS1_PADDING:
 						status=RSA_PKCS1_PADDING;
-						DEBUG1(_("Argumen: RSA menggunakan bantalan %s."), "RSA_PKCS1_PADDING");
+						DEBUG1(
+							_("Argumen: RSA menggunakan bantalan %s."),
+							"RSA_PKCS1_PADDING"
+						);
 					break;
 					case RSA_SSLV23_PADDING:
 						status=RSA_SSLV23_PADDING;
-						DEBUG1(_("Argumen: RSA menggunakan bantalan %s."), "RSA_SSLV23_PADDING");
+						DEBUG1(
+							_("Argumen: RSA menggunakan bantalan %s."),
+							"RSA_SSLV23_PADDING"
+						);
 					break;
 					case RSA_PKCS1_OAEP_PADDING:
 						status=RSA_PKCS1_OAEP_PADDING;
-						DEBUG1(_("Argumen: RSA menggunakan bantalan %s."), "RSA_PKCS1_OAEP_PADDING");
+						DEBUG1(
+							_("Argumen: RSA menggunakan bantalan %s."),
+							"RSA_PKCS1_OAEP_PADDING"
+						);
 					break;
 					case RSA_NO_PADDING:
 						status=RSA_NO_PADDING;
-						DEBUG1(_("Argumen: RSA menggunakan bantalan %s."), "RSA_NO_PADDING");
+						DEBUG1(
+							_("Argumen: RSA menggunakan bantalan %s."),
+							"RSA_NO_PADDING"
+						);
 					break;
 				}
 			};
@@ -310,6 +390,10 @@ void urai_argumen(int argc, char *argv[]){
 				&&!is_nonascii(arg_sisa[1])
 				&& strlen(arg_sisa[1])
 			){
+				// Informasi.
+				if(!info_sudah_tampil)
+					info_versi();
+				
 				DEBUG3(_("Menambah inang %1$s dari argumen."), arg_sisa[1]);
 				strcpy(aturan.hostname[aturan.hostname_c], arg_sisa[1]);
 				aturan.hostname_c++;
@@ -324,6 +408,10 @@ void urai_argumen(int argc, char *argv[]){
 				&&!is_nonascii(arg_sisa[1])
 				&& strlen(arg_sisa[1])
 			){
+				// Informasi.
+				if(!info_sudah_tampil)
+					info_versi();
+				
 				DEBUG3(_("Menambah inang %1$s dari argumen."), arg_sisa[1]);
 				strcpy(aturan.hostname[aturan.hostname_c], arg_sisa[1]);
 				aturan.hostname_c++;
@@ -341,7 +429,7 @@ void urai_argumen(int argc, char *argv[]){
 		}
 		
 	}else{
-		if(!is_peladen() && !is_gerbang()){
+		if(!is_peladen() && !is_gerbang() && !is_kanciltest()){
 			// Peladen dan Gerbang dapat
 			// tanpa argumen minimal.
 			bantuan_param_standar();
@@ -352,14 +440,30 @@ void urai_argumen(int argc, char *argv[]){
 
 // Bantuan.
 void bantuan_param_standar(){
+	// Tidak tampil.
+	if(aturan.quiet)
+		return;
+	
+	if(!info_sudah_tampil)
+		info_versi();
+	
 	if(is_klien()){
-		printf(_("Gunakan: %1$s BERKAS [INANG[:PORTA]] [--config=BERKAS] [OPSI]."), infokancil.executable);
+		printf(
+			_("Gunakan: %1$s BERKAS [INANG[:PORTA]] [--config=BERKAS] [OPSI]."),
+			infokancil.executable
+		);
 		printf("\n");
 	}else if(is_gerbang()){
-		printf(_("Gunakan: %1$s PORTA INANG[:PORTA] [OPSI]."), infokancil.executable);
+		printf(
+			_("Gunakan: %1$s PORTA INANG[:PORTA] [OPSI]."),
+			infokancil.executable
+		);
 		printf("\n");
 	}else if(is_peladen()){
 		printf(_("Gunakan: %1$s [PORTA] [OPSI]."), infokancil.executable);
+		printf("\n");
+	}else{
+		printf(_("Gunakan: %1$s."), infokancil.executable);
 		printf("\n");
 	};
 	
@@ -372,6 +476,13 @@ void bantuan(){
  * Informasi versi.
  */
 void info_versi(){
+	info_sudah_tampil=true;
+	
+	// Tidak tampil.
+	if(aturan.quiet)
+		return;
+	
+	// Membangun.
 	char BUILT_VERSION[64];
 	snprintf(BUILT_VERSION, 64,
 		"%1$i.%2$i.%3$i.%4$i-%5$s",
@@ -381,6 +492,8 @@ void info_versi(){
 		infokancil.built_number,
 		infokancil.compile_mode
 	);
+	
+	// Tampilan.
 	printf("%1$s (%2$s).\n", infokancil.progname, BUILT_VERSION);
 	memset(BUILT_VERSION, 0, 64);
 }
@@ -389,8 +502,6 @@ void info_versi(){
  * Informasi kancil.
  */
 void info_bangun(){
-	info_versi();
-	
 	time_t BUILT_TIME;
 	char BUILT_TIME_STR[50];
 	struct tm *lcltime;
@@ -399,7 +510,10 @@ void info_bangun(){
 	strftime(BUILT_TIME_STR, sizeof(BUILT_TIME_STR), "%c", lcltime);
 	
 	// Awal tampil.
-	printf(_("Dibangun pada %1$s. Protokol versi %2$i."), BUILT_TIME_STR, PROTOCOL_VERSION );
+	printf(
+		_("Dibangun pada %1$s. Protokol versi %2$i."),
+		BUILT_TIME_STR, PROTOCOL_VERSION
+	);
 	printf("\n");
 	
 	// Informasi pembangun.
@@ -419,15 +533,21 @@ void info_lisensi(){
 	printf(_("HakCipta (C) 2014-2015 Bayu Aditya H."));
 	printf("\n");
 	printf("Rabu, 26 November 2014, 07:05:50 UTC+7\n");
-	printf(_("Lisensi: \"THE COFFEE-WARE\" (Revision 1991-A)"));
+	printf(_("Lisensi: \"THE COFFEE-WARE\" (Revision 1991)"));
 	printf("\n\n");
-	printf(_("Ditulis oleh %1$s <%2$s>."), "Bayu Aditya H.", "b@yuah.web.id");
+	printf(
+		_("Ditulis oleh %1$s <%2$s>."),
+		"Bayu Aditya H.", "b@yuah.web.id"
+	);
 	printf("\n");
 	info_tanya();
 }
 
 void info_tanya(){
-	printf(_("Kirim laporan kesalahan dan pertanyaan ke %1$s."), "bug@yuah.web.id");
+	printf(
+		_("Kirim laporan kesalahan dan pertanyaan ke %1$s."),
+		"bug@yuah.web.id"
+	);
 	printf("\n");
 }
 
@@ -443,23 +563,6 @@ int buat_konfigurasi(){
 			);
 		exit(EXIT_FAILURE_IO);
 	};
-	
-	// Mulai menulis aturan.
-	// b2s(aturan.show_error);
-	// b2s(aturan.show_warning);
-	// b2s(aturan.show_notice);
-	// b2s(aturan.show_info);
-	// b2s(aturan.show_debug1);
-	// b2s(aturan.show_debug2);
-	// b2s(aturan.show_debug3);
-	// b2s(aturan.show_debug4);
-	// b2s(aturan.show_debug5);
-	// aturan.tempdir="tmp";
-	// aturan.config="kancil-klien.cfg";
-	// aturan.tries=20;
-	// aturan.waitretry=15;
-	// aturan.waitqueue=5;
-	// aturan.parallel=1;
 	
 	// Jumlah yang ditulis adalah jumlah inang
 	// dan harus di bawah atau sama dengan MAX_GATE.
@@ -499,6 +602,12 @@ int baca_konfigurasi(){
 	};
 	
 	int status;
+	
+	// Bila ada konfigurasi.
+	if(!strlen(aturan.config) || is_nonascii(aturan.config)){
+		DEBUG1(_("Tidak menentukan berkas konfigurasi"), 0);
+		return -1;
+	};
 	
 	// Membaca konfigurasi.
 	FILE *cfg=fopen(aturan.config, "rb");
@@ -600,6 +709,21 @@ int baca_konfigurasi(){
 			aturan.show_debug5=false;
 		}else if(!strcasecmp(kunci, "RAWTRANSFER")){
 			aturan.rawtransfer=!strlen(nilai)?true:s2b(nilai);
+		}else if(!strcasecmp(kunci, "GATESNUM")){
+			status=atoi(nilai);
+			if(status){
+				aturan.gates_c=status;
+			};
+		}else if(!strcasecmp(kunci, "GATEID")){
+			if(!is_nonascii(nilai) && strlen(nilai)){
+				status=atoi(nilai);
+				aturan.gateid=status;
+			};
+		}else if(!strcasecmp(kunci, "TIMEBASE")){
+			status=atoi(nilai);
+			if(status){
+				aturan.timebase=status;
+			};
 		}else if(!strcasecmp(kunci, "SHIFTEOF")){
 			aturan.show_debug1=!strlen(nilai)?true:s2b(nilai);
 		}else if(!strcasecmp(kunci, "TRIES")){
@@ -615,31 +739,35 @@ int baca_konfigurasi(){
 		}else if(!strcasecmp(kunci, "TEMPDIR")){
 			strcpy(aturan.tempdir, nilai);
 		}else if(!strcasecmp(kunci, "LISTENING")){
-			strcpy(aturan.listening, nilai);
+			status=atoi(nilai);
+			if(status){
+				DEBUG1(_("Berkas pengaturan: Mendengarkan di porta %1$i."), status);
+				strcpy(aturan.listening, nilai);
+			};
 		}else if(!strcasecmp(kunci, "DEBUGLEVEL")){
 			status=aturan.debuglevel;
 			if(!strcasecmp("MINI_DEBUG",nilai)){
 				status=MINI_DEBUG;
-				DEBUG1(_("Argumen: Tampilan kekutu %s."), "MINI_DEBUG");
+				DEBUG1(_("Berkas pengaturan: Tampilan kekutu %s."), "MINI_DEBUG");
 			}else if(!strcasecmp("MEDIUM_DEBUG",nilai)){
 				status=MEDIUM_DEBUG;
-				DEBUG1(_("Argumen: Tampilan kekutu %s."), "MEDIUM_DEBUG");
+				DEBUG1(_("Berkas pengaturan: Tampilan kekutu %s."), "MEDIUM_DEBUG");
 			}else if(!strcasecmp("FULL_DEBUG",nilai)){
 				status=FULL_DEBUG;
-				DEBUG1(_("Argumen: Tampilan kekutu %s."), "FULL_DEBUG");
+				DEBUG1(_("Berkas pengaturan: Tampilan kekutu %s."), "FULL_DEBUG");
 			}else{
 				switch(atoi(nilai)){
 					case MINI_DEBUG:
 						status=MINI_DEBUG;
-						DEBUG1(_("Argumen: Tampilan kekutu %s."), "MINI_DEBUG");
+						DEBUG1(_("Berkas pengaturan: Tampilan kekutu %s."), "MINI_DEBUG");
 					break;
 					case MEDIUM_DEBUG:
 						status=MEDIUM_DEBUG;
-						DEBUG1(_("Argumen: Tampilan kekutu %s."), "MEDIUM_DEBUG");
+						DEBUG1(_("Berkas pengaturan: Tampilan kekutu %s."), "MEDIUM_DEBUG");
 					break;
 					case FULL_DEBUG:
 						status=FULL_DEBUG;
-						DEBUG1(_("Argumen: Tampilan kekutu %s."), "FULL_DEBUG");
+						DEBUG1(_("Berkas pengaturan: Tampilan kekutu %s."), "FULL_DEBUG");
 					break;
 				}
 			};
@@ -649,33 +777,57 @@ int baca_konfigurasi(){
 			status=aturan.rsa_padding;
 			if(!strcasecmp("RSA_PKCS1_PADDING",nilai)){
 				status=RSA_PKCS1_PADDING;
-				DEBUG1(_("Berkas pengaturan: RSA menggunakan bantalan %s."), "RSA_PKCS1_PADDING");
+				DEBUG1(
+					_("Berkas pengaturan: RSA menggunakan bantalan %s."),
+					"RSA_PKCS1_PADDING"
+				);
 			}else if(!strcasecmp("RSA_SSLV23_PADDING",nilai)){
 				status=RSA_SSLV23_PADDING;
-				DEBUG1(_("Berkas pengaturan: RSA menggunakan bantalan %s."), "RSA_SSLV23_PADDING");
+				DEBUG1(
+					_("Berkas pengaturan: RSA menggunakan bantalan %s."),
+					"RSA_SSLV23_PADDING"
+				);
 			}else if(!strcasecmp("RSA_PKCS1_OAEP_PADDING",nilai)){
 				status=RSA_PKCS1_OAEP_PADDING;
-				DEBUG1(_("Berkas pengaturan: RSA menggunakan bantalan %s."), "RSA_PKCS1_OAEP_PADDING");
+				DEBUG1(
+					_("Berkas pengaturan: RSA menggunakan bantalan %s."),
+					"RSA_PKCS1_OAEP_PADDING"
+				);
 			}else if(!strcasecmp("RSA_NO_PADDING",nilai)){
 				status=RSA_NO_PADDING;
-				DEBUG1(_("Berkas pengaturan: RSA menggunakan bantalan %s."), "RSA_NO_PADDING");
+				DEBUG1(
+					_("Berkas pengaturan: RSA menggunakan bantalan %s."),
+					"RSA_NO_PADDING"
+				);
 			}else{
 				switch(atoi(nilai)){
 					case RSA_PKCS1_PADDING:
 						status=RSA_PKCS1_PADDING;
-						DEBUG1(_("Berkas pengaturan: RSA menggunakan bantalan %s."), "RSA_PKCS1_PADDING");
+						DEBUG1(
+							_("Berkas pengaturan: RSA menggunakan bantalan %s."),
+							"RSA_PKCS1_PADDING"
+						);
 					break;
 					case RSA_SSLV23_PADDING:
 						status=RSA_SSLV23_PADDING;
-						DEBUG1(_("Berkas pengaturan: RSA menggunakan bantalan %s."), "RSA_SSLV23_PADDING");
+						DEBUG1(
+							_("Berkas pengaturan: RSA menggunakan bantalan %s."),
+							"RSA_SSLV23_PADDING"
+						);
 					break;
 					case RSA_PKCS1_OAEP_PADDING:
 						status=RSA_PKCS1_OAEP_PADDING;
-						DEBUG1(_("Berkas pengaturan: RSA menggunakan bantalan %s."), "RSA_PKCS1_OAEP_PADDING");
+						DEBUG1(
+							_("Berkas pengaturan: RSA menggunakan bantalan %s."),
+							"RSA_PKCS1_OAEP_PADDING"
+						);
 					break;
 					case RSA_NO_PADDING:
 						status=RSA_NO_PADDING;
-						DEBUG1(_("Berkas pengaturan: RSA menggunakan bantalan %s."), "RSA_NO_PADDING");
+						DEBUG1(
+							_("Berkas pengaturan: RSA menggunakan bantalan %s."),
+							"RSA_NO_PADDING"
+						);
 					break;
 				}
 			};

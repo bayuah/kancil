@@ -2,7 +2,7 @@
  * `argumen.h`
  * Pengurai argumen dari kancil.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt
  */
 

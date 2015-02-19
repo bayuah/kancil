@@ -2,7 +2,7 @@
  * `soket.c`
  * Fungsi komunikasi soket.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt
  */
 
@@ -343,7 +343,8 @@ char *kirimdata(
 					|| status == -2
 				){
 					// Pesan.
-					FAIL(_("Kesalahan untuk alamat '%1$s': %2$s (%3$i)"), hostname, gai_strerror(status), status);
+					DEBUG1(_("Berhenti mengirim."), 0);
+					DEBUG1(_("Kesalahan untuk alamat '%1$s': %2$s (%3$i)"), hostname, gai_strerror(status), status);
 					return NULL;
 				}else{
 					// Pesan.
@@ -635,12 +636,19 @@ char *kirimdata(
 		diterima = recv(sockfd, respons, panjang_pesan, MSG_WAITALL);
 		if (diterima < 0){
 			if(errno==11){
-				WARN(_("Balasan dari '%1$s' terlalu lama."), hostname);
+				WARN(_("Balasan dari '%1$s' (%2$s:%3$s terlalu lama."), hostname, ipstr, portno);
 				close(sockfd);
 				ulangi=true;
 				continue;
+			}else if(errno==104){
+				DEBUG1(_("Diputus oleh inang '%1$s' (%2$s:%3$s."), hostname, ipstr, portno);
+				close(sockfd);
+				ulangi=false;
+				return NULL;
 			}else{
 				FAIL(_("Kesalahan dalam membaca soket: %1$s (%2$i)."),strerror(errno), errno);
+				close(sockfd);
+				ulangi=false;
 				return NULL;
 			};
 		}else{

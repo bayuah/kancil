@@ -2,7 +2,7 @@
  * `tampilan.c`
  * Memberikan tampilan untuk Kancil.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt
  */
 #include "lingkungan.h"

@@ -2,7 +2,7 @@
  * `klien.c`
  * Sebagai klien dari kancil.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt
  */
 
@@ -63,6 +63,8 @@ int main(int argc, char *argv[]){
 	aturan.hostname_c=0;
 	memset(aturan.hostname, 0, sizeof(aturan.hostname[0][0])*MAX_GATE*INFOALAMAT_MAX_STR);
 	aturan.rsa_padding=RSA_PKCS1_OAEP_PADDING;
+	aturan.gates_c=0;
+	aturan.timebase=10;
 	
 	// Informasi versi.
 	info_versi();
@@ -77,7 +79,16 @@ int main(int argc, char *argv[]){
 	if(!aturan.hostname_c){
 		FAIL(_("Inang kosong."), 0);
 		exit(EXIT_FAILURE_ARGS);
-	}
+	};
+	
+	// Bila jumlah gerbang kosong.
+	if(!aturan.gates_c){
+		DEBUG1(_("Jumlah Gerbang kosong. Menggunakan jumlah inang."),0 );
+		aturan.gates_c=aturan.hostname_c;
+	}else if(aturan.gates_c>aturan.hostname_c){
+		DEBUG1(_("Jumlah Gerbang melebihi jumlah inang. Menggunakan jumlah inang."),0 );
+		aturan.gates_c=aturan.hostname_c;
+	};
 	
 	// Berbagi memori.
 	int berbagi_ukuran = 1024 * 1024 * 128; //128 MiB
@@ -234,6 +245,7 @@ int main(int argc, char *argv[]){
 		// Perilaku.
 		bool pengawas=true;
 		bool pertama=true;
+		int coba=0;
 		
 		// Aturan dasar.
 		int kec_rendah_minimal=100*1024; // Bita
@@ -478,10 +490,23 @@ int main(int argc, char *argv[]){
 			};
 			
 			if (pids[sambungan] == 0){
-				// Proses anak.	
+				// Proses anak.
 				
-				int pilih_inang=0;
+				// Pesan.
+				DEBUG1(_("Jumlah inang adalah %1$i."), aturan.gates_c);
 				
+				// Pilih gerbang.
+				unsigned char *kunci=(unsigned char*)" Sate atau satai";
+				double waktu_unix=current_time(CURRENTTIME_SECONDS);
+				int pilih_inang=pilih_gerbang(
+					aturan.gates_c,
+					kunci,
+					aturan.timebase,
+					waktu_unix,
+					default_rsa_pubkey()
+				);
+				
+				// Bila kosong.
 				if(!strlen(aturan.hostname[pilih_inang])){
 					FAIL(_("Inang ke-%1$i kosong."), pilih_inang);
 					exit(EXIT_FAILURE_ARGS);
@@ -502,6 +527,12 @@ int main(int argc, char *argv[]){
 					exit(EXIT_FAILURE_ARGS);
 					
 				};
+				
+				// Pesan.
+				DEBUG1(
+					_("Memilih inang nomor %1$i (%2$s:%3$s) di waktu %4$.0f."),
+					pilih_inang, nama_inang, porta_inang, waktu_unix
+				);
 				
 				// Menyalin.
 				strncpy(kirim_mmap->hostname, nama_inang, BERKAS_MAX_STR);
@@ -529,18 +560,6 @@ int main(int argc, char *argv[]){
 				// Proses Bapak.
 				if((sambungan+1)>=(sambungan_maksimal_sekarang)){
 					for (int i = 0; i < sambungan_maksimal_sekarang; ++i) {
-						
-						// DEBUG2(_("Menunggu proses %1$i (%2$i)."), i, pids[i]);
-						// while (-1 == waitpid(pids[i], &pid_status, WNOHANG)){
-							// sleep(1);
-							// killpid(pids[i], SIGKILL);
-							// WARN(_("Proses %1$i (%2$i) terlalu lama."), i, pids[i]);
-						// };
-						// if (!WIFEXITED(pid_status) || WEXITSTATUS(pid_status) != 0) {
-							// FAIL(_("Gagal mematikan proses %1$i (%2$i)."), i, pids[i]);
-							// exit(EXIT_FAILURE_FORK);
-						// };
-						
 						// Bapak tunggu anak.
 						do{
 							pid_anak  = waitpid(pids[i], &status, WUNTRACED | WCONTINUED);
@@ -589,20 +608,34 @@ int main(int argc, char *argv[]){
 								// exit(WIFSIGNALED(status));
 							}else if(WEXITSTATUS(status)) {
 								
-								// Terjadi kesalahan.
-								FAIL(
-									_("Proses cabang (PID%1$i) berhenti dengan status: %2$s (%3$i)."),
-									pids[i], kancil_signal_code(WEXITSTATUS(status)),
-									WEXITSTATUS(status)
+								// Bila ditolak oleh inang.
+								if (
+									WEXITSTATUS(status)==EXIT_FAILURE_SOCKET
+									&& coba< aturan.tries
+								){
+									DEBUG1(
+										_("Kegagalan soket di proses cabang (PID%1$i)."),
+										pids[i]
 									);
-								
-								// Berhenti.
-								// kirim_mmap->do_kirim=false;
-								exit(WEXITSTATUS(status));
+									coba++;
+								}else{
+									// Terjadi kesalahan.
+									FAIL(
+										_("Proses cabang (PID%1$i) berhenti dengan status: %2$s (%3$i)."),
+										pids[i], kancil_signal_code(WEXITSTATUS(status)),
+										WEXITSTATUS(status)
+										);
+									// Berhenti.
+									// kirim_mmap->do_kirim=false;
+									exit(WEXITSTATUS(status));
+								};
 							}else if(WIFEXITED(status)) {
 								
 								// Berhenti dengan normal.
 								DEBUG3(_("Proses cabang (PID%1$i) selesai."), pids[i]);
+								
+								// Tidak ada kesalahan.
+								coba=0;
 							}else if(WIFCONTINUED(status)) {
 								
 								// MAsih berjalan.
@@ -633,6 +666,7 @@ int main(int argc, char *argv[]){
 					
 					// Identifikasi.
 					identifikasi++;
+					
 				};
 			};
 			

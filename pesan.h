@@ -2,7 +2,7 @@
  * `pesan.h`
  * Fungsi pesan.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015
  * Lisensi: lihat LICENCE.txt
  */
 #ifndef _KANCIL_PESAN_
@@ -62,5 +62,11 @@ char *buat_pesan(
 	int *paritas,
 	char* pesan);
 char *ambil_pesan(const char* pecahan);
-
+int pilih_gerbang(
+	int maksimal_gerbang,
+	unsigned char *kunci,
+	int basis_waktu,
+	double waktu_unix,
+	unsigned char *pubkey
+);
 #endif /* _KANCIL_PESAN_ */

@@ -2,7 +2,7 @@
  * `lingkungan.h`
  * Menentukan lingkungan kompiler.
  * Penulis: Bayu Aditya H. <b@yuah.web.id>
- * HakCipta: 2014
+ * HakCipta: 2014 - 2015 - 2015
  * Lisensi: lihat LICENCE.txt
  */
 #ifndef _KANCIL_ARCH_
