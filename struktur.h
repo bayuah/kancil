@@ -9,6 +9,10 @@
 #ifndef _KANCIL_STRUKTUR_H_
 #define _KANCIL_STRUKTUR_H_
 
+#ifndef MAX_STR
+	#define MAX_STR 2048
+#endif
+
 // Alamat.
 #ifndef INET_ADDRSTRLEN
 	#define INET_ADDRSTRLEN 16
@@ -137,6 +141,9 @@ struct GLOBAL_CONFIG {
 	int  gates_c;
 	int  hostname_c;
 	char hostname[MAX_GATE][INFOALAMAT_MAX_STR];
+	int  pubkeys_c;
+	char pubkeys[MAX_GATE][MAX_STR];
+	char privkey[MAX_STR];
 	char listening[INFOALAMAT_MAX_STR];
 	char defaultport[INFOALAMAT_MAX_STR];
 	char inputfile[BERKAS_MAX_STR];

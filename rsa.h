@@ -25,19 +25,26 @@
 	#define RSA_NO_PADDING 3
 #endif
 
+#define CREATE_RSA_FROM_PRIVKEY 1
+#define CREATE_RSA_FROM_PUBKEY  2
+
 // Fungsi.
+RSA * create_rsa(
+	unsigned char * key,
+	int flag
+);
 int rsa_encrypt(
 	unsigned char *data,
 	int data_len,
-	unsigned char *key,
-	unsigned char *target, 
+	unsigned char *target,
+	RSA *rsa,
 	int bantalan
 	);
 int rsa_decrypt(
 	unsigned char *data,
 	int data_len,
-	unsigned char *key,
 	unsigned char *target,
+	RSA *rsa,
 	int bantalan
 	);
 unsigned char *default_rsa_privatekey();

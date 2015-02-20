@@ -679,7 +679,7 @@ int pilih_gerbang(
 	unsigned char *kunci,
 	int basis_waktu,
 	double waktu_unix,
-	unsigned char *pubkey
+	RSA *rsa
 ){
 	int rturn=-1;
 	
@@ -739,8 +739,8 @@ int pilih_gerbang(
 		// (unsigned char*)"Sate enak",
 		kunci,
 		panjang_kunci,
-		pubkey,
 		tujuan_ency,
+		rsa,
 		RSA_NO_PADDING
 	);
 	DEBUG4(_("Berhasil mendapatkan nilai Kunci Gerbang."), 0);

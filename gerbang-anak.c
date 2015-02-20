@@ -14,7 +14,9 @@
 void anak_gerbang(
 	int sock,
 	struct KIRIMBERKAS *kirim,
-	struct INFOALAMAT *infoalamat
+	struct INFOALAMAT *infoalamat,
+	RSA *rsapub,
+	RSA *rsapriv
 ){
 	// Variabel.
 	int n;
@@ -86,8 +88,8 @@ void anak_gerbang(
 		diterima=rsa_decrypt(
 			pesan_deco,
 			diterima,
-			default_rsa_privatekey(),
 			tujuan_deco,
+			rsapriv,
 			aturan.rsa_padding
 		);
 		
@@ -178,8 +180,8 @@ void anak_gerbang(
 				panjang_penyangga=rsa_encrypt(
 					pesan_ency,
 					MAX_CHUNK_SIZE+1,
-					default_rsa_pubkey(),
 					tujuan_ency,
+					rsapub,
 					aturan.rsa_padding
 				);
 				
@@ -240,8 +242,8 @@ void anak_gerbang(
 				panjang_penyangga=rsa_decrypt(
 					pesan_deco,
 					panjang_diterima,
-					default_rsa_privatekey(),
 					tujuan_deco,
+					rsapriv,
 					aturan.rsa_padding
 				);
 				
@@ -392,8 +394,8 @@ void anak_gerbang(
 		panjang_penyangga=rsa_encrypt(
 			pesan_ency,
 			MAX_CHUNK_SIZE,
-			default_rsa_pubkey(),
 			tujuan_ency,
+			rsapub,
 			aturan.rsa_padding
 		);
 		

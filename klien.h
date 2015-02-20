@@ -27,6 +27,8 @@ void signal_callback_handler(int signum);
 unsigned int anak_kirim(
 	unsigned int identifikasi,
 	FILE *pberkas,
+	RSA *rsapub,
+	RSA *rsapriv,
 	struct KIRIMBERKAS *kirim,
 	struct INFOALAMAT *info_alamat,
 	int ukuberkas_panjang

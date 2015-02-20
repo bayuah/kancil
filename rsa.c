@@ -151,8 +151,8 @@ int rsa_data_size(RSA *rsa, int bantalan){
 int rsa_encrypt(
 	unsigned char *data,
 	int data_len,
-	unsigned char *key,
 	unsigned char *target,
+	RSA *rsa,
 	int bantalan
 	){
 	
@@ -166,7 +166,7 @@ int rsa_encrypt(
 	};
 	
 	// RSA.
-	RSA *rsa = create_rsa(key, CREATE_RSA_FROM_PUBKEY);
+	// RSA *rsa = create_rsa(key, CREATE_RSA_FROM_PUBKEY);
 	
 	// Mendapatkan ukuran.
 	int ukuran_data_rsa=rsa_data_size(rsa, bantalan);
@@ -279,8 +279,8 @@ int rsa_encrypt(
 int rsa_decrypt(
 	unsigned char *data,
 	int data_len,
-	unsigned char *key,
 	unsigned char *target,
+	RSA *rsa,
 	int bantalan
 	){
 	
@@ -294,7 +294,7 @@ int rsa_decrypt(
 	};
 	
 	// RSA.
-	RSA *rsa = create_rsa(key, CREATE_RSA_FROM_PRIVKEY);
+	// RSA *rsa = create_rsa(key, CREATE_RSA_FROM_PRIVKEY);
 	
 	// Mendapatkan ukuran.
 	int ukuran_rsa=RSA_size(rsa);

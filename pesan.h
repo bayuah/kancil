@@ -67,6 +67,6 @@ int pilih_gerbang(
 	unsigned char *kunci,
 	int basis_waktu,
 	double waktu_unix,
-	unsigned char *pubkey
+	RSA *rsa
 );
 #endif /* _KANCIL_PESAN_ */

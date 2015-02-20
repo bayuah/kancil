@@ -136,6 +136,33 @@ int main(int argc, char *argv[]){
 		exit(EXIT_FAILURE_SOCKET);
 	}
 	
+	// RSA.
+	// Membuat RSA Pub
+	// sebanyak SATU
+	// Pubkey.
+	RSA *rsapub[1];
+	unsigned char pubkey[MAX_STR];
+	memset(pubkey, 0, MAX_STR);
+	memcpy(pubkey, default_rsa_pubkey(), MAX_STR);
+	
+	// Privkey.
+	RSA *rsapriv;
+	unsigned char privkey[MAX_STR];
+	memset(privkey, 0, MAX_STR);
+	memcpy(privkey, default_rsa_privatekey(), MAX_STR);
+	
+	// Bila bukan tansfer mentah.
+	if(!aturan.rawtransfer){
+		for(int iru=0; iru<1; iru++){
+			DEBUG3(_("Membangun RSA publik untuk inang %1$i."), iru);
+			rsapub[iru] = create_rsa(pubkey, CREATE_RSA_FROM_PUBKEY);
+		};
+		
+		// Membuat RSA Priv.
+		DEBUG3(_("Membangun RSA privat untuk Peladen."), 0);
+		rsapriv=create_rsa(privkey, CREATE_RSA_FROM_PRIVKEY);
+	};
+	
 	/* 
 	 * Mulai mendengarkan klien.
 	 * Proses menuju mode tidur
@@ -198,8 +225,11 @@ int main(int argc, char *argv[]){
 						WARN(_("Proses %1$i (%2$i) terlalu lama."), i, pids[i]);
 					};
 					if (!WIFEXITED(pid_status) || WEXITSTATUS(pid_status) != 0) {
-						FAIL(_("Gagal mematikan proses %1$i (%2$i)."), i, pids[i]);
-						exit(EXIT_FAILURE_FORK);
+						WARN(
+							_("Proses %1$i (%2$i) tidak mati secara wajar."),
+							i, pids[i]
+						);
+						// exit(EXIT_FAILURE_FORK);
 					};
 					
 					// Menunggu milidetik.
@@ -264,7 +294,12 @@ int main(int argc, char *argv[]){
 			#endif
 			
 			// Panggil anak.
-			anak_sambungan(newsockfd, berkas_mmap);
+			anak_sambungan(
+				newsockfd,
+				berkas_mmap,
+				rsapub[0],
+				rsapriv
+			);
 			
 			// Pesan.
 			INFO(

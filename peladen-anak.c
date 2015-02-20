@@ -12,7 +12,12 @@
  * anak_sambungan()
  * Proses yang menangani sambungan dari klien.
  */
-void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
+void anak_sambungan (
+	int sock,
+	struct TERIMABERKAS *berkas,
+	RSA *rsapub,
+	RSA *rsapriv
+){
 	int n, status;
 	pid_t pid;
 	// pid_t result_waitpid;
@@ -68,8 +73,8 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 				diterima=rsa_decrypt(
 					pesan_deco,
 					diterima,
-					default_rsa_privatekey(),
 					tujuan_deco,
+					rsapriv,
 					aturan.rsa_padding
 				);
 				
@@ -537,8 +542,8 @@ void anak_sambungan (int sock, struct TERIMABERKAS *berkas){
 		panjang_pecahan=rsa_encrypt(
 			pesan_ency,
 			MAX_CHUNK_SIZE,
-			default_rsa_pubkey(),
 			tujuan_ency,
+			rsapub,
 			aturan.rsa_padding
 		);
 		

@@ -27,7 +27,9 @@ void signal_callback_handler(int signum);
 void anak_gerbang(
 	int sock,
 	struct KIRIMBERKAS *kirim,
-	struct INFOALAMAT *infoalamat
+	struct INFOALAMAT *infoalamat,
+	RSA *rsapub,
+	RSA *rsapriv
 );
 void free_shm();
 

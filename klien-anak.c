@@ -11,6 +11,8 @@
 unsigned int anak_kirim(
 	unsigned int identifikasi,
 	FILE *pberkas,
+	RSA *rsapub,
+	RSA *rsapriv,
 	struct KIRIMBERKAS *kirim,
 	struct INFOALAMAT *infoalamat,
 	int ukuberkas_panjang
@@ -332,8 +334,8 @@ unsigned int anak_kirim(
 		panjang_pecahan=rsa_encrypt(
 			pesan_ency,
 			MAX_CHUNK_SIZE+1,
-			default_rsa_pubkey(),
 			tujuan_ency,
+			rsapub,
 			aturan.rsa_padding
 		);
 		
@@ -386,8 +388,8 @@ unsigned int anak_kirim(
 		panjang_pecahan=rsa_decrypt(
 			pesan_deco,
 			panjang_diterima,
-			default_rsa_privatekey(),
 			tujuan_deco,
+			rsapriv,
 			aturan.rsa_padding
 		);
 		

@@ -52,6 +52,7 @@ int main(int argc, char *argv[]){
 	strcpy(aturan.listening,"5001");
 	aturan.rsa_padding=RSA_PKCS1_OAEP_PADDING;
 	aturan.gates_c=1;
+	aturan.hostname_c=0;
 	aturan.gateid=0;
 	aturan.timebase=10;
 	aturan.timetollerance=1;
@@ -144,6 +145,38 @@ int main(int argc, char *argv[]){
 		alamat_mmap->sockaddr_sa_data, 0,
 		sizeof(alamat_mmap->sockaddr_sa_data[0][0][0]) * mxid * mxip * 14);
 	
+	// RSA.
+	// Pubkey.
+	RSA *rsapub[aturan.hostname_c];
+	unsigned char pubkey[MAX_STR];
+	memset(pubkey, 0, MAX_STR);
+	memcpy(pubkey, default_rsa_pubkey(), MAX_STR);
+	
+	// Privkey.
+	RSA *rsapriv;
+	unsigned char privkey[MAX_STR];
+	memset(privkey, 0, MAX_STR);
+	memcpy(privkey, default_rsa_privatekey(), MAX_STR);
+	
+	// Untuk pilih Gerbang.
+	DEBUG3(_("Membangun RSA publik untuk memilih Gerbang."), 0);
+	RSA *rsapub_pilih_gerbang=create_rsa(pubkey, CREATE_RSA_FROM_PUBKEY);
+	DEBUG3(_("Membangun RSA publik untuk memilih Peladen."), 0);
+	RSA *rsapub_pilih_peladen=create_rsa(pubkey, CREATE_RSA_FROM_PUBKEY);
+	
+	// Bila bukan tansfer mentah.
+	if(!aturan.rawtransfer){
+		// Membuat RSA Pub
+		// sebanyak aturan.hostname_c
+		for(int iru=0; iru<aturan.hostname_c; iru++){
+			DEBUG3(_("Membangun RSA publik untuk inang %1$i."), iru);
+			rsapub[iru] = create_rsa(pubkey, CREATE_RSA_FROM_PUBKEY);
+		};
+		
+		// Membuat RSA Priv.
+		DEBUG3(_("Membangun RSA privat untuk Gerbang."), 0);
+		rsapriv=create_rsa(privkey, CREATE_RSA_FROM_PRIVKEY);
+	};
 	// Penerima.
 	// Soket.
 	int sockfd, newsockfd, portno;
@@ -213,38 +246,19 @@ int main(int argc, char *argv[]){
 	// strncpy(kirim_mmap->berkas, berkas, BERKAS_MAX_STR);
 	kirim_mmap->coba=1;
 	
-	// Pilih inang.
-	int pilih_inang=0;
-	
-	// Memecah nama inang.
-	char porta_inang[BERKAS_MAX_STR];
-	char nama_inang[BERKAS_MAX_STR];
-	status=sscanf(
-		aturan.hostname[pilih_inang], "%[^:]:%s", nama_inang, &porta_inang
-		);
-	if(status==1 && !strlen(porta_inang)){
-		// Bila porta kosong.
-		strcpy(porta_inang, aturan.defaultport);
-		
-	}else if (status > 2|| status <=0){
-		// Gagal.
-		FAIL(_("Gagal mengurai inang %1$s."), aturan.hostname);
-		exit(EXIT_FAILURE_ARGS);
-		
-	};
-	
-	// Menyalin.
-	strncpy(kirim_mmap->hostname, nama_inang, BERKAS_MAX_STR);
-	strncpy(kirim_mmap->portno, porta_inang, BERKAS_MAX_STR);
-	
 	// Bila minus.
 	if(aturan.timetollerance<0)
 		aturan.timetollerance=0;
 	
 	// Pilih inang
+	unsigned char *kunci_peladen=(unsigned char*)" Sate atau satai";
+	
+	// Pilih terima.
 	unsigned char *kunci=(unsigned char*)" Sate atau satai";
 	double waktu_unix;
 	bool inang_sama=false;
+	char porta_inang[INFOALAMAT_MAX_STR];
+	char nama_inang[INFOALAMAT_MAX_STR];
 	
 	// Perilaku.
 	int tunggu=0;
@@ -283,8 +297,11 @@ int main(int argc, char *argv[]){
 						WARN(_("Proses %1$i (%2$i) terlalu lama."), i, pids[i]);
 					};
 					if (!WIFEXITED(pid_status) || WEXITSTATUS(pid_status) != 0) {
-						FAIL(_("Gagal mematikan proses %1$i (%2$i)."), i, pids[i]);
-						exit(EXIT_FAILURE_FORK);
+						WARN(
+							_("Proses %1$i (%2$i) tidak mati secara wajar."),
+							i, pids[i]
+						);
+						// exit(EXIT_FAILURE_FORK);
 					};
 					
 					// Menunggu milidetik.
@@ -351,6 +368,7 @@ int main(int argc, char *argv[]){
 			// Memeriksa inang.
 			waktu_unix=current_time(CURRENTTIME_SECONDS);
 			inang_sama=false;
+			int pilih_inang;
 			if(aturan.timetollerance<=0){
 				// Bila tanpa toleransi.
 				pilih_inang=pilih_gerbang(
@@ -358,7 +376,7 @@ int main(int argc, char *argv[]){
 					kunci,
 					aturan.timebase,
 					waktu_unix,
-					default_rsa_pubkey()
+					rsapub_pilih_gerbang
 				);
 				
 				// Pilih.
@@ -381,7 +399,7 @@ int main(int argc, char *argv[]){
 						kunci,
 						aturan.timebase,
 						(waktu_unix+i),
-						default_rsa_pubkey()
+						rsapub_pilih_gerbang
 					);
 					// Pilih.
 					if(pilih_inang==(int)aturan.gateid){
@@ -410,11 +428,44 @@ int main(int argc, char *argv[]){
 				// Menutup sambungan.
 				close(newsockfd);
 			}else{
+				
+				// Pilih inang.
+				int pilih_inang_peladen=pilih_gerbang(
+					aturan.hostname_c,
+					kunci_peladen,
+					aturan.timebase,
+					waktu_unix,
+					rsapub_pilih_peladen
+				);
+				
+				// Memecah nama inang.
+				memset(nama_inang, 0, INFOALAMAT_MAX_STR);
+				memset(porta_inang, 0, INFOALAMAT_MAX_STR);
+				status=sscanf(
+					aturan.hostname[pilih_inang_peladen], "%[^:]:%s", nama_inang, &porta_inang
+					);
+				if(status==1 && !strlen(porta_inang)){
+					// Bila porta kosong.
+					strcpy(porta_inang, aturan.defaultport);
+					
+				}else if (status > 2|| status <=0){
+					// Gagal.
+					FAIL(_("Gagal mengurai inang %1$s."), aturan.hostname[pilih_inang_peladen]);
+					exit(EXIT_FAILURE_ARGS);
+					
+				};
+				
+				// Menyalin.
+				strncpy(kirim_mmap->hostname, nama_inang, INFOALAMAT_MAX_STR);
+				strncpy(kirim_mmap->portno, porta_inang, INFOALAMAT_MAX_STR);
+				
 				// Panggil anak.
 				anak_gerbang(
 					newsockfd,
 					kirim_mmap,
-					alamat_mmap
+					alamat_mmap,
+					rsapub[pilih_inang_peladen],
+					rsapriv
 				);
 				
 				// Pesan.

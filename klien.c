@@ -194,6 +194,37 @@ int main(int argc, char *argv[]){
 			};
 		};
 		
+		// RSA.
+		// Pubkey.
+		RSA *rsapub[aturan.gates_c];
+		unsigned char pubkey[MAX_STR];
+		memset(pubkey, 0, MAX_STR);
+		memcpy(pubkey, default_rsa_pubkey(), MAX_STR);
+		
+		// Privkey
+		RSA *rsapriv;
+		unsigned char privkey[MAX_STR];
+		memset(privkey, 0, MAX_STR);
+		memcpy(privkey, default_rsa_privatekey(), MAX_STR);
+		
+		// Untuk pilih Gerbang.
+		DEBUG3(_("Membangun RSA publik untuk memilih Gerbang."), 0);
+		RSA *rsapub_pilih_gerbang=create_rsa(pubkey, CREATE_RSA_FROM_PUBKEY);
+		
+		// Bila bukan tansfer mentah.
+		if(!aturan.rawtransfer){
+			// Membuat RSA Pub
+			// sebanyak aturan.gates_c
+			for(int iru=0; iru<aturan.gates_c; iru++){
+				DEBUG3(_("Membangun RSA publik untuk inang %1$i."), iru);
+				rsapub[iru] = create_rsa(pubkey, CREATE_RSA_FROM_PUBKEY);
+			};
+			
+			// Membuat RSA Priv.
+			DEBUG3(_("Membangun RSA privat untuk Klien."), 0);
+			rsapriv=create_rsa(privkey, CREATE_RSA_FROM_PRIVKEY);
+		};
+		
 		// Inisiasi isi.
 		kirim_mmap->identifikasi=0;
 		kirim_mmap->identifikasi_sebelumnya=0;
@@ -503,7 +534,7 @@ int main(int argc, char *argv[]){
 					kunci,
 					aturan.timebase,
 					waktu_unix,
-					default_rsa_pubkey()
+					rsapub_pilih_gerbang
 				);
 				
 				// Bila kosong.
@@ -523,7 +554,7 @@ int main(int argc, char *argv[]){
 					
 				}else if (status > 2|| status <=0){
 					// Gagal.
-					FAIL(_("Gagal mengurai inang %1$s."), aturan.hostname);
+					FAIL(_("Gagal mengurai inang %1$s."), aturan.hostname[pilih_inang]);
 					exit(EXIT_FAILURE_ARGS);
 					
 				};
@@ -542,6 +573,8 @@ int main(int argc, char *argv[]){
 				identifikasi=anak_kirim(
 					identifikasi,
 					pberkas[sambungan],
+					rsapub[pilih_inang],
+					rsapriv,
 					kirim_mmap,
 					alamat_mmap,
 					ukuberkas_panjang
