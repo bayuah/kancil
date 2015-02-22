@@ -286,6 +286,9 @@ unsigned int anak_kirim(
 			// dan keluar dari perulangan.
 			DEBUG1(_("Menghentikan pengulangan pengiriman."), 0);
 			kirim->do_kirim=false;
+		}else{
+			// Pesan.
+			DEBUG3(_("Panjang pesan adalah %1$i bita"), panjang_pesan);
 		};
 	};
 	
@@ -508,7 +511,10 @@ unsigned int anak_kirim(
 	
 	// Bila berkas yang diterima
 	// telah sama atau lebih besar dari ukuran.
-	if(r_berkas_diterima>=kirim->ukuran_berkas){
+	if(
+		aturan.transferedcheck
+		&& r_berkas_diterima>=kirim->ukuran_berkas
+	){
 		// Pesan.
 		if(
 			(r_berkas_diterima-kirim->ukuran_berkas) > (double)CHUNK_MESSAGE_SIZE * (aturan.parallel)
@@ -527,7 +533,6 @@ unsigned int anak_kirim(
 		// Keluar.
 		return identifikasi;
 	};
-	
 	
 	
 	// Memeriksa hasil.

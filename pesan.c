@@ -11,6 +11,10 @@
 #include "faedah.h"
 #include "rsa.h"
 
+// Definisi untuk `pilih_gerbang()`
+#define GATEHASHING_XOR 0
+#define GATEHASHING_RSA 1
+
 /*
  * arti_panji()
  * Mengartikan panji.
@@ -726,25 +730,28 @@ int pilih_gerbang(
 	int panjang_waktu=strlen((char *)waktu_unix_str);
 	DEBUG4(_("Panjang waktu adalah %1$i bita."), panjang_waktu);
 	
-	// Pindahkan.
-	// unsigned char kunci_ency[panjang_kunci+1];
-	// memset(kunci_ency, 0, panjang_kunci+1);
-	// memcpy(kunci_ency, kunci, panjang_kunci);
-	// DEBUG4(_("Kunci adalah '%1$s'."), kunci_ency);
+	// Untuk kunci,
+	unsigned char tujuan_kunci[256];
+	if(aturan.gateshashing==GATEHASHING_RSA){
+		// Mendapatkan hasil enkripsi
+		// bila aturan.gateshashing=GATEHASHING_RSA
+		DEBUG4(_("Mendapatkan nilai Kunci Gerbang."), 0);
+		rsa_encrypt(
+			// (unsigned char*)"Sate enak",
+			kunci,
+			panjang_kunci,
+			tujuan_kunci,
+			rsa,
+			RSA_NO_PADDING
+		);
+		DEBUG4(_("Berhasil mendapatkan nilai Kunci Gerbang."), 0);
+	}else{
+		// Mendapatkan hasil enkripsi
+		// bila aturan.gates_hashing=GATEHASHING_XOR
+		memcpy(tujuan_kunci, kunci, panjang_waktu);
+	};
 	
-	// Mendapatkan hasil enkripsi.
-	DEBUG4(_("Mendapatkan nilai Kunci Gerbang."), 0);
-	unsigned char tujuan_ency[256];
-	rsa_encrypt(
-		// (unsigned char*)"Sate enak",
-		kunci,
-		panjang_kunci,
-		tujuan_ency,
-		rsa,
-		RSA_NO_PADDING
-	);
-	DEBUG4(_("Berhasil mendapatkan nilai Kunci Gerbang."), 0);
-	DEBUG5(_("Kunci Gerbang"), tujuan_ency, 0, panjang_waktu);
+	DEBUG5(_("Kunci Gerbang"), tujuan_kunci, 0, panjang_waktu);
 	DEBUG5(_("Waktu UNIX"), waktu_unix_str, 0, panjang_waktu);
 	
 	// Operasi XOR hasil dan waktu UNIX.
@@ -753,7 +760,7 @@ int pilih_gerbang(
 	int i, j;
 	DEBUG4(_("Mencari nilai XOR dari Kunci Gerbang dan Waktu UNIX."), 0);
 	for(i=(panjang_waktu-1),j=0;i>=0;i--,j++){
-		hasil+=(int)tujuan_ency[j]^waktu_unix_str[i];
+		hasil+=(int)tujuan_kunci[j]^waktu_unix_str[i];
 	};
 	DEBUG4(_("Nilai operasi XOR adalah %1$i."), hasil);
 	

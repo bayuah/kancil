@@ -57,10 +57,11 @@ bool file_exist (char *filename);
 char *readable_fs(double size, char *penyanga);
 int killpid(pid_t pid, int sig);
 char *unix_signal_code(int signal);
-// int cari_karakter(
-	// char* jarum, char* jerami,
-	// size_t awal, size_t akhir
-	// );
+double kecepatan_rerata(
+	double kecepatan,
+	double kecepatan_sebelumnya,
+	double penghalus
+);
 
 void throw_error(int type, const char * file, const int line,
 	const char *msg, ...);

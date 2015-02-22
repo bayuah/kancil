@@ -604,12 +604,19 @@ char *readable_fs(double ukuran, char *penyanga) {
 	 * Atau pratayang IEC 60027:
 	 *      http://webstore.iec.ch/preview/info_iec60027-2(Bed3.0)b.pdf
 	 */
-	const char* satuan[] = {"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"};
+	const char* satuan[] =
+		{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"};
+	
+	// Perulangan.
 	while (ukuran > basis) {
 		ukuran /= basis;
 		i++;
 	};
+	
+	// Tampilan.
 	sprintf(penyanga, "%.*f %s", i, ukuran, satuan[i]);
+	
+	// Kembali.
 	return penyanga;
 }
 /*
@@ -674,23 +681,37 @@ char *unix_signal_code(int sinyal){
 }
 
 /*
- * cari_karakter()
- * Mencari karakter dalam string.
- * @param (char*) jarum, tercari;
- * @param (char*) jerami, dicari;
- * @param (char*) awal, awal pencarian;
- * @param (char*) akhir, akhir pencarian.
- * @hasil (int) posisi. Dimulai dari NOL.
+ * `kecepatan_rerata()`
+ * Kecepataan rerata menggunakan
+ * rumus Tapis Rerata Kecepatan Pesat Tertimbang
+ * (Exponentially Weighted Moving Average Filter).
+ * Lihat: http://lorien.ncl.ac.uk/ming/filter/filewma.htm
+ * HakCipta (c) 2009 M.T. Tham
+ * Berkas dimodifikasi: Jumat, 21 Agustus 2009, 06:22:02 WIB
+ * Berkas diakses: Sabtu, 07 Februari 2015, 00:40:40 WIB
+ * @param: kecepatan (double) kecepatan sekarang;
+ * @param: kecepatan_sebelumnya (double) kecepatan sebelumnya;
+ * @param: penghalus (double) memiliki nilai antara NOL hingga SATU. Semakin
+ *                            tinggi angka, semakin cepat sampel tua dibuang.
+ * @hasil (double)
  */
-// int cari_karakter(
-	// char* jarum, char* jerami,
-	// size_t awal, size_t akhir
-	// ){
-	// int i, posisi;
-	// int ukuran_jarum=strlen(jarum);
-	// for(i=awal; i<=akhir; i++){
-		
-	// };
+double kecepatan_rerata(
+	double kecepatan,
+	double kecepatan_sebelumnya,
+	double penghalus
+){
+	double rturn;
 	
-	// return ukuran_jarum;
-// }
+	// Bila di luar batas.
+	if(penghalus > 1){
+		penghalus=1;
+	}else if(penghalus < 0){
+		penghalus=0;
+	};
+	
+	// Rumus.
+	rturn=penghalus * kecepatan + (1 - penghalus) * kecepatan_sebelumnya;
+	
+	// Kembali.
+	return rturn;
+}

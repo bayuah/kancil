@@ -13,6 +13,10 @@ int main(int argc, char *argv[]){
 	signal(SIGINT, signal_callback_handler);
 	int status;
 	
+	// Penyangga STDOUT.
+	char stdout_buf[1024];
+	setvbuf(stdout, stdout_buf, _IOFBF, sizeof(stdout_buf));
+	
 	// Lokalisasi.
 	setlocale(LC_ALL,"");
 	bindtextdomain("kancil", "./locale");
@@ -47,8 +51,9 @@ int main(int argc, char *argv[]){
 	strcpy(aturan.completedir, "complete");
 	strcpy(aturan.tempdir, "tmp");
 	aturan.rawtransfer=true;
-	strcpy(aturan.listening,"5001");
+	strcpy(aturan.listening,"27000");
 	aturan.rsa_padding=RSA_PKCS1_OAEP_PADDING;
+	aturan.maxconnection=20;
 	
 	// Informasi versi.
 	info_versi();
@@ -116,7 +121,7 @@ int main(int argc, char *argv[]){
 	
 	// Membangun struktur soket.
 	memset((char *) &serv_addr, 0, sizeof(serv_addr));
-	portno = 5001;
+	portno = atoi(aturan.listening);
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(portno);
@@ -137,30 +142,85 @@ int main(int argc, char *argv[]){
 	}
 	
 	// RSA.
+	FILE *irufl;
+	int terbaca=0;
+	int selesai=0;
+	
 	// Membuat RSA Pub
 	// sebanyak SATU
 	// Pubkey.
 	RSA *rsapub[1];
 	unsigned char pubkey[MAX_STR];
 	memset(pubkey, 0, MAX_STR);
-	memcpy(pubkey, default_rsa_pubkey(), MAX_STR);
 	
 	// Privkey.
 	RSA *rsapriv;
 	unsigned char privkey[MAX_STR];
 	memset(privkey, 0, MAX_STR);
-	memcpy(privkey, default_rsa_privatekey(), MAX_STR);
 	
 	// Bila bukan tansfer mentah.
 	if(!aturan.rawtransfer){
+		// Membuat RSA Pub
+		// sebanyak aturan.hostname_c
 		for(int iru=0; iru<1; iru++){
+			
+			// Mengosongkan.
+			memset(pubkey, 0, MAX_STR);
+			
+			// Bila terisi.
+			if(
+				file_exist(aturan.pubkeys[iru])
+				&& iru <= aturan.pubkeys_c
+			){
+				// Baca berkas.
+				irufl=fopen(aturan.pubkeys[iru], "rb");
+				
+				// Baca pelan
+				// setiap 10 bita.
+				terbaca=0;
+				selesai=0;
+				do{
+					terbaca=fread(pubkey+selesai, 1, 10, irufl);
+					selesai+=terbaca;
+				}while(terbaca);
+				
+				// Menutup.
+				fclose(irufl);
+			}else{
+				// Bila tidak ada.
+				memcpy(pubkey, default_rsa_pubkey(), MAX_STR);
+			};
+		
+			// Membuat.
 			DEBUG3(_("Membangun RSA publik untuk inang %1$i."), iru);
 			rsapub[iru] = create_rsa(pubkey, CREATE_RSA_FROM_PUBKEY);
 		};
 		
+		// Privat.
+		// Bila terisi.
+		if(file_exist(aturan.privkey)){
+			// Baca berkas.
+			irufl=fopen(aturan.privkey, "rb");
+			
+			// Baca pelan
+			// setiap 10 bita.
+			terbaca=0;
+			selesai=0;
+			do{
+				terbaca=fread(privkey+selesai, 1, 10, irufl);
+				selesai+=terbaca;
+			}while(terbaca);
+			
+			// Menutup.
+			fclose(irufl);
+		}else{
+			// Bila tidak ada.
+			memcpy(privkey, default_rsa_privatekey(), MAX_STR);
+		};
+		
 		// Membuat RSA Priv.
-		DEBUG3(_("Membangun RSA privat untuk Peladen."), 0);
-		rsapriv=create_rsa(privkey, CREATE_RSA_FROM_PRIVKEY);
+		DEBUG3(_("Membangun RSA privat untuk Klien."), 0);
+		rsapriv=create_rsa(privkey , CREATE_RSA_FROM_PRIVKEY);
 	};
 	
 	/* 
@@ -169,7 +229,7 @@ int main(int argc, char *argv[]){
 	 * dan menunggu sambungan masuk.
 	 */
 	socklen_t clilen;
-	int max_connection=5;
+	int max_connection=aturan.maxconnection;
 	int pids[max_connection+1];
 	int pid_status;
 	int tunggu=0;
@@ -216,6 +276,7 @@ int main(int argc, char *argv[]){
 		if(pengawas){
 			pengawas=false;
 			if(connection>=max_connection){
+				INFO(_("Menunggu %1$i proses cabang."), max_connection);
 				for (i = 0; i < max_connection; ++i) {
 					
 					DEBUG2(_("Menunggu proses %1$i (%2$i)."), i, pids[i]);

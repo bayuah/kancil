@@ -14,10 +14,11 @@
 #include <time.h>
 #include <string.h>
 #include "kancil.h"
+#include "struktur.h"
 #include "return.h"
 #include "faedah.h"
 #include "rsa.h"
-#include "struktur.h"
+#include "pesan.h"
 
 // Lokalisasi.
 #ifndef _LOCALE_H
@@ -72,38 +73,47 @@ void urai_argumen(int argc, char *argv[]){
 		// int this_option_optind = optind ? optind : 1;
 		int option_index = 0;
 		static struct option long_options[] = {
-			{"host",         required_argument, 0, 'H'},
-			{"config",       required_argument, 0, 'c'},
-			{"logfile",      required_argument, 0, 'l'},
-			{"listening",    required_argument, 0, 'L'},
-			{"debug",        required_argument, 0, 'd'},
-			{"debug1",       no_argument,       0, '1'},
-			{"debug2",       no_argument,       0, '2'},
-			{"debug3",       no_argument,       0, '3'},
-			{"debug4",       no_argument,       0, '4'},
-			{"debug5",       no_argument,       0, '5'},
-			{"debuglevel",   required_argument, 0, 'D'},
-			{"show-error",   no_argument,       0, 'E'},
-			{"show-warning", no_argument,       0, 'W'},
-			{"show-notice",  no_argument,       0, 'N'},
-			{"show-info",    no_argument,       0, 'I'},
-			{"verbose",      no_argument,       0, 'v'},
-			{"quiet",        no_argument,       0, 'q'},
-			{"gateid",       required_argument, 0, 'G'},
-			{"gatesnum",     required_argument, 0, 'g'},
-			{"timebase",     required_argument, 0, 'B'},
-			{"tries",        no_argument,       0, 't'},
-			{"parallel",     no_argument,       0, 'p'},
-			{"shifteof",     no_argument,       0, 'S'},
-			{"rsapadding",   no_argument,       0, 'P'},
-			{"version",      no_argument,       0, 'V'},
-			{"help",         no_argument,       0, 'h'},
-			{0,              0,                 0,  0 }
+			{"host",            required_argument, 0, 'h'},
+			{"hostnum",         required_argument, 0, 'H'},
+			{"config",          required_argument, 0, 'c'},
+			{"logfile",         required_argument, 0, 'l'},
+			{"listening",       required_argument, 0, 'L'},
+			{"debug",           required_argument, 0, 'd'},
+			{"debug1",          no_argument,       0, '1'},
+			{"debug2",          no_argument,       0, '2'},
+			{"debug3",          no_argument,       0, '3'},
+			{"debug4",          no_argument,       0, '4'},
+			{"debug5",          no_argument,       0, '5'},
+			{"debuglevel",      required_argument, 0, 'D'},
+			{"show-error",      no_argument,       0, 'E'},
+			{"show-warning",    no_argument,       0, 'W'},
+			{"show-notice",     no_argument,       0, 'N'},
+			{"show-info",       no_argument,       0, 'I'},
+			{"verbose",         no_argument,       0, 'v'},
+			{"quiet",           no_argument,       0, 'q'},
+			{"pubkeyfile",      required_argument, 0, 'k'},
+			{"privkeyfile",     required_argument, 0, 'K'},
+			{"gateid",          required_argument, 0, 'G'},
+			{"maxconnection",   required_argument, 0, 'M'},
+			{"gatesnum",        required_argument, 0, 'g'},
+			{"timebase",        required_argument, 0, 'B'},
+			{"tries",           required_argument, 0, 't'},
+			{"parallel",        required_argument, 0, 'p'},
+			{"shifteof",        no_argument,       0, 'S'},
+			{"summary",         no_argument,       0, 's'},
+			{"transferedcheck", no_argument,       0, 'C'},
+			{"gateshashing",    required_argument, 0, 'A'},
+			{"rsapadding",      no_argument,       0, 'P'},
+			{"version",         no_argument,       0, 'V'},
+			{"help",            no_argument,       0, 'h'},
+			{0,                 0,                 0,  0 }
 		};
 		
 		// Mendapatkan argumen.
-		int c = getopt_long(argc, argv, "12345B:c:d:D:g:G:H:hl:L:p:P:RrSvVq?",
-				 long_options, &option_index);
+		int c = getopt_long(argc, argv,
+			"12345DEWNIA:B:Cc:D:d:g:G:H:hK:k:l:L:M:n:p:P:RrSsvVq?",
+			long_options, &option_index
+		);
 		if (c == -1)
 			break;
 		
@@ -237,7 +247,10 @@ void urai_argumen(int argc, char *argv[]){
 			break;
 		case 'H':
 			// Menambah inang tujuan.
-			if(!is_nonascii(optarg) && strlen(optarg)){
+			if(
+				!is_nonascii(optarg) && strlen(optarg)
+				&& aturan.hostname_c < MAX_GATE
+			){
 				DEBUG1(_("Argumen: Menambah inang %1$s."), optarg);
 				strcpy(aturan.hostname[aturan.hostname_c], optarg);
 				aturan.hostname_c++;
@@ -268,6 +281,59 @@ void urai_argumen(int argc, char *argv[]){
 				aturan.gateid=status;
 			};
 			break;
+		case 'A':
+			status=aturan.gateshashing;
+			if(!strcasecmp("XOR",optarg)){
+				status=GATEHASHING_XOR;
+				DEBUG1(
+					_("Argumen: Menggunakan pencincang %s."),
+					"XOR"
+				);
+			}else if(!strcasecmp("RSA",optarg)){
+				status=GATEHASHING_RSA;
+				DEBUG1(
+					_("Argumen: Menggunakan pencincang %s."),
+					"RSA"
+				);
+			}else{
+				switch(atoi(optarg)){
+					case GATEHASHING_XOR:
+						status=GATEHASHING_XOR;
+						DEBUG1(
+							_("Argumen: Menggunakan pencincang %s."),
+							"XOR"
+						);
+					break;
+					case GATEHASHING_RSA:
+						status=GATEHASHING_RSA;
+						DEBUG1(
+							_("Argumen: Menggunakan pencincang %s."),
+							"XOR"
+						);
+
+					break;
+				}
+			};
+			// Menyimpan.
+			aturan.gateshashing=status;
+			break;
+		case 'K':
+			if(file_exist(optarg)){
+				DEBUG1(_("Argumen: Menambahkan berkas kunci privat '%1$s'."), optarg);
+				strcpy(aturan.privkey, optarg);
+			};
+			break;
+		case 'k':
+			if(
+				file_exist(optarg)
+				&& aturan.pubkeys_c < MAX_GATE
+			){
+				
+				DEBUG1(_("Argumen: Menambahkan berkas kunci publik '%1$s'."), optarg);
+				strcpy(aturan.pubkeys[aturan.pubkeys_c], optarg);
+				aturan.pubkeys_c++;
+			};
+			break;
 		case 'L':
 			status=atoi(optarg);
 			if(status){
@@ -275,9 +341,38 @@ void urai_argumen(int argc, char *argv[]){
 				strcpy(aturan.listening, optarg);
 			};
 			break;
+		case 'M':
+			status=atoi(optarg);
+			if(status){
+				DEBUG1(_("Argumen: Maksimal %1$i sambungan."), status);
+				aturan.maxconnection=status;
+			};
+			break;
 		case 'p':
-			DEBUG1(_("Paralel sebanyak %s sambungan."), optarg);
-			aturan.parallel=atoi(optarg);
+			status=atoi(optarg);
+			if(status){
+				DEBUG1(_("Argumen: Paralel sebanyak %1$i sambungan."), status);
+				if(status>1){
+					DEBUG1(_("Paralel adalah eksperimen."), 0);
+					DEBUG1(_("Paralel juga mengaktifkan '%1$s' dan '%2$s'."),
+						"shifteof", "transferedcheck"
+					);
+					DEBUG1(
+	_("Gunakan '%1$s' dan/atau '%2$s' untuk mematikan '%3$s' dan/atau '%4$s'."),
+						"-nS", "-nC", "shifteof", "transferedcheck"
+					);
+					aturan.shifteof=true;
+					aturan.transferedcheck=true;
+				};
+				aturan.parallel=status;
+			};
+			break;
+		case 'n':
+			if(!strcmp("S",optarg)){
+				aturan.shifteof=false;
+			}else if(!strcmp("C",optarg)){
+				aturan.transferedcheck=false;
+			};
 			break;
 		case 'P':
 			status=aturan.rsa_padding;
@@ -338,7 +433,7 @@ void urai_argumen(int argc, char *argv[]){
 				}
 			};
 			// Menyimpan.
-			aturan.parallel=status;
+			aturan.rsa_padding=status;
 			break;
 		case 'R':
 			DEBUG1(_("Argumen: Transfer mentah."), 0);
@@ -351,6 +446,14 @@ void urai_argumen(int argc, char *argv[]){
 		case 'S':
 			DEBUG1(_("Argumen: Menggeser pembacaan akhir berkas."), 0);
 			aturan.shifteof=true;
+			break;
+		case 's':
+			DEBUG1(_("Argumen: Menampilkan rangkuman pengiriman."), 0);
+			aturan.summary=true;
+			break;
+		case 'C':
+			DEBUG1(_("Argumen: Memeriksa ukuran terkirim menurut Peladen."), 0);
+			aturan.transferedcheck=true;
 			break;
 		case 'h':
 			bantuan_param_standar();
@@ -389,6 +492,7 @@ void urai_argumen(int argc, char *argv[]){
 			if(i>1
 				&&!is_nonascii(arg_sisa[1])
 				&& strlen(arg_sisa[1])
+				&& aturan.hostname_c < MAX_GATE
 			){
 				// Informasi.
 				if(!info_sudah_tampil)
@@ -407,6 +511,7 @@ void urai_argumen(int argc, char *argv[]){
 			if(i>1
 				&&!is_nonascii(arg_sisa[1])
 				&& strlen(arg_sisa[1])
+				&& aturan.hostname_c < MAX_GATE
 			){
 				// Informasi.
 				if(!info_sudah_tampil)
@@ -639,7 +744,11 @@ int baca_konfigurasi(){
 		
 		// Membandingkan.
 		if(!strcasecmp(kunci, "HOST")){
-			if(!is_nonascii(nilai) && strlen(nilai)){
+			if(
+				!is_nonascii(nilai)
+				&& strlen(nilai)
+				&& aturan.hostname_c < MAX_GATE
+				){
 				DEBUG3(_("Berkas pengaturan: Menambah inang %1$s."), nilai);
 				strcpy(aturan.hostname[aturan.hostname_c], nilai);
 				aturan.hostname_c++;
@@ -688,15 +797,75 @@ int baca_konfigurasi(){
 				aturan.show_debug4=status;
 			};
 		}else if(!strcasecmp(kunci, "SHOW_ERROR")){
+			// Apakah menampilkan Galat.
 			aturan.show_error=!strlen(nilai)?true:s2b(nilai);
+			if(aturan.show_error){
+				DEBUG3(
+					_("Berkas pengaturan: Menampilkan %s."),
+					_("Galat")
+				);
+			}else{
+				DEBUG3(
+					_("Berkas pengaturan: Tidak menampilkan %s."),
+					_("Galat")
+				);
+			};
 		}else if(!strcasecmp(kunci, "SHOW_WARNING")){
-			aturan.show_error=!strlen(nilai)?true:s2b(nilai);
+			// Apakah menampilkan Peringatan.
+			aturan.show_warning=!strlen(nilai)?true:s2b(nilai);
+			if(aturan.show_warning){
+				DEBUG3(
+					_("Berkas pengaturan: Menampilkan %s."),
+					_("Peringatan")
+				);
+			}else{
+				DEBUG3(
+					_("Berkas pengaturan: Tidak menampilkan %s."),
+					_("Peringatan")
+				);
+			}
 		}else if(!strcasecmp(kunci, "SHOW_NOTICE")){
+			// Apakah menampilkan Maklumat.
 			aturan.show_notice=!strlen(nilai)?true:s2b(nilai);
+			if(aturan.show_notice){
+				DEBUG3(
+					_("Berkas pengaturan: Menampilkan %s."),
+					_("Maklumat")
+				);
+			}else{
+				DEBUG3(
+					_("Berkas pengaturan: Tidak menampilkan %s."),
+					_("Maklumat")
+				);
+			}
 		}else if(!strcasecmp(kunci, "SHOW_INFO")){
+			// Apakah menampilkan Informasi.
 			aturan.show_info=!strlen(nilai)?true:s2b(nilai);
+			if(aturan.show_info){
+				DEBUG3(
+					_("Berkas pengaturan: Menampilkan %s."),
+					_("Informasi")
+				);
+			}else{
+				DEBUG3(
+					_("Berkas pengaturan: Tidak menampilkan %s."),
+					_("Informasi")
+				);
+			}
 		}else if(!strcasecmp(kunci, "VERBOSE")){
+			// Apakah menampilkan Kekutu.
 			aturan.show_debug1=!strlen(nilai)?true:s2b(nilai);
+			if(aturan.show_debug1){
+				DEBUG3(
+					_("Berkas pengaturan: Menampilkan %s."),
+					_("Kekutu")
+				);
+			}else{
+				DEBUG3(
+					_("Berkas pengaturan: Tidak menampilkan %s."),
+					_("Kekutu")
+				);
+			}
 		}else if(!strcasecmp(kunci, "QUIET")){
 			aturan.show_error=false;
 			aturan.show_warning=false;
@@ -708,7 +877,13 @@ int baca_konfigurasi(){
 			aturan.show_debug4=false;
 			aturan.show_debug5=false;
 		}else if(!strcasecmp(kunci, "RAWTRANSFER")){
+			// Apakah menampilkan Transfer Mentah.
 			aturan.rawtransfer=!strlen(nilai)?true:s2b(nilai);
+			if(aturan.rawtransfer){
+				DEBUG1(_("Berkas pengaturan: Transfer mentah."), 0);
+			}else{
+				DEBUG1(_("Berkas pengaturan: Transfer terenkripsi."), 0);
+			}
 		}else if(!strcasecmp(kunci, "GATESNUM")){
 			status=atoi(nilai);
 			if(status){
@@ -726,14 +901,49 @@ int baca_konfigurasi(){
 			};
 		}else if(!strcasecmp(kunci, "SHIFTEOF")){
 			aturan.show_debug1=!strlen(nilai)?true:s2b(nilai);
+		}else if(!strcasecmp(kunci, "SUMMARY")){
+			aturan.summary=!strlen(nilai)?true:s2b(nilai);
+		}else if(!strcasecmp(kunci, "TRANSFEREDCHECK")){
+			aturan.show_debug1=!strlen(nilai)?true:s2b(nilai);
 		}else if(!strcasecmp(kunci, "TRIES")){
 			aturan.tries=atoi(nilai);
 		}else if(!strcasecmp(kunci, "WAITRETRY")){
 			aturan.waitretry=atoi(nilai);
 		}else if(!strcasecmp(kunci, "WAITQUEUE")){
 			aturan.waitqueue=atoi(nilai);
+		}else if(!strcasecmp(kunci, "PUBKEYFILE")){
+			if(
+				file_exist(nilai)
+				&& aturan.pubkeys_c < MAX_GATE
+			){
+				
+				DEBUG1(_("Argumen: Menambahkan berkas kunci publik '%1$s'."), nilai);
+				strcpy(aturan.pubkeys[aturan.pubkeys_c], nilai);
+				aturan.pubkeys_c++;
+			};
+		}else if(!strcasecmp(kunci, "PRIVKEYFILE")){
+			if(file_exist(nilai)){
+				DEBUG1(_("Argumen: Menambahkan berkas kunci privat '%1$s'."), nilai);
+				strcpy(aturan.privkey, nilai);
+			};
 		}else if(!strcasecmp(kunci, "PARALLEL")){
-			aturan.parallel=atoi(nilai);
+			status=atoi(nilai);
+			if(status){
+				DEBUG1(_("Berkas pengaturan: Paralel sebanyak %1$i sambungan."), status);
+				if(status>1){
+					DEBUG1(_("Paralel adalah eksperimen."), 0);
+					DEBUG1(_("Paralel juga mengaktifkan '%1$s' dan '%2$s'."),
+						"shifteof", "transferedcheck"
+					);
+					DEBUG1(
+	_("Gunakan '%1$s' dan/atau '%2$s' untuk mematikan '%3$s' dan/atau '%4$s'."),
+						"-nS", "-nC", "shifteof", "transferedcheck"
+					);
+					aturan.shifteof=true;
+					aturan.transferedcheck=true;
+				};
+				aturan.parallel=status;
+			};
 		}else if(!strcasecmp(kunci, "COMPLETEDIR")){
 			strcpy(aturan.completedir, nilai);
 		}else if(!strcasecmp(kunci, "TEMPDIR")){
@@ -743,6 +953,12 @@ int baca_konfigurasi(){
 			if(status){
 				DEBUG1(_("Berkas pengaturan: Mendengarkan di porta %1$i."), status);
 				strcpy(aturan.listening, nilai);
+			};
+		}else if(!strcasecmp(kunci, "MAXCONNECTION")){
+			status=atoi(nilai);
+			if(status){
+				DEBUG1(_("Berkas pengaturan: Maksimal %1$i sambungan."), status);
+				aturan.maxconnection=status;
 			};
 		}else if(!strcasecmp(kunci, "DEBUGLEVEL")){
 			status=aturan.debuglevel;

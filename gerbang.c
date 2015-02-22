@@ -13,6 +13,10 @@ int main(int argc, char *argv[]){
 	signal(SIGINT, signal_callback_handler);
 	int status;
 	
+	// Penyangga STDOUT.
+	char stdout_buf[1024];
+	setvbuf(stdout, stdout_buf, _IOFBF, sizeof(stdout_buf));
+	
 	// Lokalisasi.
 	setlocale(LC_ALL,"");
 	bindtextdomain("kancil", "./locale");
@@ -49,13 +53,16 @@ int main(int argc, char *argv[]){
 	aturan.waitretry=5;
 	aturan.waitqueue=30;
 	aturan.rawtransfer=true;
-	strcpy(aturan.listening,"5001");
+	strcpy(aturan.listening,"27001");
+	strcpy(aturan.defaultport, "27000");
 	aturan.rsa_padding=RSA_PKCS1_OAEP_PADDING;
 	aturan.gates_c=1;
 	aturan.hostname_c=0;
 	aturan.gateid=0;
 	aturan.timebase=10;
 	aturan.timetollerance=1;
+	aturan.gateshashing=GATEHASHING_XOR;
+	aturan.maxconnection=50;
 	
 	// Informasi versi.
 	info_versi();
@@ -88,7 +95,10 @@ int main(int argc, char *argv[]){
 		
 		// Bila gagal mengubah ukuran.
 		if(status){
-			FAIL(_("Gagal membuat berkas memori: %1$s (%2$i)."), strerror(errno), errno);
+			FAIL(
+				_("Gagal membuat berkas memori: %1$s (%2$i)."),
+				strerror(errno), errno
+			);
 			exit(EXIT_FAILURE_MEMORY);
 		};
 	#else
@@ -99,7 +109,10 @@ int main(int argc, char *argv[]){
 	
 	// Bila gagal.
 	if(shm_berkas == -1) {
-		FAIL(_("Kegagalan '%1$s': %2$s (%3$i)."), "shm_open", strerror(errno), errno);
+		FAIL(
+			_("Kegagalan '%1$s': %2$s (%3$i)."),
+			"shm_open", strerror(errno), errno
+		);
 		exit(EXIT_FAILURE_MEMORY);
 	};
 	
@@ -146,17 +159,49 @@ int main(int argc, char *argv[]){
 		sizeof(alamat_mmap->sockaddr_sa_data[0][0][0]) * mxid * mxip * 14);
 	
 	// RSA.
+	FILE *irufl;
+	int terbaca=0;
+	int selesai=0;
+	
 	// Pubkey.
 	RSA *rsapub[aturan.hostname_c];
 	unsigned char pubkey[MAX_STR];
 	memset(pubkey, 0, MAX_STR);
-	memcpy(pubkey, default_rsa_pubkey(), MAX_STR);
 	
 	// Privkey.
 	RSA *rsapriv;
 	unsigned char privkey[MAX_STR];
 	memset(privkey, 0, MAX_STR);
-	memcpy(privkey, default_rsa_privatekey(), MAX_STR);
+	
+	// Buka berkas.
+	if(file_exist(aturan.pubkeys[0])){
+		// Baca berkas.
+		irufl=fopen(aturan.pubkeys[0], "rb");
+		
+		// Mengosongkan.
+		memset(pubkey, 0, MAX_STR);
+		
+		// Baca pelan
+		// setiap 10 bita.
+		terbaca=0;
+		selesai=0;
+		do{
+			terbaca=fread(pubkey+selesai, 1, 10, irufl);
+			selesai+=terbaca;
+		}while(terbaca);
+		
+		// Pesan.
+		DEBUG4(_("Berhasil membaca berkas RSA publik sebesar %1$i bita."), selesai);
+		
+		// Menutup.
+		fclose(irufl);
+	}else{
+		
+		DEBUG4(_("Menggunakan RSA publik standar."), 0);
+		
+		// Bila tidak ada.
+		memcpy(pubkey, default_rsa_pubkey(), MAX_STR);
+	};
 	
 	// Untuk pilih Gerbang.
 	DEBUG3(_("Membangun RSA publik untuk memilih Gerbang."), 0);
@@ -169,14 +214,66 @@ int main(int argc, char *argv[]){
 		// Membuat RSA Pub
 		// sebanyak aturan.hostname_c
 		for(int iru=0; iru<aturan.hostname_c; iru++){
+			
+			// Mengosongkan.
+			memset(pubkey, 0, MAX_STR);
+			
+			// Bila terisi.
+			if(
+				file_exist(aturan.pubkeys[iru])
+				&& iru <= aturan.pubkeys_c
+			){
+				// Baca berkas.
+				irufl=fopen(aturan.pubkeys[iru], "rb");
+				
+				// Baca pelan
+				// setiap 10 bita.
+				terbaca=0;
+				selesai=0;
+				do{
+					terbaca=fread(pubkey+selesai, 1, 10, irufl);
+					selesai+=terbaca;
+				}while(terbaca);
+				
+				// Menutup.
+				fclose(irufl);
+			}else{
+				// Bila tidak ada.
+				memcpy(pubkey, default_rsa_pubkey(), MAX_STR);
+			};
+		
+			// Membuat.
 			DEBUG3(_("Membangun RSA publik untuk inang %1$i."), iru);
 			rsapub[iru] = create_rsa(pubkey, CREATE_RSA_FROM_PUBKEY);
 		};
 		
+		// Privat.
+		// Bila terisi.
+		if(file_exist(aturan.privkey)){
+			// Baca berkas.
+			irufl=fopen(aturan.privkey, "rb");
+			
+			// Baca pelan
+			// setiap 10 bita.
+			terbaca=0;
+			selesai=0;
+			do{
+				terbaca=fread(privkey+selesai, 1, 10, irufl);
+				selesai+=terbaca;
+			}while(terbaca);
+			
+			// Menutup.
+			fclose(irufl);
+		}else{
+			// Bila tidak ada.
+			memcpy(privkey, default_rsa_privatekey(), MAX_STR);
+		};
+		
 		// Membuat RSA Priv.
-		DEBUG3(_("Membangun RSA privat untuk Gerbang."), 0);
-		rsapriv=create_rsa(privkey, CREATE_RSA_FROM_PRIVKEY);
+		DEBUG3(_("Membangun RSA privat untuk Klien."), 0);
+		rsapriv=create_rsa(privkey , CREATE_RSA_FROM_PRIVKEY);
 	};
+	
 	// Penerima.
 	// Soket.
 	int sockfd, newsockfd, portno;
@@ -223,7 +320,7 @@ int main(int argc, char *argv[]){
 	 * dan menunggu sambungan masuk.
 	 */
 	socklen_t clilen;
-	int max_connection=5;
+	int max_connection=aturan.maxconnection;
 	int pids[max_connection+1];
 	int pid_status;
 	int connection;
@@ -296,7 +393,7 @@ int main(int argc, char *argv[]){
 						killpid(pids[i], SIGKILL);
 						WARN(_("Proses %1$i (%2$i) terlalu lama."), i, pids[i]);
 					};
-					if (!WIFEXITED(pid_status) || WEXITSTATUS(pid_status) != 0) {
+					if (!WIFEXITED(pid_status) || WEXITSTATUS(pid_status) != 0){
 						WARN(
 							_("Proses %1$i (%2$i) tidak mati secara wajar."),
 							i, pids[i]
@@ -442,7 +539,8 @@ int main(int argc, char *argv[]){
 				memset(nama_inang, 0, INFOALAMAT_MAX_STR);
 				memset(porta_inang, 0, INFOALAMAT_MAX_STR);
 				status=sscanf(
-					aturan.hostname[pilih_inang_peladen], "%[^:]:%s", nama_inang, &porta_inang
+					aturan.hostname[pilih_inang_peladen],
+					"%[^:]:%s", nama_inang, &porta_inang
 					);
 				if(status==1 && !strlen(porta_inang)){
 					// Bila porta kosong.
@@ -450,7 +548,10 @@ int main(int argc, char *argv[]){
 					
 				}else if (status > 2|| status <=0){
 					// Gagal.
-					FAIL(_("Gagal mengurai inang %1$s."), aturan.hostname[pilih_inang_peladen]);
+					FAIL(
+						_("Gagal mengurai inang %1$s."),
+						aturan.hostname[pilih_inang_peladen]
+					);
 					exit(EXIT_FAILURE_ARGS);
 					
 				};

@@ -27,6 +27,8 @@ int main(int argc, char *argv[]){
 	textdomain("kancil");
 	
 	// Info kancil.
+	// Lihat `struktur.h`
+	// untuk penjelasan lengkap.
 	infokancil.executable=basename(argv[0]);
 	infokancil.progname=PROGNAME;
 	infokancil.progcode=PROGCODE;
@@ -41,6 +43,8 @@ int main(int argc, char *argv[]){
 	infokancil.compiler_flags=STRINGIZE_VALUE_OF(COMPILER_FLAGS);
 	
 	// Aturan umum.
+	// Lihat `struktur.h`
+	// untuk penjelasan lengkap.
 	aturan.show_error=true;
 	aturan.show_warning=true;
 	aturan.show_notice=true;
@@ -58,13 +62,27 @@ int main(int argc, char *argv[]){
 	aturan.waitqueue=5;
 	aturan.parallel=1;
 	aturan.debuglevel=MINI_DEBUG;
-	strcpy(aturan.defaultport, "5001");
+	strcpy(aturan.defaultport, "27000");
 	aturan.rawtransfer=true;
-	aturan.hostname_c=0;
-	memset(aturan.hostname, 0, sizeof(aturan.hostname[0][0])*MAX_GATE*INFOALAMAT_MAX_STR);
 	aturan.rsa_padding=RSA_PKCS1_OAEP_PADDING;
 	aturan.gates_c=0;
 	aturan.timebase=10;
+	aturan.summary=false;
+	aturan.gateshashing=GATEHASHING_XOR;
+	aturan.hostname_c=0;
+	memset(
+		aturan.hostname, 0,
+		sizeof(aturan.hostname[0][0])*MAX_GATE*INFOALAMAT_MAX_STR
+	);
+	aturan.pubkeys_c=0;
+	memset(
+		aturan.pubkeys, 0,
+		sizeof(aturan.pubkeys[0][0])*MAX_GATE*BERKAS_MAX_STR
+	);
+	memset(
+		aturan.privkey, 0,
+		sizeof(aturan.privkey[0])*BERKAS_MAX_STR
+	);
 	
 	// Informasi versi.
 	info_versi();
@@ -86,7 +104,9 @@ int main(int argc, char *argv[]){
 		DEBUG1(_("Jumlah Gerbang kosong. Menggunakan jumlah inang."),0 );
 		aturan.gates_c=aturan.hostname_c;
 	}else if(aturan.gates_c>aturan.hostname_c){
-		DEBUG1(_("Jumlah Gerbang melebihi jumlah inang. Menggunakan jumlah inang."),0 );
+		DEBUG1(
+		_("Jumlah Gerbang melebihi jumlah inang. Menggunakan jumlah inang."),
+			0);
 		aturan.gates_c=aturan.hostname_c;
 	};
 	
@@ -105,7 +125,10 @@ int main(int argc, char *argv[]){
 		
 		// Bila gagal mengubah ukuran.
 		if(status){
-			FAIL(_("Gagal membuat berkas memori: %1$s (%2$i)."), strerror(errno), errno);
+			FAIL(
+				_("Gagal membuat berkas memori: %1$s (%2$i)."),
+				strerror(errno), errno
+			);
 			exit(EXIT_FAILURE_MEMORY);
 		};
 	#else
@@ -116,7 +139,10 @@ int main(int argc, char *argv[]){
 	
 	// Bila gagal.
 	if(shm_berkas == -1) {
-		FAIL(_("Kegagalan '%1$s': %2$s (%3$i)."), "shm_open", strerror(errno), errno);
+		FAIL(
+			_("Kegagalan '%1$s': %2$s (%3$i)."), "shm_open",
+			strerror(errno), errno
+		);
 		exit(EXIT_FAILURE_MEMORY);
 	};
 	
@@ -142,15 +168,33 @@ int main(int argc, char *argv[]){
 	int mxid=INFOALAMAT_MAX_ID;
 	int mxip=INFOALAMAT_MAX_IP;
 	int mxst=INFOALAMAT_MAX_STR;
-	memset(alamat_mmap->inang, 0, sizeof(alamat_mmap->inang[0][0]) * mxid * mxst);
-	memset(alamat_mmap->ipcount, 0, sizeof(alamat_mmap->ipcount[0]) * mxid);
-	memset(alamat_mmap->ai_family, 0, sizeof(alamat_mmap->ai_family[0][0]) * mxid * mxip);
-	memset(alamat_mmap->ai_socktype, 0, sizeof(alamat_mmap->ai_socktype[0][0]) * mxid * mxip);
-	memset(alamat_mmap->ai_protocol, 0, sizeof(alamat_mmap->ai_protocol[0][0]) * mxid * mxip);
-	memset(alamat_mmap->ai_addrlen, 0, sizeof(alamat_mmap->ai_addrlen[0][0]) * mxid * mxip);
-	memset(alamat_mmap->ai_canonname, 0, sizeof(alamat_mmap->ai_canonname[0][0]) * mxid * mxip * mxst);
-	memset(alamat_mmap->sockaddr_sa_family, 0, sizeof(alamat_mmap->sockaddr_sa_family[0][0]) * mxid * mxip);
-	memset(alamat_mmap->sockaddr_sa_data, 0, sizeof(alamat_mmap->sockaddr_sa_data[0][0][0]) * mxid * mxip * 14);
+	memset(
+		alamat_mmap->inang, 0,
+		sizeof(alamat_mmap->inang[0][0]) * mxid * mxst);
+	memset(
+		alamat_mmap->ipcount, 0,
+		sizeof(alamat_mmap->ipcount[0]) * mxid);
+	memset(
+		alamat_mmap->ai_family, 0,
+		sizeof(alamat_mmap->ai_family[0][0]) * mxid * mxip);
+	memset(
+		alamat_mmap->ai_socktype, 0,
+		sizeof(alamat_mmap->ai_socktype[0][0]) * mxid * mxip);
+	memset(
+		alamat_mmap->ai_protocol, 0,
+		sizeof(alamat_mmap->ai_protocol[0][0]) * mxid * mxip);
+	memset(
+		alamat_mmap->ai_addrlen, 0,
+		sizeof(alamat_mmap->ai_addrlen[0][0]) * mxid * mxip);
+	memset(
+		alamat_mmap->ai_canonname, 0,
+		sizeof(alamat_mmap->ai_canonname[0][0]) * mxid * mxip * mxst);
+	memset(
+		alamat_mmap->sockaddr_sa_family, 0,
+		sizeof(alamat_mmap->sockaddr_sa_family[0][0]) * mxid * mxip);
+	memset(
+		alamat_mmap->sockaddr_sa_data, 0,
+		sizeof(alamat_mmap->sockaddr_sa_data[0][0][0]) * mxid * mxip * 14);
 	
 	// Berkas.
 	berkas = aturan.inputfile;
@@ -172,7 +216,8 @@ int main(int argc, char *argv[]){
 		memset(penyangga_fschar, 0, ukuberkas_panjang);
 		INFO(
 			_("Berkas '%1$s' ditemukan dengan ukuran %2$s (%3$.0lf bita)."),
-			berkas, readable_fs(kirim_mmap->ukuran_berkas, penyangga_fschar), kirim_mmap->ukuran_berkas
+			berkas, readable_fs(kirim_mmap->ukuran_berkas, penyangga_fschar),
+			kirim_mmap->ukuran_berkas
 			);
 		
 		// Jumlah sambungan.
@@ -195,34 +240,120 @@ int main(int argc, char *argv[]){
 		};
 		
 		// RSA.
+		FILE *irufl;
+		int terbaca=0;
+		int selesai=0;
+		
 		// Pubkey.
 		RSA *rsapub[aturan.gates_c];
 		unsigned char pubkey[MAX_STR];
 		memset(pubkey, 0, MAX_STR);
-		memcpy(pubkey, default_rsa_pubkey(), MAX_STR);
 		
 		// Privkey
 		RSA *rsapriv;
 		unsigned char privkey[MAX_STR];
 		memset(privkey, 0, MAX_STR);
-		memcpy(privkey, default_rsa_privatekey(), MAX_STR);
 		
-		// Untuk pilih Gerbang.
+		// Mulai memilih RSA untuk gerbang.
 		DEBUG3(_("Membangun RSA publik untuk memilih Gerbang."), 0);
+		
+		// Buka berkas.
+		if(file_exist(aturan.pubkeys[0])){
+			// Baca berkas.
+			irufl=fopen(aturan.pubkeys[0], "rb");
+			
+			// Mengosongkan.
+			memset(pubkey, 0, MAX_STR);
+			
+			// Baca pelan
+			// setiap 10 bita.
+			terbaca=0;
+			selesai=0;
+			do{
+				terbaca=fread(pubkey+selesai, 1, 10, irufl);
+				selesai+=terbaca;
+			}while(terbaca);
+			
+			// Pesan.
+			DEBUG4(_("Berhasil membaca berkas RSA publik sebesar %1$i bita."), selesai);
+			
+			// Menutup.
+			fclose(irufl);
+		}else{
+			
+			DEBUG4(_("Menggunakan RSA publik standar."), 0);
+			
+			// Bila tidak ada.
+			memcpy(pubkey, default_rsa_pubkey(), MAX_STR);
+		}
+		
+		// Memilih Gerbang.
 		RSA *rsapub_pilih_gerbang=create_rsa(pubkey, CREATE_RSA_FROM_PUBKEY);
 		
 		// Bila bukan tansfer mentah.
 		if(!aturan.rawtransfer){
+			
 			// Membuat RSA Pub
 			// sebanyak aturan.gates_c
 			for(int iru=0; iru<aturan.gates_c; iru++){
+				
+				// Mengosongkan.
+				memset(pubkey, 0, MAX_STR);
+				
+				// Bila terisi.
+				if(
+					file_exist(aturan.pubkeys[iru])
+					&& iru <= aturan.pubkeys_c
+				){
+					// Baca berkas.
+					irufl=fopen(aturan.pubkeys[iru], "rb");
+					
+					// Baca pelan
+					// setiap 10 bita.
+					terbaca=0;
+					selesai=0;
+					do{
+						terbaca=fread(pubkey+selesai, 1, 10, irufl);
+						selesai+=terbaca;
+					}while(terbaca);
+					
+					// Menutup.
+					fclose(irufl);
+				}else{
+					// Bila tidak ada.
+					memcpy(pubkey, default_rsa_pubkey(), MAX_STR);
+				};
+			
+				// Membuat.
 				DEBUG3(_("Membangun RSA publik untuk inang %1$i."), iru);
 				rsapub[iru] = create_rsa(pubkey, CREATE_RSA_FROM_PUBKEY);
 			};
 			
+			// Privat.
+			// Bila terisi.
+			if(file_exist(aturan.privkey)){
+				// Baca berkas.
+				irufl=fopen(aturan.privkey, "rb");
+				
+				// Baca pelan
+				// setiap 10 bita.
+				terbaca=0;
+				selesai=0;
+				do{
+					terbaca=fread(privkey+selesai, 1, 10, irufl);
+					selesai+=terbaca;
+				}while(terbaca);
+				
+				// Menutup.
+				fclose(irufl);
+			}else{
+				// Bila tidak ada.
+				memcpy(privkey, default_rsa_privatekey(), MAX_STR);
+			};
+			
 			// Membuat RSA Priv.
 			DEBUG3(_("Membangun RSA privat untuk Klien."), 0);
-			rsapriv=create_rsa(privkey, CREATE_RSA_FROM_PRIVKEY);
+			rsapriv=create_rsa(privkey , CREATE_RSA_FROM_PRIVKEY);
 		};
 		
 		// Inisiasi isi.
@@ -236,7 +367,9 @@ int main(int argc, char *argv[]){
 		kirim_mmap->do_kirim=true;
 		strncpy(kirim_mmap->berkas_lajur, berkas, BERKAS_MAX_STR);
 		strncpy(kirim_mmap->berkas, basename(berkas), BERKAS_MAX_STR);
-		memset(kirim_mmap->data_terkirim, 0, sizeof(kirim_mmap->data_terkirim[0])*MAX_CHUNK_ID);
+		memset(
+			kirim_mmap->data_terkirim, 0,
+			sizeof(kirim_mmap->data_terkirim[0])*MAX_CHUNK_ID);
 		kirim_mmap->waktu_terkirim=current_time(CURRENTTIME_MICROSECONDS);
 		kirim_mmap->paksa_panji=UNDEFINED_FLAG;
 		kirim_mmap->kecepatan=0;
@@ -260,7 +393,9 @@ int main(int argc, char *argv[]){
 		);
 		
 		// Memasukkan Identifikasi berkas.
-		strncpy(kirim_mmap->berkas_identifikasi, berkas_identifikasi, BERKAS_MAX_STR);
+		strncpy(
+			kirim_mmap->berkas_identifikasi,
+			berkas_identifikasi, BERKAS_MAX_STR);
 		
 		// Mendaptakan jumlah pecahan.
 		
@@ -295,15 +430,20 @@ int main(int argc, char *argv[]){
 					
 					// Ubah sambungan maksimal
 					// bila lebih besar dari ukuran.
-					if((double)(sambungan_maksimal*CHUNK_MESSAGE_SIZE)>(double)kirim_mmap->ukuran_berkas){
+					if(
+						(double)(sambungan_maksimal*CHUNK_MESSAGE_SIZE)
+						>(double)kirim_mmap->ukuran_berkas
+					){
 						// Pesan
 						DEBUG3(
-							_("Sambungan maksimal (%1$i) melebihi ukuran berkas (%2$.0f)."),
+				_("Sambungan maksimal (%1$i) melebihi ukuran berkas (%2$.0f)."),
 							sambungan_maksimal, kirim_mmap->ukuran_berkas
 							);
 						
 						// Ubah.
-						sambungan_maksimal=(int)((double)kirim_mmap->ukuran_berkas/(double)CHUNK_MESSAGE_SIZE)*25/100;
+						sambungan_maksimal=(int)
+							((double)kirim_mmap->ukuran_berkas
+							/(double)CHUNK_MESSAGE_SIZE)*25/100;
 						
 						// Pesan.
 						DEBUG3(
@@ -317,7 +457,7 @@ int main(int argc, char *argv[]){
 					if((sambungan_maksimal)>MAX_CHUNK_ID){
 						// Pesan
 						DEBUG3(
-							_("Sambungan maksimal (%1$i) melebihi jumlah pecahan (%2$i)."),
+				_("Sambungan maksimal (%1$i) melebihi jumlah pecahan (%2$i)."),
 							sambungan_maksimal, MAX_CHUNK_ID
 							);
 						
@@ -339,8 +479,12 @@ int main(int argc, char *argv[]){
 				// Bila identifikasi adalah lebih dari MAX_CHUNK_ID,
 				// maka kembali ke NOL.
 				if(kirim_mmap->identifikasi>MAX_CHUNK_ID){
-					DEBUG1(_("Telah melebihi maksimal identifikasi %1$i."), MAX_CHUNK_ID);
-					DEBUG1(_("Nilai identifikasi adalah %1$i."), kirim_mmap->identifikasi);
+					DEBUG1(
+						_("Telah melebihi maksimal identifikasi %1$i."),
+						MAX_CHUNK_ID);
+					DEBUG1(
+						_("Nilai identifikasi adalah %1$i."),
+						kirim_mmap->identifikasi);
 					kirim_mmap->identifikasi=0;
 				};
 				
@@ -362,24 +506,28 @@ int main(int argc, char *argv[]){
 				}else if(kirim_mmap->identifikasi==MAX_CHUNK_ID){
 					// Bila telah mencapai
 					// batas identifikasi.
-					DEBUG3(_("Pecahan identifikasi telah sama dengan jumlah maksimal pecahan (%1$i)."), MAX_CHUNK_ID);
+					DEBUG3(
+	_("Pecahan identifikasi telah sama dengan jumlah maksimal pecahan (%1$i)."),
+						MAX_CHUNK_ID);
 					sambungan_maksimal_sekarang=1;
 					
 				}else if(kirim_mmap->ukuran_kirim>kirim_mmap->ukuran_berkas){
 					// Bila melebihi ukuran berkas.
 					DEBUG3(
-						_("Berkas terkirim (%1$.0f bita) telah melebihi ukuran berkas (%2$.0f bita)."),
+_("Berkas terkirim (%1$.0f bita) telah melebihi ukuran berkas (%2$.0f bita)."),
 						kirim_mmap->ukuran_kirim, kirim_mmap->ukuran_berkas
 						);
 					sambungan_maksimal_sekarang=1;
 					
 				}else if(
-					(kirim_mmap->ukuran_kirim+(sambungan_maksimal*CHUNK_MESSAGE_SIZE*10))
-					> kirim_mmap->ukuran_berkas
+					(
+						kirim_mmap->ukuran_kirim
+						+(sambungan_maksimal*CHUNK_MESSAGE_SIZE*10)
+					)> kirim_mmap->ukuran_berkas
 				){
 					// Bila medekati ukuran berkas.
 					DEBUG3(
-						_("Berkas terkirim (%1$.0f bita) hampir mendekati ukuran berkas (%2$.0f bita)."),
+_("Berkas terkirim (%1$.0f bita) hampir mendekati ukuran berkas (%2$.0f bita)."),
 						kirim_mmap->ukuran_kirim, kirim_mmap->ukuran_berkas
 						);
 					sambungan_maksimal_sekarang=1;
@@ -393,19 +541,27 @@ int main(int argc, char *argv[]){
 					// kecepatan rendah minimal
 					// maka jumlah maksimal paralel adalah
 					// sambunan maksimal kecepatan rendah.
-					DEBUG3(_("Menggunakan kecepatan rendah dengan %1$i sambungan dalam %2$.0f bita tersisa."),
-						sambungan_maksimal_kec_rendah, (kirim_mmap->ukuran_berkas-kirim_mmap->ukuran_kirim)
+					DEBUG3(
+_("Menggunakan kecepatan rendah dengan %1$i sambungan dalam %2$.0f bita tersisa."),
+						sambungan_maksimal_kec_rendah,
+						(kirim_mmap->ukuran_berkas-kirim_mmap->ukuran_kirim)
 						);
 					sambungan_maksimal_sekarang=sambungan_maksimal_kec_rendah;
 					
 				}else{
 					// Maksimalkan.
-					DEBUG3(_("Menggunakan %1$i sambungan."), sambungan_maksimal);
+					DEBUG3(
+						_("Menggunakan %1$i sambungan."),
+						sambungan_maksimal
+					);
 					sambungan_maksimal_sekarang=sambungan_maksimal;
 				};
 				
 				// Pesan.
-				DEBUG3(_("Jumlah sambungan adalah %1$i."), sambungan_maksimal_sekarang);
+				DEBUG3(
+					_("Jumlah sambungan adalah %1$i."),
+					sambungan_maksimal_sekarang
+				);
 				
 				// Berhasil.
 				DEBUG4(_("Menghitung kecepatan."), 0);
@@ -414,31 +570,34 @@ int main(int argc, char *argv[]){
 				// Kecepatan merupakan perbedaan ukuran sekarang
 				// dibandingkan dengan perbedaan waktu.
 				double kecepatan_sebelumnya=kirim_mmap->kecepatan;
-				double beda_ukuran=(kirim_mmap->ukuran_kirim)-(kirim_mmap->ukuran_kirim_sebelumnya);
-				double beda_waktu= (current_time(CURRENTTIME_MICROSECONDS) - kirim_mmap->waktu_terkirim );
+				double beda_ukuran=0
+					+ (kirim_mmap->ukuran_kirim)
+					- (kirim_mmap->ukuran_kirim_sebelumnya);
+				double beda_waktu=
+					(
+						current_time(CURRENTTIME_MICROSECONDS)
+						- kirim_mmap->waktu_terkirim
+					);
 				double kecepatan = beda_ukuran / beda_waktu;
 				
 				// Bila kurang dari NOL.
 				if (kecepatan<0)
 					kecepatan=0;
 				
-				// Kecepataan rerata.
-				// Kecepataan rerata menggunakan
-				// rumus Tapis Rerata Kecepatan Pesat Tertimbang
-				// (Exponentially Weighted Moving Average Filter).
-				// Lihat: http://lorien.ncl.ac.uk/ming/filter/filewma.htm
-				// HakCipta (c) 2009 M.T. Tham
-				// Berkas dimodifikasi: Jumat, 21 Agustus 2009, 06:22:02 WIB
-				// Berkas diakses: Sabtu, 07 Februari 2015, 00:40:40 WIB
-				double konstanta=0.9;
-				double kecepatan_rerata=konstanta* kecepatan + (1 - konstanta) * kecepatan_sebelumnya;
+				// Mendapatkan
+				// kecepatan rerata.
+				double kec_rerata=kecepatan_rerata(
+						kecepatan,
+						kecepatan_sebelumnya,
+						0.1
+					);
 				
 				// Bila kurang dari NOL.
-				if (kecepatan_rerata<0)
-					kecepatan_rerata=0;
+				if (kec_rerata<0)
+					kec_rerata=0;
 				
 				// Menyimpan.
-				kirim_mmap->kecepatan=kecepatan_rerata;
+				kirim_mmap->kecepatan=kec_rerata;
 				
 				// Pesan.
 				DEBUG4(_("Berhasil menghitung kecepatan."), 0);
@@ -448,13 +607,21 @@ int main(int argc, char *argv[]){
 				
 				// Mempersiapkan tampilan ukuran.
 				char ukuberkas_dikirim[ukuberkas_panjang];
-				strcpy(ukuberkas_dikirim, readable_fs(br_dikirim, ukuberkas_dikirim));
+				strcpy(
+					ukuberkas_dikirim,
+					readable_fs(br_dikirim, ukuberkas_dikirim)
+					);
 				
 				char ukukecepatan[ukuberkas_panjang];
-				if(kecepatan_rerata<1){
-					snprintf(ukukecepatan, ukuberkas_panjang, "%1$.04f B", kecepatan);
+				if(kec_rerata<1){
+					snprintf(
+						ukukecepatan, ukuberkas_panjang,
+						"%1$.04f B", kecepatan);
 				}else{
-					strcpy(ukukecepatan, readable_fs(kecepatan_rerata, ukukecepatan));
+					strcpy(
+						ukukecepatan,
+						readable_fs(kec_rerata, ukukecepatan)
+						);
 				};
 				
 				// Tampilan.
@@ -515,7 +682,10 @@ int main(int argc, char *argv[]){
 			
 			// Bila terjadi kesalahan.
 			if (pids[sambungan]< 0){
-				FAIL(_("Kegagalan proses cabang: %1$s (%2$i)."), strerror(errno), errno);
+				FAIL(
+					_("Kegagalan proses cabang: %1$s (%2$i)."),
+					strerror(errno), errno
+				);
 				exit(EXIT_FAILURE_FORK);
 			}else{
 			};
@@ -546,15 +716,24 @@ int main(int argc, char *argv[]){
 				// Memecah nama inang.
 				char porta_inang[BERKAS_MAX_STR];
 				char nama_inang[BERKAS_MAX_STR];
-				status=sscanf(aturan.hostname[pilih_inang], "%[^:]:%s", nama_inang, &porta_inang);
+				status=sscanf(
+					aturan.hostname[pilih_inang],
+					"%[^:]:%s", nama_inang, &porta_inang
+					);
 				if(status==1 || (status == 2 && !strlen(porta_inang))){
 					// Bila porta kosong.
-					DEBUG3(_("Porta inang kosong. Menggunakan nilai asali: %1$s."), aturan.defaultport);
+					DEBUG3(
+						_("Porta inang kosong. Menggunakan nilai asali: %1$s."),
+						aturan.defaultport
+					);
 					strcpy(porta_inang, aturan.defaultport);
 					
 				}else if (status > 2|| status <=0){
 					// Gagal.
-					FAIL(_("Gagal mengurai inang %1$s."), aturan.hostname[pilih_inang]);
+					FAIL(
+						_("Gagal mengurai inang %1$s."),
+						aturan.hostname[pilih_inang]
+					);
 					exit(EXIT_FAILURE_ARGS);
 					
 				};
@@ -583,7 +762,10 @@ int main(int argc, char *argv[]){
 				// Memasukkan nilai identifikasi.
 				// DEBUG2(_("Menyimpan identifikasi %1$i."), identifikasi);
 				kirim_mmap->identifikasi=identifikasi;
-				// DEBUG2(_("Identifikasi %1$i tersimpan."), kirim_mmap->identifikasi);
+				// DEBUG2(
+					// _("Identifikasi %1$i tersimpan."),
+					// kirim_mmap->identifikasi
+				// );
 				
 				// Menutup.
 				#ifndef KANCIL_NOFORK
@@ -595,10 +777,15 @@ int main(int argc, char *argv[]){
 					for (int i = 0; i < sambungan_maksimal_sekarang; ++i) {
 						// Bapak tunggu anak.
 						do{
-							pid_anak  = waitpid(pids[i], &status, WUNTRACED | WCONTINUED);
+							pid_anak  = waitpid(
+								pids[i], &status, WUNTRACED | WCONTINUED
+								);
 							if (pid_anak  == -1) {
 								// Pesan.
-								FAIL(_("Kegagalan proses cabang (PID%1$i): %2$s (%3$i)."), pids[i], strerror(errno), errno);
+								FAIL(
+						_("Kegagalan proses cabang (PID%1$i): %2$s (%3$i)."),
+									pids[i], strerror(errno), errno
+								);
 								exit(EXIT_FAILURE_FORK);
 							};
 							
@@ -607,8 +794,9 @@ int main(int argc, char *argv[]){
 								
 								// Terjadi kesalahan.
 								FAIL(
-									_("Kesalahan memori di proses cabang (PID%1$i): %2$s (%3$i)."),
-									pids[i], kancil_signal_code(EXIT_FAILURE_MEMORY),
+				_("Kesalahan memori di proses cabang (PID%1$i): %2$s (%3$i)."),
+									pids[i],
+									kancil_signal_code(EXIT_FAILURE_MEMORY),
 									EXIT_FAILURE_MEMORY
 									);
 								
@@ -616,8 +804,9 @@ int main(int argc, char *argv[]){
 								exit(EXIT_FAILURE_MEMORY);
 							}else if (WIFSTOPPED(status)) {
 								WARN(
-									_("Proses cabang (PID%1$i) dihentikan sinyal %2$s (%3$i)."),
-									pids[i], kancil_signal_code(WIFSTOPPED(status)),
+					_("Proses cabang (PID%1$i) dihentikan sinyal %2$s (%3$i)."),
+									pids[i],
+									kancil_signal_code(WIFSTOPPED(status)),
 									WIFSTOPPED(status)
 									);
 								
@@ -628,8 +817,9 @@ int main(int argc, char *argv[]){
 								
 								// Anak terbunuh sinyal.
 								WARN(
-									_("Proses cabang (PID%1$i) terbunuh sinyal %1$s (%2$i)."),
-									pids[i], kancil_signal_code(WIFSIGNALED(status)),
+					_("Proses cabang (PID%1$i) terbunuh sinyal %1$s (%2$i)."),
+									pids[i],
+									kancil_signal_code(WIFSIGNALED(status)),
 									status
 								);
 								
@@ -647,15 +837,16 @@ int main(int argc, char *argv[]){
 									&& coba< aturan.tries
 								){
 									DEBUG1(
-										_("Kegagalan soket di proses cabang (PID%1$i)."),
+							_("Kegagalan soket di proses cabang (PID%1$i)."),
 										pids[i]
 									);
 									coba++;
 								}else{
 									// Terjadi kesalahan.
 									FAIL(
-										_("Proses cabang (PID%1$i) berhenti dengan status: %2$s (%3$i)."),
-										pids[i], kancil_signal_code(WEXITSTATUS(status)),
+			_("Proses cabang (PID%1$i) berhenti dengan status: %2$s (%3$i)."),
+										pids[i],
+										kancil_signal_code(WEXITSTATUS(status)),
 										WEXITSTATUS(status)
 										);
 									// Berhenti.
@@ -665,22 +856,31 @@ int main(int argc, char *argv[]){
 							}else if(WIFEXITED(status)) {
 								
 								// Berhenti dengan normal.
-								DEBUG3(_("Proses cabang (PID%1$i) selesai."), pids[i]);
+								DEBUG3(
+									_("Proses cabang (PID%1$i) selesai."),
+									pids[i]
+								);
 								
 								// Tidak ada kesalahan.
 								coba=0;
 							}else if(WIFCONTINUED(status)) {
 								
 								// MAsih berjalan.
-								DEBUG3(_("Proses cabang sedang berlangsung."), 0);
+								DEBUG3(
+									_("Proses cabang sedang berlangsung."), 0);
 							}
 						} while (!WIFEXITED(status) && !WIFSIGNALED(status));
 						
 						// Menambah identifikasi.
 						// identifikasi++;
-						// DEBUG1(_("Menyimpan identifikasi %1$i."), identifikasi);
+						// DEBUG1(
+							// _("Menyimpan identifikasi %1$i."), identifikasi
+							// );
 						// kirim_mmap->identifikasi=identifikasi;
-						// DEBUG1(_("Identifikasi %1$i tersimpan."), kirim_mmap->identifikasi);
+						// DEBUG1(
+							// _("Identifikasi %1$i tersimpan."),
+							// kirim_mmap->identifikasi
+						// );
 						identifikasi=kirim_mmap->identifikasi;
 						
 						// Menunggu milidetik.
@@ -742,7 +942,10 @@ int main(int argc, char *argv[]){
  */
 void signal_callback_handler(int signum){
 	printf("\r\n");
-	NOTICE(_("Menangkap sinyal %1$s (%2$i)."), kancil_signal_code(signum), signum);
+	NOTICE(
+		_("Menangkap sinyal %1$s (%2$i)."),
+		kancil_signal_code(signum), signum
+	);
 	
 	// Membersihkan berkas memori.
 	free_shm();
@@ -781,7 +984,10 @@ void free_shm(){
 		
 		// Status.
 		if(status && errno!=2){
-			FAIL(_("Gagal membersihkan berkas memori: %1$s (%2$i)."), strerror(errno), errno);
+			FAIL(
+				_("Gagal membersihkan berkas memori: %1$s (%2$i)."),
+				strerror(errno), errno
+			);
 			exit(EXIT_FAILURE_MEMORY);
 		};
 	#endif

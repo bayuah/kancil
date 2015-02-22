@@ -7,6 +7,11 @@
  */
 #ifndef _KANCIL_PESAN_
 #define _KANCIL_PESAN_
+
+// Definisi untuk `pilih_gerbang()`
+#define GATEHASHING_XOR 0
+#define GATEHASHING_RSA 1
+
 // Fungsi.
 char* arti_panji(int panji);
 char *arti_status(int status);

@@ -108,7 +108,6 @@ struct TERIMABERKAS{
 	bool data_terima[MAX_CHUNK_ID];
 } TERIMABERKAS;
 
-
 #ifndef MAX_GATE
 	#define MAX_GATE 256
 #endif
@@ -125,13 +124,16 @@ struct GLOBAL_CONFIG {
 	bool show_debug4;
 	bool show_debug5;
 	bool quiet;
-	int debuglevel;
+	int  debuglevel;
 	bool rawtransfer;
 	bool shifteof;
-	int tries;
-	int waitretry;
-	int waitqueue;
-	int parallel;
+	bool transferedcheck;
+	bool summary;
+	int  tries;
+	int  waitretry;
+	int  waitqueue;
+	int  maxconnection;
+	int  parallel;
 	char completedir[BERKAS_MAX_STR];
 	char tempdir[BERKAS_MAX_STR];
 	char config[BERKAS_MAX_STR];
@@ -139,11 +141,19 @@ struct GLOBAL_CONFIG {
 	int  timetollerance;
 	int  gateid;
 	int  gates_c;
+	
+	/* 
+	 * Cara Pengalutan.
+	 * 0 Hanya XOR
+	 * 1 Menggunakan kunci publik RSA
+	 */
+	int  gateshashing;
+	
 	int  hostname_c;
 	char hostname[MAX_GATE][INFOALAMAT_MAX_STR];
 	int  pubkeys_c;
-	char pubkeys[MAX_GATE][MAX_STR];
-	char privkey[MAX_STR];
+	char pubkeys[MAX_GATE][BERKAS_MAX_STR];
+	char privkey[BERKAS_MAX_STR];
 	char listening[INFOALAMAT_MAX_STR];
 	char defaultport[INFOALAMAT_MAX_STR];
 	char inputfile[BERKAS_MAX_STR];
