@@ -375,6 +375,7 @@ unsigned int anak_kirim(
 		exit(EXIT_FAILURE_SOCKET);
 	};
 	
+	// Menyalin isi.
 	memcpy(pecahan, kirim_data, ENCRYPTED_CONTAINER_SIZE);
 	
 	// Pesan mentah.
@@ -497,10 +498,13 @@ unsigned int anak_kirim(
 	DEBUG2(_("Balasan: Status Gerbang: %1$s."), arti_status(r_status_gerbang));
 	DEBUG2(_("Balasan: Status Peladen: %1$s."), arti_status(r_status_peladen));
 	DEBUG2(_("Balasan: Identifikasi berkas: %1$s."), r_berkas_id);
-	DEBUG2(_("Balasan: Ukuran berkas: %1$.0f."), r_berkas_ukuran);
-	DEBUG2(_("Balasan: Berkas diterima: %1$.0f."), r_berkas_diterima);
+	DEBUG2(_("Balasan: Ukuran berkas: %1$.0f bita."), r_berkas_ukuran);
+	DEBUG2(_("Balasan: Berkas diterima: %1$.0f bita."), r_berkas_diterima)
 	DEBUG2(_("Balasan: Waktu Peladen: %1$.06f."), r_unixtime);
-	
+	DEBUG1(
+		_("Perbedaan waktu Peladen: %1$.06f detik."),
+		infokancil.unixtime-r_unixtime
+	);
 	
 	// Menyimpan.
 	if(r_berkas_diterima<=0){
@@ -517,11 +521,18 @@ unsigned int anak_kirim(
 	){
 		// Pesan.
 		if(
-			(r_berkas_diterima-kirim->ukuran_berkas) > (double)CHUNK_MESSAGE_SIZE * (aturan.parallel)
+			(r_berkas_diterima-kirim->ukuran_berkas)
+			> (double)CHUNK_MESSAGE_SIZE * (aturan.parallel)
 		){
-			WARN(_("Peladen telah menerima berkas melebihi %1$.0f bita."), r_berkas_diterima-kirim->ukuran_berkas);
+			WARN(
+				_("Peladen telah menerima berkas melebihi %1$.0f bita."),
+				r_berkas_diterima-kirim->ukuran_berkas
+			);
 		}else if(r_berkas_diterima>kirim->ukuran_berkas){
-			DEBUG1(_("Peladen telah menerima berkas melebihi %1$.0f bita."), r_berkas_diterima-kirim->ukuran_berkas);
+			DEBUG1(
+				_("Peladen telah menerima berkas melebihi %1$.0f bita."),
+				r_berkas_diterima-kirim->ukuran_berkas
+			);
 		}else{
 			DEBUG1(_("Peladen telah menerima keseluruhan berkas."), 0);
 		};
@@ -542,10 +553,16 @@ unsigned int anak_kirim(
 		// Memeriksa apakah
 		// telah terlalu banyak melakukan percobaan.
 		if(kirim->coba>maksimal_coba){
-			FAIL(_("Telah melakukan percobaan sebanyak %1$i kali. Berhenti."), maksimal_coba);
+			FAIL(
+				_("Telah melakukan percobaan sebanyak %1$i kali. Berhenti."),
+				maksimal_coba
+			);
 			exit(EXIT_FAILURE);
 		}else if(!r_status_gerbang && !r_status_peladen){
-			WARN(_("Gagal mengirim ke %1$s dan %2$s."),_("Gerbang"),_("Peladen"));
+			WARN(
+				_("Gagal mengirim ke %1$s dan %2$s."),
+				_("Gerbang"),_("Peladen")
+			);
 		}else if(!r_status_peladen){
 			WARN(_("Gagal mengirim ke %1$s."),_("Peladen"));
 		}else{
@@ -556,7 +573,10 @@ unsigned int anak_kirim(
 		if(r_panji==INVALID_FLAG){
 			// Pesan.
 			NOTICE(_("Panji Taksah ditemukan."), 0);
-			NOTICE(_("Menunggu %1$i detik untuk mengirim ulang."), ulang_tunggu);
+			NOTICE(
+				_("Menunggu %1$i detik untuk mengirim ulang."),
+				ulang_tunggu
+			);
 			sleep(ulang_tunggu);
 		}else if(r_panji==START_FLAG){
 			// Mengunlang pengiriman
@@ -571,7 +591,10 @@ unsigned int anak_kirim(
 		}else if(r_panji==INTRANSFER_FLAG){
 			// Meminta pengiriman ulang
 			// berkas berdasarkan identifikasi.
-			NOTICE(_("Meminta pengiriman ulang pecahan identifikasi '%1$i'."), r_identifikasi);
+			NOTICE(
+				_("Meminta pengiriman ulang pecahan identifikasi '%1$i'."),
+				r_identifikasi
+			);
 			
 			// Mengatur ulang ukuran berkas terkirim
 			// sesuai dengan ukuran peladen.
@@ -579,7 +602,10 @@ unsigned int anak_kirim(
 		};
 		
 		// Mengirim ulang.
-		NOTICE(_("Percobaan ke-%1$i. Mengulangi pengiriman pecahan %2$i."),kirim->coba, r_identifikasi);
+		NOTICE(
+			_("Percobaan ke-%1$i. Mengulangi pengiriman pecahan %2$i."),
+			kirim->coba, r_identifikasi
+		);
 		identifikasi=r_identifikasi;
 		
 		// Menambah
@@ -593,7 +619,7 @@ unsigned int anak_kirim(
 		if(r_berkas_diterima> kirim->ukuran_kirim){
 			// Pesan.
 			DEBUG2(
-				_("Peladen telah menerima berkas melebihi %1$.0f bita dari yang terkirim."),
+	_("Peladen telah menerima berkas melebihi %1$.0f bita dari yang terkirim."),
 				r_berkas_diterima-(kirim->ukuran_berkas)
 			);
 			
@@ -631,8 +657,14 @@ unsigned int anak_kirim(
 				kirim->kelompok_kirim=kelompok_kirim;
 				
 				// Pesan.
-				DEBUG1(_("Menunggu %1$i detik untuk melanjutkan."), urut_tunggu);
-				DEBUG1(_("Kelompok pecahan selanjutnya adalah '%1$i'."), kelompok_kirim);
+				DEBUG1(
+					_("Menunggu %1$i detik untuk melanjutkan."),
+					urut_tunggu
+				);
+				DEBUG1(
+					_("Kelompok pecahan selanjutnya adalah '%1$i'."),
+					kelompok_kirim
+				);
 				
 				// Tunggu.
 				sleep(urut_tunggu);

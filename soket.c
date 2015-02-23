@@ -634,6 +634,11 @@ char *kirimdata(
 		respons=malloc(sizeof(respons) * panjang_pesan);
 		memset(respons, 0, panjang_pesan);
 		diterima = recv(sockfd, respons, panjang_pesan, MSG_WAITALL);
+		
+		// Simpan waktu.
+		infokancil.unixtime=current_time(CURRENTTIME_MICROSECONDS);
+		
+		// Bila diterima.
 		if (diterima < 0){
 			if(errno==11){
 				WARN(_("Balasan dari '%1$s' (%2$s:%3$s terlalu lama."), hostname, ipstr, portno);

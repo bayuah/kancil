@@ -35,6 +35,7 @@ int main(int argc, char *argv[]){
 	infokancil.compiler_machine=STRINGIZE_VALUE_OF(COMPILER_MACHINE);
 	infokancil.compiler_version=STRINGIZE_VALUE_OF(COMPILER_VERSION);
 	infokancil.compiler_flags=STRINGIZE_VALUE_OF(COMPILER_FLAGS);
+	infokancil.unixtime=current_time(CURRENTTIME_MICROSECONDS);
 	
 	// Aturan umum.
 	aturan.show_error=true;

@@ -45,6 +45,9 @@ void anak_sambungan (
 	
 	// Mulai.
 	do{
+		// Simpan waktu.
+		infokancil.unixtime=current_time(CURRENTTIME_MICROSECONDS);
+		
 		// Memeriksa apakah sedang sibuk.
 		if(!berkas->sedang_sibuk){
 			// Tidak sibuk.
@@ -489,6 +492,10 @@ void anak_sambungan (
 				status_peladen=0;
 			};
 		};
+		
+		// Simpan waktu.
+		infokancil.unixtime=current_time(CURRENTTIME_MICROSECONDS);
+		
 	}while(do_ulang);
 	
 	// printf("\n");

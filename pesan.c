@@ -422,10 +422,30 @@ int ambil_pesan_peladen(
 					}else{
 						DEBUG4(_("Tidak kosong."), 0);
 						
+						// Mendapatkan lokalisasi untuk desimal.
+						struct lconv * lc;
+						lc=localeconv();
+						char *desimal=lc->decimal_point;
+						
+						// Penampung waktu.
+						char waktu[panjang_tok+1];
+						memset(waktu, 0, panjang_tok+1);
+						
 						// Waktu unix.
 						panjang_tok=strlen(tok);
 						DEBUG4(_("Mendapatkan waktu peladen panjang %1$i bita."), panjang_tok);
-						strncpy(*unix_time,tok,panjang_tok);
+						// strncpy(*unix_time,tok,panjang_tok);
+						strncpy(waktu,tok,panjang_tok);
+						
+						// Mengubah koma menjadi `desimal`
+						char *pch;
+						pch=strchr(waktu, '.');
+						waktu[pch-waktu] = desimal[0];
+						
+						// Salin.
+						strncpy(*unix_time, waktu, panjang_tok);
+						
+						// Pesan.
 						DEBUG4(_("Berhasil mendapatkan waktu peladen."), 0);
 					};
 				};
@@ -674,6 +694,7 @@ char *ambil_pesan(char* pecahan){
 /*
  * `pilih_gerbang()`
  * Memilih gerbang.
+ * @global: aturan.gateshashing
  * @param: maksimal_gerbang (int) Jumlah maksimal gerbang;
  * @param: kunci (unsigned char*) Kunci yang digunakan;
  * @param: basis_waktu (int)      Basis waktu pemilihan gerbang;

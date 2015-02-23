@@ -175,6 +175,7 @@ struct GLOBAL_KANCIL {
 	char* compiler_flags;
 	long built_time;
 	char* executable;
+	double unixtime;
 } GLOBAL_KANCIL;
 #define infokancil GLOBAL_KANCIL
 

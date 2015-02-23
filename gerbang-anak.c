@@ -18,6 +18,7 @@ void anak_gerbang(
 	RSA *rsapub,
 	RSA *rsapriv
 ){
+	
 	// Variabel.
 	int n;
 	// int status;
@@ -143,6 +144,9 @@ void anak_gerbang(
 		bool do_ulang=false;
 		int coba=0;
 		do{
+			
+			// Simpan waktu.
+			infokancil.unixtime=current_time(CURRENTTIME_MICROSECONDS);
 			
 			// Bangun pesan.
 			memcpy(penyangga, buat_pesan(
@@ -358,6 +362,9 @@ void anak_gerbang(
 				INFO(_("Meneruskan ke Klien."), 0);
 				break;
 			};
+			
+			// Simpan waktu.
+			infokancil.unixtime=current_time(CURRENTTIME_MICROSECONDS);
 			
 		}while(do_ulang);
 	};
