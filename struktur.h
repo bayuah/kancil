@@ -9,6 +9,14 @@
 #ifndef _KANCIL_STRUKTUR_H_
 #define _KANCIL_STRUKTUR_H_
 
+// Bila belum dimuat.
+#ifndef _TR1_STDBOOL_H
+	#include <stdbool.h>
+#endif
+#ifndef _INC_TYPES
+	#include <sys/types.h>
+#endif
+
 #ifndef MAX_STR
 	#define MAX_STR 2048
 #endif
@@ -33,7 +41,7 @@
 	#define INFOALAMAT_MAX_IP 5
 #endif
 #ifndef INFOALAMAT_MAX_STR
-	#define INFOALAMAT_MAX_STR 64
+	#define INFOALAMAT_MAX_STR 128
 #endif
 
 struct INFOALAMAT{
@@ -89,6 +97,7 @@ struct KIRIMBERKAS{
 	char berkas_identifikasi[BERKAS_MAX_STR];
 	int data_terkirim[MAX_CHUNK_ID];
 	double waktu_terkirim;
+	double detik;
 	double kecepatan;
 	int coba;
 	bool kunci;
@@ -137,6 +146,8 @@ struct GLOBAL_CONFIG {
 	char completedir[BERKAS_MAX_STR];
 	char tempdir[BERKAS_MAX_STR];
 	char config[BERKAS_MAX_STR];
+	unsigned char salt[MAX_STR];
+	unsigned char salt_send[MAX_STR];
 	int  timebase;
 	int  timetollerance;
 	int  gateid;

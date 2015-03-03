@@ -61,9 +61,17 @@ int main(int argc, char *argv[]){
 	aturan.hostname_c=0;
 	aturan.gateid=0;
 	aturan.timebase=10;
-	aturan.timetollerance=1;
+	aturan.timetollerance=10;
 	aturan.gateshashing=GATEHASHING_XOR;
 	aturan.maxconnection=50;
+	
+	// Garam.
+	unsigned char *uc=(unsigned char*)"kancil dan buaya";
+	int puc=strlen((char*)uc);
+	memset(aturan.salt, 0, sizeof(aturan.salt[0])*MAX_STR);
+	memset(aturan.salt_send, 0, sizeof(aturan.salt_send[0])*MAX_STR);
+	memcpy(aturan.salt, uc, puc);
+	memcpy(aturan.salt_send, aturan.salt, puc);
 	
 	// Informasi versi.
 	info_versi();
@@ -77,6 +85,7 @@ int main(int argc, char *argv[]){
 	// Bila inang kosong.
 	if(!aturan.hostname_c){
 		FAIL(_("Inang kosong."), 0);
+		bantuan_param_standar();
 		exit(EXIT_FAILURE_ARGS);
 	}
 	
@@ -134,7 +143,7 @@ int main(int argc, char *argv[]){
 		PROT_WRITE | PROT_READ, berbagi_panji, 
 		shm_berkas, 0 );
 	
-	// Inisiasi isi.
+	// Mengosongkan isi.
 	int mxid=INFOALAMAT_MAX_ID;
 	int mxip=INFOALAMAT_MAX_IP;
 	int mxst=INFOALAMAT_MAX_STR;
@@ -329,7 +338,7 @@ int main(int argc, char *argv[]){
 	
 	// Mendengarkan.
 	connection=0;
-	listen(sockfd, 5);
+	listen(sockfd, max_connection);
 	clilen = sizeof(cli_addr);
 	INFO(_("Mendengarkan porta %1$i."), portno);
 	
@@ -348,15 +357,25 @@ int main(int argc, char *argv[]){
 	if(aturan.timetollerance<0)
 		aturan.timetollerance=0;
 	
-	// Pilih inang
-	unsigned char *kunci_peladen=(unsigned char*)" Sate atau satai";
-	
-	// Pilih terima.
-	unsigned char *kunci=(unsigned char*)" Sate atau satai";
+	// Pilih waktu.
+	unsigned char *kunci=(unsigned char*)aturan.salt;
+	unsigned char *kunci_peladen=(unsigned char*)aturan.salt_send;
 	double waktu_unix;
 	bool inang_sama=false;
 	char porta_inang[INFOALAMAT_MAX_STR];
 	char nama_inang[INFOALAMAT_MAX_STR];
+	
+	/*
+	 * waktu_pilih
+	 * Tembolok perhitungan.
+	 * Indeks 0: Waktu Unix
+	 * Indeks 1: Pilihan peladen.
+	 * Indeks >1: Nilai gerbang berdasarkan
+	 *            Toleransi>T<Toleransi
+	*/
+	double waktu_pilih[aturan.timetollerance+4];
+	memset(waktu_pilih, 0,
+		sizeof(waktu_pilih[0])*(aturan.timetollerance*2)+3);
 	
 	// Perilaku.
 	int tunggu=0;
@@ -389,7 +408,9 @@ int main(int argc, char *argv[]){
 				for (i = 0; i < max_connection; ++i) {
 					
 					DEBUG2(_("Menunggu proses %1$i (%2$i)."), i, pids[i]);
-					while (-1 == waitpid(pids[i], &pid_status, WNOHANG)){
+					while (-1 == waitpid(
+						pids[i], &pid_status, WUNTRACED | WCONTINUED
+					)){
 						sleep(1);
 						killpid(pids[i], SIGKILL);
 						WARN(_("Proses %1$i (%2$i) terlalu lama."), i, pids[i]);
@@ -408,6 +429,95 @@ int main(int argc, char *argv[]){
 				connection=0;
 			};
 		};
+		
+		
+		// Memeriksa inang
+		// sebelum memecah proses.
+		waktu_unix=current_time(CURRENTTIME_SECONDS);
+		inang_sama=false;
+		int pilih_inang;
+		if(aturan.timetollerance<=0){
+			// Bila tanpa toleransi.
+			
+			// Memeriksa tembolok.
+			if(waktu_pilih[0]==waktu_unix){
+				// Indeks 2
+				pilih_inang=waktu_pilih[2];
+			}else{
+				// Buat kembali.
+				pilih_inang=pilih_gerbang(
+					aturan.gates_c,
+					kunci,
+					aturan.timebase,
+					waktu_unix,
+					rsapub_pilih_gerbang
+				);
+				// Simpan.
+				waktu_pilih[2]=pilih_inang;
+			};
+			
+			// Pilih.
+			if(pilih_inang==(int)aturan.gateid){
+				inang_sama=true;
+			}else{
+				inang_sama=false;
+			};
+		}else{
+			// Memeriksa setiap toleransi.
+			inang_sama=false;
+			int j=2;
+			for(
+				i=0-aturan.timetollerance;
+				i<=(aturan.timetollerance);
+				i++
+			){
+				// Pilih.
+				// Memeriksa tembolok.
+				if(waktu_pilih[0]==waktu_unix){
+					// Indeks >1
+					pilih_inang=waktu_pilih[j];
+				}else{
+					pilih_inang=pilih_gerbang(
+						aturan.gates_c,
+						kunci,
+						aturan.timebase,
+						(waktu_unix+i),
+						rsapub_pilih_gerbang
+					);
+					waktu_pilih[j]=pilih_inang;
+				};
+				
+				// Pilih.
+				if(pilih_inang==(int)aturan.gateid){
+					inang_sama=true;
+					break;
+				}else{
+					inang_sama=false;
+				};
+				
+				// Menaikkan j.
+				j++;
+			}
+		};
+		
+		// Pilih inang peladen
+		// sebelum memecah proses.
+		// Memeriksa apakah telah dihitung.
+		int pilih_inang_peladen;
+		if(waktu_pilih[0]==waktu_unix){
+			// Indeks 1;
+			pilih_inang_peladen=waktu_pilih[1];
+		}else{
+			pilih_inang_peladen=pilih_gerbang(
+				aturan.hostname_c,
+				kunci_peladen,
+				aturan.timebase,
+				waktu_unix,
+				rsapub_pilih_peladen
+			);
+			waktu_pilih[1]=pilih_inang_peladen;
+		};
+		
 		// Memecah tugas.
 		// Mencabangkan proses.
 		// 'KANCIL_NOFORK' berguna untuk melakukan pengutuan
@@ -429,7 +539,7 @@ int main(int argc, char *argv[]){
 				coba=0;
 				i=0;
 				WARN(_("Sumber daya tidak mencukupi."), 0);
-				while (waitpid(0,NULL,WNOHANG)!=-1){
+				while (waitpid(0, NULL, WNOHANG)!=-1){
 					DEBUG1(
 						_("Menunggu proses anak selama %1$i detik."),
 						tunggu
@@ -463,52 +573,6 @@ int main(int argc, char *argv[]){
 				close(sockfd);
 			#endif
 			
-			// Memeriksa inang.
-			waktu_unix=current_time(CURRENTTIME_SECONDS);
-			inang_sama=false;
-			int pilih_inang;
-			if(aturan.timetollerance<=0){
-				// Bila tanpa toleransi.
-				pilih_inang=pilih_gerbang(
-					aturan.gates_c,
-					kunci,
-					aturan.timebase,
-					waktu_unix,
-					rsapub_pilih_gerbang
-				);
-				
-				// Pilih.
-				if(pilih_inang==(int)aturan.gateid){
-					inang_sama=true;
-				}else{
-					inang_sama=false;
-				};
-			}else{
-				// Memeriksa setiap toleransi.
-				inang_sama=false;
-				for(
-					i=0-aturan.timetollerance;
-					i<=(aturan.timetollerance);
-					i++
-				){
-					// Pilih.
-					pilih_inang=pilih_gerbang(
-						aturan.gates_c,
-						kunci,
-						aturan.timebase,
-						(waktu_unix+i),
-						rsapub_pilih_gerbang
-					);
-					// Pilih.
-					if(pilih_inang==(int)aturan.gateid){
-						inang_sama=true;
-						break;
-					}else{
-						inang_sama=false;
-					};
-				}
-			}
-			
 			// Memilih.
 			if(!inang_sama){
 				// Berhenti.
@@ -526,15 +590,6 @@ int main(int argc, char *argv[]){
 				// Menutup sambungan.
 				close(newsockfd);
 			}else{
-				
-				// Pilih inang.
-				int pilih_inang_peladen=pilih_gerbang(
-					aturan.hostname_c,
-					kunci_peladen,
-					aturan.timebase,
-					waktu_unix,
-					rsapub_pilih_peladen
-				);
 				
 				// Memecah nama inang.
 				memset(nama_inang, 0, INFOALAMAT_MAX_STR);

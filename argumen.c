@@ -20,6 +20,10 @@
 #include "rsa.h"
 #include "pesan.h"
 
+#ifdef __CYGWIN__
+	int strcasecmp(const char *s1, const char *s2);
+#endif
+
 // Lokalisasi.
 #ifndef _LOCALE_H
 	#include <libintl.h>
@@ -57,6 +61,7 @@ bool is_kanciltest(){
 	return !strcasecmp(infokancil.progcode, "KANCIL_TEST");
 }
 
+
 /*
  * urai_argumen()
  * Mengurai argumen.
@@ -64,10 +69,6 @@ bool is_kanciltest(){
 void urai_argumen(int argc, char *argv[]){
 	// Bila kosong.
 	int status;
-	
-	if(!argc){
-		bantuan();
-	};
 	
 	while (1) {
 		// int this_option_optind = optind ? optind : 1;
@@ -100,7 +101,7 @@ void urai_argumen(int argc, char *argv[]){
 			{"tries",           required_argument, 0, 't'},
 			{"parallel",        required_argument, 0, 'p'},
 			{"shifteof",        no_argument,       0, 'S'},
-			{"summary",         no_argument,       0, 's'},
+			{"salt",            no_argument,       0, 's'},
 			{"transferedcheck", no_argument,       0, 'C'},
 			{"gateshashing",    required_argument, 0, 'A'},
 			{"rsapadding",      no_argument,       0, 'P'},
@@ -111,7 +112,7 @@ void urai_argumen(int argc, char *argv[]){
 		
 		// Mendapatkan argumen.
 		int c = getopt_long(argc, argv,
-			"12345DEWNIA:B:Cc:D:d:g:G:H:hK:k:l:L:M:n:p:P:RrSsvVq?",
+			"12345DEWNIA:B:Cc:D:d:g:G:H:hK:k:l:L:M:n:p:P:RrSs:vVq?",
 			long_options, &option_index
 		);
 		if (c == -1)
@@ -352,7 +353,12 @@ void urai_argumen(int argc, char *argv[]){
 			status=atoi(optarg);
 			if(status){
 				DEBUG1(_("Argumen: Paralel sebanyak %1$i sambungan."), status);
-				if(status>1){
+				
+				// Bila kirim enkripsi
+				// menggunakan shifteof dan transferedcheck
+				if(
+					status>1
+				){
 					DEBUG1(_("Paralel adalah eksperimen."), 0);
 					DEBUG1(_("Paralel juga mengaktifkan '%1$s' dan '%2$s'."),
 						"shifteof", "transferedcheck"
@@ -370,8 +376,10 @@ void urai_argumen(int argc, char *argv[]){
 		case 'n':
 			if(!strcmp("S",optarg)){
 				aturan.shifteof=false;
+				DEBUG1(_("Argumen: Mematikan '%1$i'."), "shifteof");
 			}else if(!strcmp("C",optarg)){
 				aturan.transferedcheck=false;
+				DEBUG1(_("Argumen: Mematikan '%1$i'."), "transferedcheck");
 			};
 			break;
 		case 'P':
@@ -448,8 +456,10 @@ void urai_argumen(int argc, char *argv[]){
 			aturan.shifteof=true;
 			break;
 		case 's':
-			DEBUG1(_("Argumen: Menampilkan rangkuman pengiriman."), 0);
-			aturan.summary=true;
+			DEBUG1(_("Argumen: Memberikan garam '%1$s'."), optarg);
+			status=strlen((char*)optarg);
+			memset(aturan.salt, 0, sizeof(aturan.salt[0])*MAX_STR);
+			memcpy(aturan.salt, optarg, status);
 			break;
 		case 'C':
 			DEBUG1(_("Argumen: Memeriksa ukuran terkirim menurut Peladen."), 0);
@@ -879,10 +889,10 @@ int baca_konfigurasi(){
 		}else if(!strcasecmp(kunci, "RAWTRANSFER")){
 			// Apakah menampilkan Transfer Mentah.
 			aturan.rawtransfer=!strlen(nilai)?true:s2b(nilai);
-			if(aturan.rawtransfer){
-				DEBUG1(_("Berkas pengaturan: Transfer mentah."), 0);
-			}else{
+			if(!aturan.rawtransfer){
 				DEBUG1(_("Berkas pengaturan: Transfer terenkripsi."), 0);
+			}else{
+				DEBUG1(_("Berkas pengaturan: Transfer mentah."), 0);
 			}
 		}else if(!strcasecmp(kunci, "GATESNUM")){
 			status=atoi(nilai);
@@ -901,8 +911,11 @@ int baca_konfigurasi(){
 			};
 		}else if(!strcasecmp(kunci, "SHIFTEOF")){
 			aturan.show_debug1=!strlen(nilai)?true:s2b(nilai);
-		}else if(!strcasecmp(kunci, "SUMMARY")){
-			aturan.summary=!strlen(nilai)?true:s2b(nilai);
+		}else if(!strcasecmp(kunci, "SALT")){
+			DEBUG1(_("Berkas pengaturan: Memberikan garam '%1$s'."), optarg);
+			status=strlen((char*)optarg);
+			memset(aturan.salt, 0, sizeof(aturan.salt[0])*MAX_STR);
+			memcpy(aturan.salt, optarg, status);
 		}else if(!strcasecmp(kunci, "TRANSFEREDCHECK")){
 			aturan.show_debug1=!strlen(nilai)?true:s2b(nilai);
 		}else if(!strcasecmp(kunci, "TRIES")){
@@ -917,20 +930,28 @@ int baca_konfigurasi(){
 				&& aturan.pubkeys_c < MAX_GATE
 			){
 				
-				DEBUG1(_("Argumen: Menambahkan berkas kunci publik '%1$s'."), nilai);
+				DEBUG1(_("Berkas pengaturan: Menambahkan berkas kunci publik '%1$s'."), nilai);
 				strcpy(aturan.pubkeys[aturan.pubkeys_c], nilai);
 				aturan.pubkeys_c++;
 			};
 		}else if(!strcasecmp(kunci, "PRIVKEYFILE")){
 			if(file_exist(nilai)){
-				DEBUG1(_("Argumen: Menambahkan berkas kunci privat '%1$s'."), nilai);
+				DEBUG1(_("Berkas pengaturan: Menambahkan berkas kunci privat '%1$s'."), nilai);
 				strcpy(aturan.privkey, nilai);
 			};
 		}else if(!strcasecmp(kunci, "PARALLEL")){
 			status=atoi(nilai);
 			if(status){
-				DEBUG1(_("Berkas pengaturan: Paralel sebanyak %1$i sambungan."), status);
-				if(status>1){
+				DEBUG1(
+					_("Berkas pengaturan: Paralel sebanyak %1$i sambungan."),
+					status
+				);
+				
+				// Bila kirim enkripsi
+				// menggunakan shifteof dan transferedcheck
+				if(
+					status>1
+				){
 					DEBUG1(_("Paralel adalah eksperimen."), 0);
 					DEBUG1(_("Paralel juga mengaktifkan '%1$s' dan '%2$s'."),
 						"shifteof", "transferedcheck"

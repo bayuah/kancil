@@ -19,9 +19,17 @@
 #define _FILE_OFFSET_BITS 64
 #include <sys/types.h>
 
-#ifndef __off64_t_defined
-	typedef __off64_t off64_t;
-	# define __off64_t_defined
+// Bila tak ada.
+#ifdef __CYGWIN__
+	#ifndef _off64_t_defined
+		typedef _off64_t off64_t;
+		# define _off64_t_defined
+	#endif
+#else
+	#ifndef __off64_t_defined
+		typedef __off64_t off64_t;
+		# define __off64_t_defined
+	#endif
 #endif
 
 // Tingkat kekutu.

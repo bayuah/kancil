@@ -85,6 +85,14 @@ int main(int argc, char *argv[]){
 		sizeof(aturan.privkey[0])*BERKAS_MAX_STR
 	);
 	
+	// Garam.
+	unsigned char *uc=(unsigned char*)"kancil dan buaya";
+	int puc=strlen((char*)uc);
+	memset(aturan.salt, 0, sizeof(aturan.salt[0])*MAX_STR);
+	memset(aturan.salt_send, 0, sizeof(aturan.salt_send[0])*MAX_STR);
+	memcpy(aturan.salt, uc, puc);
+	memcpy(aturan.salt_send, aturan.salt, puc);
+	
 	// Informasi versi.
 	info_versi();
 	
@@ -97,18 +105,23 @@ int main(int argc, char *argv[]){
 	// Bila inang kosong.
 	if(!aturan.hostname_c){
 		FAIL(_("Inang kosong."), 0);
+		bantuan_param_standar();
 		exit(EXIT_FAILURE_ARGS);
 	};
 	
 	// Bila jumlah gerbang kosong.
 	if(!aturan.gates_c){
-		DEBUG1(_("Jumlah Gerbang kosong. Menggunakan jumlah inang."),0 );
 		aturan.gates_c=aturan.hostname_c;
-	}else if(aturan.gates_c>aturan.hostname_c){
 		DEBUG1(
-		_("Jumlah Gerbang melebihi jumlah inang. Menggunakan jumlah inang."),
-			0);
+			_("Jumlah Gerbang kosong. Menggunakan jumlah inang %1$i."),
+			aturan.hostname_c
+		);
+	}else if(aturan.gates_c>aturan.hostname_c){
 		aturan.gates_c=aturan.hostname_c;
+		DEBUG1(
+	_("Jumlah Gerbang melebihi jumlah inang. Menggunakan jumlah inang %1$i."),
+			aturan.hostname_c
+		);
 	};
 	
 	// Berbagi memori.
@@ -372,6 +385,7 @@ int main(int argc, char *argv[]){
 			kirim_mmap->data_terkirim, 0,
 			sizeof(kirim_mmap->data_terkirim[0])*MAX_CHUNK_ID);
 		kirim_mmap->waktu_terkirim=current_time(CURRENTTIME_MICROSECONDS);
+		kirim_mmap->detik=0;
 		kirim_mmap->paksa_panji=UNDEFINED_FLAG;
 		kirim_mmap->kecepatan=0;
 		kirim_mmap->coba=1;
@@ -512,23 +526,23 @@ int main(int argc, char *argv[]){
 						MAX_CHUNK_ID);
 					sambungan_maksimal_sekarang=1;
 					
-				}else if(kirim_mmap->ukuran_kirim>kirim_mmap->ukuran_berkas){
-					// Bila melebihi ukuran berkas.
-					DEBUG3(
-_("Berkas terkirim (%1$.0f bita) telah melebihi ukuran berkas (%2$.0f bita)."),
-						kirim_mmap->ukuran_kirim, kirim_mmap->ukuran_berkas
-						);
-					sambungan_maksimal_sekarang=1;
-					
 				}else if(
 					(
 						kirim_mmap->ukuran_kirim
-						+(sambungan_maksimal*CHUNK_MESSAGE_SIZE*10)
-					)> kirim_mmap->ukuran_berkas
+						+(sambungan_maksimal*CHUNK_MESSAGE_SIZE*2)
+					)>= kirim_mmap->ukuran_berkas
 				){
 					// Bila medekati ukuran berkas.
 					DEBUG3(
 _("Berkas terkirim (%1$.0f bita) hampir mendekati ukuran berkas (%2$.0f bita)."),
+						kirim_mmap->ukuran_kirim, kirim_mmap->ukuran_berkas
+						);
+					sambungan_maksimal_sekarang=1;
+					
+				}else if(kirim_mmap->ukuran_kirim>kirim_mmap->ukuran_berkas){
+					// Bila melebihi ukuran berkas.
+					DEBUG3(
+_("Berkas terkirim (%1$.0f bita) telah melebihi ukuran berkas (%2$.0f bita)."),
 						kirim_mmap->ukuran_kirim, kirim_mmap->ukuran_berkas
 						);
 					sambungan_maksimal_sekarang=1;
@@ -541,7 +555,7 @@ _("Berkas terkirim (%1$.0f bita) hampir mendekati ukuran berkas (%2$.0f bita).")
 					// Bila ukuran tersisa kurang dari
 					// kecepatan rendah minimal
 					// maka jumlah maksimal paralel adalah
-					// sambunan maksimal kecepatan rendah.
+					// sambungan maksimal kecepatan rendah.
 					DEBUG3(
 _("Menggunakan kecepatan rendah dengan %1$i sambungan dalam %2$.0f bita tersisa."),
 						sambungan_maksimal_kec_rendah,
@@ -564,111 +578,139 @@ _("Menggunakan kecepatan rendah dengan %1$i sambungan dalam %2$.0f bita tersisa.
 					sambungan_maksimal_sekarang
 				);
 				
-				// Berhasil.
-				DEBUG4(_("Menghitung kecepatan."), 0);
-				
-				// Kecepatan.
-				// Kecepatan merupakan perbedaan ukuran sekarang
-				// dibandingkan dengan perbedaan waktu.
-				double kecepatan_sebelumnya=kirim_mmap->kecepatan;
-				double beda_ukuran=0
-					+ (kirim_mmap->ukuran_kirim)
-					- (kirim_mmap->ukuran_kirim_sebelumnya);
-				double beda_waktu=
-					(
-						current_time(CURRENTTIME_MICROSECONDS)
-						- kirim_mmap->waktu_terkirim
-					);
-				double kecepatan = beda_ukuran / beda_waktu;
-				
-				// Bila kurang dari NOL.
-				if (kecepatan<0)
-					kecepatan=0;
-				
-				// Mendapatkan
-				// kecepatan rerata.
-				double kec_rerata=kecepatan_rerata(
-						kecepatan,
-						kecepatan_sebelumnya,
-						0.1
-					);
-				
-				// Bila kurang dari NOL.
-				if (kec_rerata<0)
-					kec_rerata=0;
-				
-				// Menyimpan.
-				kirim_mmap->kecepatan=kec_rerata;
-				
-				// Pesan.
-				DEBUG4(_("Berhasil menghitung kecepatan."), 0);
-				
-				// Mendapat informasi.
-				double br_dikirim=kirim_mmap->ukuran_kirim;
-				
-				// Mempersiapkan tampilan ukuran.
-				char ukuberkas_dikirim[ukuberkas_panjang];
-				strcpy(
-					ukuberkas_dikirim,
-					readable_fs(br_dikirim, ukuberkas_dikirim)
-					);
-				
-				char ukukecepatan[ukuberkas_panjang];
-				if(kec_rerata<1){
-					snprintf(
-						ukukecepatan, ukuberkas_panjang,
-						"%1$.04f B", kecepatan);
-				}else{
-					strcpy(
-						ukukecepatan,
-						readable_fs(kec_rerata, ukukecepatan)
-						);
-				};
-				
-				// Tampilan.
-				// Bila tidak aktif,
-				// maka menggunakan progress.
+				// Memastikan bahwa perhitungan kecepatan
+				// hanya muncul dalam setiap perubahan detik.
+				double detik=current_time(CURRENTTIME_SECONDS);
 				if(
-					aturan.show_debug1
-					|| aturan.show_debug2
-					|| aturan.show_debug3
-					|| aturan.show_debug4
-					|| aturan.show_debug5
+					kirim_mmap->detik!=detik
+					|| kirim_mmap->detik==0
 				){
-					INFO(
-						_("Berhasil mengirim %1$s (%2$.0lf bita) (%3$s/s)."),
-						ukuberkas_dikirim, br_dikirim, ukukecepatan
+					if(kirim_mmap->detik==0){
+						DEBUG4(_("Menghitung kecepatan awal."), 0);
+					}else{
+						DEBUG4(_("Menghitung kecepatan."), 0);
+					};
+					
+					// Memasukkan detik.
+					kirim_mmap->detik=current_time(CURRENTTIME_SECONDS);
+					
+					// Kecepatan.
+					// Kecepatan merupakan perbedaan ukuran sekarang
+					// dibandingkan dengan perbedaan waktu.
+					double rerata_sebelumnya=kirim_mmap->kecepatan;
+					double beda_ukuran=(double)0
+						+ (kirim_mmap->ukuran_kirim)
+						- (kirim_mmap->ukuran_kirim_sebelumnya);
+					double beda_waktu=
+						(
+							current_time(CURRENTTIME_MICROSECONDS)
+							- kirim_mmap->waktu_terkirim
 						);
-				}else{
-					PROGRESS(
-						_("Berhasil mengirim %1$s (%2$.0lf bita) (%3$s/s)."),
-						ukuberkas_dikirim, br_dikirim, ukukecepatan
+					
+					// Agar todak NOL.
+					if(beda_waktu==0)
+						beda_waktu=1;
+					
+					// Mendapatkan kecepatan.
+					double kecepatan = beda_ukuran / beda_waktu;
+					
+					// Bila kurang dari NOL.
+					if (kecepatan<0)kecepatan=0;
+					
+					// Mendapatkan
+					// kecepatan rerata.
+					double kec_rerata=kecepatan_rerata(
+							kecepatan,
+							rerata_sebelumnya,
+							0.1
 						);
+					
+					// Bila kurang dari NOL.
+					if (kec_rerata<0)
+						kec_rerata=0;
+					
+					// Menyimpan.
+					kirim_mmap->kecepatan=kec_rerata;
+					
+					// Pesan.
+					DEBUG4(_("Berhasil menghitung kecepatan."), 0);
+					
+					// Mendapat informasi.
+					double br_dikirim=kirim_mmap->ukuran_kirim;
+					
+					// Mempersiapkan tampilan ukuran.
+					char ukuberkas_dikirim[ukuberkas_panjang];
+					strcpy(
+						ukuberkas_dikirim,
+						readable_fs(br_dikirim, ukuberkas_dikirim)
+						);
+					
+					char ukukecepatan[ukuberkas_panjang];
+					if(kec_rerata<1){
+						snprintf(
+							ukukecepatan, ukuberkas_panjang,
+							"%1$.04f B", kecepatan);
+					}else{
+						strcpy(
+							ukukecepatan,
+							readable_fs(kec_rerata, ukukecepatan)
+							);
+					};
+					
+					// Tampilan.
+					// Bila tidak aktif,
+					// maka menggunakan progress.
+					if(
+						aturan.show_debug1
+						|| aturan.show_debug2
+						|| aturan.show_debug3
+						|| aturan.show_debug4
+						|| aturan.show_debug5
+					){
+						INFO(
+						_("Berhasil mengirim %1$s (%2$.0lf bita) (%3$s/s)."),
+							ukuberkas_dikirim, br_dikirim, ukukecepatan
+							);
+					}else{
+						PROGRESS(
+						_("Berhasil mengirim %1$s (%2$.0lf bita) (%3$s/s)."),
+							ukuberkas_dikirim, br_dikirim, ukukecepatan
+							);
+					};
+					
+					// Bersihkan.
+					DEBUG4(_("Membersihkan penyangga kecepatan."), 0);
+					memset(ukuberkas_dikirim, 0, ukuberkas_panjang);
+					memset(ukukecepatan, 0, ukuberkas_panjang);
+					
+					// Menyimpan waktu sekarang.
+					DEBUG4(_("Menyimpan waktu sekarang."), 0);
+					kirim_mmap->waktu_terkirim=
+						current_time(CURRENTTIME_MICROSECONDS);
+					DEBUG4(_("Selesai menyimpan waktu sekarang."), 0);
+					
+					// Menyimpan ukuran sekarang.
+					DEBUG4(_("Menyimpan ukuran sekarang."), 0);
+					kirim_mmap->ukuran_kirim_sebelumnya=
+						kirim_mmap->ukuran_kirim;
+					DEBUG4(_("Selesai menyimpan ukuran sekarang."), 0);
 				};
-				
-				// Bersihkan.
-				DEBUG4(_("Membersihkan penyangga kecepatan."), 0);
-				memset(ukuberkas_dikirim, 0, ukuberkas_panjang);
-				memset(ukukecepatan, 0, ukuberkas_panjang);
-				
-				// Menyimpan waktu sekarang.
-				DEBUG4(_("Menyimpan waktu sekarang."), 0);
-				kirim_mmap->waktu_terkirim=current_time(CURRENTTIME_MICROSECONDS);
-				DEBUG4(_("Selesai menyimpan waktu sekarang."), 0);
-				
-				// Menyimpan ukuran sekarang.
-				DEBUG4(_("Menyimpan ukuran sekarang."), 0);
-				kirim_mmap->ukuran_kirim_sebelumnya=kirim_mmap->ukuran_kirim;
-				DEBUG4(_("Selesai menyimpan ukuran sekarang."), 0);
-				
-				// Menambah identifikasi.
-				// kirim_mmap->identifikasi++;
-				// identifikasi=kirim_mmap->identifikasi;
-				
 				// Matikan pengawas.
 				pengawas=false;
 				
 			};
+			
+			// Pilih gerbang
+			// sebelum memecah proses.
+			unsigned char *kunci=(unsigned char*)aturan.salt;
+			double waktu_unix=current_time(CURRENTTIME_SECONDS);
+			int pilih_inang=pilih_gerbang(
+				aturan.gates_c,
+				kunci,
+				aturan.timebase,
+				waktu_unix,
+				rsapub_pilih_gerbang
+			);
 			
 			// Memecah tugas.
 			// Mencabangkan proses.
@@ -696,17 +738,6 @@ _("Menggunakan kecepatan rendah dengan %1$i sambungan dalam %2$.0f bita tersisa.
 				
 				// Pesan.
 				DEBUG1(_("Jumlah inang adalah %1$i."), aturan.gates_c);
-				
-				// Pilih gerbang.
-				unsigned char *kunci=(unsigned char*)" Sate atau satai";
-				double waktu_unix=current_time(CURRENTTIME_SECONDS);
-				int pilih_inang=pilih_gerbang(
-					aturan.gates_c,
-					kunci,
-					aturan.timebase,
-					waktu_unix,
-					rsapub_pilih_gerbang
-				);
 				
 				// Bila kosong.
 				if(!strlen(aturan.hostname[pilih_inang])){
@@ -784,8 +815,8 @@ _("Menggunakan kecepatan rendah dengan %1$i sambungan dalam %2$.0f bita tersisa.
 							if (pid_anak  == -1) {
 								// Pesan.
 								FAIL(
-						_("Kegagalan proses cabang (PID%1$i): %2$s (%3$i)."),
-									pids[i], strerror(errno), errno
+					_("Kegagalan proses cabang %1$i (PID%2$i): %3$s (%4$i)."),
+									i, pids[i], strerror(errno), errno
 								);
 								exit(EXIT_FAILURE_FORK);
 							};
@@ -837,10 +868,17 @@ _("Menggunakan kecepatan rendah dengan %1$i sambungan dalam %2$.0f bita tersisa.
 									WEXITSTATUS(status)==EXIT_FAILURE_SOCKET
 									&& coba< aturan.tries
 								){
-									DEBUG1(
+									if(coba>1){
+										WARN(
+			_("Kegagalan soket di proses cabang (PID%1$i). Percobaan ke-%2$i."),
+											pids[i], coba
+										);
+									}else{
+										WARN(
 							_("Kegagalan soket di proses cabang (PID%1$i)."),
-										pids[i]
-									);
+											pids[i]
+										);
+									};
 									coba++;
 								}else{
 									// Terjadi kesalahan.
@@ -872,16 +910,7 @@ _("Menggunakan kecepatan rendah dengan %1$i sambungan dalam %2$.0f bita tersisa.
 							}
 						} while (!WIFEXITED(status) && !WIFSIGNALED(status));
 						
-						// Menambah identifikasi.
-						// identifikasi++;
-						// DEBUG1(
-							// _("Menyimpan identifikasi %1$i."), identifikasi
-							// );
-						// kirim_mmap->identifikasi=identifikasi;
-						// DEBUG1(
-							// _("Identifikasi %1$i tersimpan."),
-							// kirim_mmap->identifikasi
-						// );
+						// Mendapatkan identifikasi dari memori bersama.
 						identifikasi=kirim_mmap->identifikasi;
 						
 						// Menunggu milidetik.

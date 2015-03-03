@@ -6,6 +6,7 @@
  * Lisensi: lihat LICENCE.txt
  */
 #include "lingkungan.h"
+#include "struktur.h"
 #include "return.h"
 
 #ifdef __x86_64___
@@ -58,6 +59,7 @@ void tampil_info_progres_berkas(
 	double sekarang, double tujuan,
 	int ukuberkas_panjang
 	){
+	
 	// Mempersiapkan tampilan ukuran.
 	char *ukuberkas_dikirim;
 	ukuberkas_dikirim=malloc(sizeof(char*)*ukuberkas_panjang);
@@ -89,6 +91,61 @@ void tampil_info_progres_berkas(
 	// Membersihkan.
 	free(ukuberkas_ukuran);
 	free(ukuberkas_dikirim);
+}
+
+/*
+ * `_progress()`
+ * Memberikan tampilan perkembangan.
+ * @param (char*) Format pesan.
+ * @param (char*) Pesan.
+ */
+void _progress(char *msg, ...){
+	
+	// Buang STDOUT.
+	fflush(stdout);
+	
+	// Tidak tampil.
+	if(aturan.quiet)
+		return;
+	
+	// Penyangga.
+	int penyangga_ukuran=256;
+	char penyangga[penyangga_ukuran];
+	
+	// Mendapatkan ukuran tty.
+	struct winsize ws;
+	ioctl(0, TIOCGWINSZ, &ws);
+	int tty_kolom=ws.ws_col;
+	
+	// Ubah format.
+	va_list args;
+	va_start(args, msg);
+	vsnprintf(penyangga, penyangga_ukuran, msg, args);
+	va_end(args);
+	
+	// Panjang tampilan.
+	int panjang_tampilan=strlen(penyangga);
+	
+	// Bila terlalu panjang.
+	// if(panjang_tampilan>tty_kolom){
+		// panjang_tampilan=tty_kolom;
+		// penyangga[tty_kolom]=0;
+	// };
+	
+	// Hasil.
+	#ifdef __WIN32__
+		tty_kolom-=5;
+	#endif
+	printf("\r");
+	printf("%*.*s", 0, tty_kolom, penyangga);
+	for(int i=0; i < (tty_kolom-panjang_tampilan); i++)
+		printf(" ");
+	printf("\r");
+	memset(penyangga, 0, penyangga_ukuran);
+	
+	// Buang STDOUT.
+	fflush(stdout);
+	
 }
 
 /*
@@ -172,51 +229,3 @@ char *keterangan_soket(int apa, int nilai){
 	return NULL;
 }
 
-/*
- * `_progress()`
- * Memberikan tampilan perkembangan.
- * @param (char*) Format pesan.
- * @param (char*) Pesan.
- */
-void _progress(char *msg, ...){
-	
-	// Buang STDOUT.
-	fflush(stdout);
-	
-	// Penyangga.
-	int penyangga_ukuran=256;
-	char penyangga[penyangga_ukuran];
-	
-	// Mendapatkan ukuran tty.
-	struct winsize ws;
-	ioctl(0, TIOCGWINSZ, &ws);
-	int tty_kolom=ws.ws_col;
-	
-	// Ubah format.
-	va_list args;
-	va_start(args, msg);
-	vsnprintf(penyangga, penyangga_ukuran, msg, args);
-	va_end(args);
-	
-	// Panjang tampilan.
-	int panjang_tampilan=strlen(penyangga);
-	
-	// Bila terlalu panjang.
-	// if(panjang_tampilan>tty_kolom){
-		// panjang_tampilan=tty_kolom;
-		// penyangga[tty_kolom]=0;
-	// };
-	
-	// Hasil.
-	printf("\r");
-	printf("%*.*s", 0, tty_kolom, penyangga);
-	for(int i=0; i < (tty_kolom-panjang_tampilan); i++)
-		printf(" ");
-	printf("\r");
-	
-	memset(penyangga, 0, penyangga_ukuran);
-	
-	// Buang STDOUT.
-	fflush(stdout);
-	
-}

@@ -6,7 +6,6 @@
  * Lisensi: lihat LICENCE.txt
  */
 
-#include "lingkungan.h"
 
 // Memastikan dapat membaca
 // berkas ukuran besar.
@@ -16,6 +15,8 @@
 #define _LARGEFILE64_SOURCE
 #define _FILE_OFFSET_BITS 64
 #define _GNU_SOURCE // Untuk strcasestr()
+
+#include "lingkungan.h"
 
 // Standar.
 #include <string.h>
@@ -55,9 +56,25 @@
 #define MEDIUM_DEBUG 2
 #define FULL_DEBUG 3
 
-// Ubtuk waktu.
+// Untuk waktu.
 #define CURRENTTIME_SECONDS 0
 #define CURRENTTIME_MICROSECONDS 1
+
+// Bila tak ada.
+#ifdef __CYGWIN__
+	#ifndef _off64_t_defined
+		typedef _off64_t off64_t;
+		# define _off64_t_defined
+	#endif
+#else
+	#ifndef __off64_t_defined
+		typedef __off64_t off64_t;
+		# define __off64_t_defined
+	#endif
+#endif
+#ifndef stat64
+	#define stat64 stat
+#endif
 
 // Fungsi lokal.
 char *remove_ext (char* str, char dot, char sep);
@@ -67,13 +84,28 @@ void print_unsigned_char_csv(
 	size_t maximal
 );
 
-/*
+/* `throw_error()`
+ * Menampilkan pesan.
+ * @global aturan.debuglevel
+ * @global aturan.show_error,
+ * @global aturan.show_warning,
+ * @global aturan.show_notice,
+ * @global aturan.show_info,
+ * @global aturan.show_debug1,
+ * @global aturan.show_debug2,
+ * @global aturan.show_debug3,
+ * @global aturan.show_debug4,
+ * @global aturan.show_debug5
  * @param: type (int)
  * 1 Galat (Error)
  * 2 Peringatan (Warning)
  * 3 Pesan (Notice)
- * 4 Kekutu 1 (Debug1)
- * 5 Kekutu 2 (Debug2)
+ * 4 Informasi (Info)
+ * 5 Kekutu 1 (Debug1)
+ * 6 Kekutu 2 (Debug2)
+ * 7 Kekutu 3 (Debug3)
+ * 8 Kekutu 4 (Debug4)
+ * 9 Kekutu 5 (Debug5)
  */
 void throw_error(int type, const char * file, const int line,
 	const char *msg, ...){
@@ -127,7 +159,7 @@ void throw_error(int type, const char * file, const int line,
 	}else if(aturan.debuglevel==MEDIUM_DEBUG){
 		snprintf(tingkat_kekuktu, penyangga_ukuran, "%s:%d ", filestr, line);
 	}else if(aturan.debuglevel==MINI_DEBUG){
-		// Takada
+		// Tak ada
 	};
 	
 	// Pilih.
@@ -261,6 +293,42 @@ void dec2bin(int num, char *str){
 	*str++ = !!(mask & num) + '0';
 }
 
+// Bila tidak terdefinisi.
+#if !defined(strcasestr) \
+	&& defined(__CYGWIN__)
+	#define ap_tolower(c) \
+		(tolower(((unsigned char)(c))))
+	#define ap_toupper(c) \
+		(toupper(((unsigned char)(c))))
+	
+	/*
+	 * h="haystack", n="needle"
+	 */
+	char *strcasestr( char *h, char *n ){
+		char *a=h, *e=n;
+		
+		if( !h || !*h || !n || !*n ) {
+			return 0;
+		};
+		
+		while( *a && *e ) {
+			if(ap_toupper(*a)!=ap_toupper(*e)){
+				++h; a=h; e=n;
+			}else{
+				++a; ++e;
+			}
+		}
+		return *e ? 0 : h;
+	}
+#endif
+
+// Bila tidak terdefinisi.
+#ifndef isascii
+	int isascii(int c){
+		return ((c >= 0) && (c <= 127))?1:0;
+	}
+#endif
+
 // bool to string
 char *b2s(bool s){
 	return (s)?"true":"false";
@@ -273,7 +341,7 @@ bool s2b(char *s){
 }
 
 /*
- * Memeriksa pakaha terdapat non-ascii.
+ * Memeriksa karakter terdapat non-ascii.
  */
 bool is_nonascii(char *s){
 	int i=0;

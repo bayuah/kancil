@@ -26,19 +26,25 @@ char* arti_panji(int panji){
 	
 	switch(panji){
 		case START_FLAG:
-			snprintf(penyangga, sizeof(penyangga)*penyangga_ukuran, _("Mulai"));
+			snprintf(penyangga,
+				sizeof(penyangga)*penyangga_ukuran, _("Mulai"));
 		break;
 		case STOP_FLAG:
-			snprintf(penyangga, sizeof(penyangga)*penyangga_ukuran, _("Henti"));
+			snprintf(penyangga,
+				sizeof(penyangga)*penyangga_ukuran, _("Henti"));
 		break;
 		case INTRANSFER_FLAG:
-			snprintf(penyangga, sizeof(penyangga)*penyangga_ukuran, _("Transfer"));
+			snprintf(penyangga,
+				sizeof(penyangga)*penyangga_ukuran, _("Transfer"));
 		break;
 		case INVALID_FLAG:
-			snprintf(penyangga, sizeof(penyangga)*penyangga_ukuran, _("Taksah"));
+			snprintf(penyangga,
+				sizeof(penyangga)*penyangga_ukuran, _("Taksah"));
 		break;
 		default:
-			snprintf(penyangga, sizeof(penyangga)*penyangga_ukuran, _("Tak Dikenal (%1$i)"), panji);
+			snprintf(penyangga,
+				sizeof(penyangga)*penyangga_ukuran,
+				_("Tak Dikenal (%1$i)"), panji);
 		break;
 	};
 	
@@ -53,13 +59,17 @@ char *arti_status(int status){
 	
 	switch(status){
 		case 0:
-			snprintf(penyangga, sizeof(penyangga)*penyangga_ukuran, _("NOPE"));
+			snprintf(penyangga,
+				sizeof(penyangga)*penyangga_ukuran, _("NOPE"));
 		break;
 		case 1:
-			snprintf(penyangga, sizeof(penyangga)*penyangga_ukuran, _("OKE"));
+			snprintf(penyangga,
+				sizeof(penyangga)*penyangga_ukuran, _("OKE"));
 		break;
 		default:
-			snprintf(penyangga, sizeof(penyangga)*penyangga_ukuran, _("Tak Dikenal (%1$i)"), status);
+			snprintf(penyangga,
+				sizeof(penyangga)*penyangga_ukuran,
+				_("Tak Dikenal (%1$i)"), status);
 		break;
 	};
 	
@@ -76,7 +86,8 @@ char *arti_status(int status){
  * @param (char*) berkas_identifikasi, penanda berkas terkirim.
  *  Digunakan agar peladen mengetahui bahwa berkas
  *  yang dikirim merupakan bagian dari berkas lain;
- * @param (char*) berkas_nama, nama berkas tujuan. Maksimal BERKAS_MAX_STR karakter;
+ * @param (char*) berkas_nama, nama berkas tujuan.
+ *  Maksimal BERKAS_MAX_STR karakter;
  * @param (double) berkas_ukuran, ukuran berkas.
  *  Angkat bulat yang akan diubah menjadi string (char*)
  */
@@ -252,7 +263,9 @@ char *buat_pesan_peladen(
 	
 	// Mengubah angka jadi huruf.
 	char* ukuran_diterima_str;
-	ukuran_diterima_str=malloc(sizeof (ukuran_diterima_str) * BERKAS_MAX_STR+1);
+	ukuran_diterima_str=malloc(
+		sizeof (ukuran_diterima_str) * BERKAS_MAX_STR+1
+		);
 	memset(ukuran_diterima_str, 0, BERKAS_MAX_STR+1);
 	sprintf(ukuran_diterima_str, "%.0f", ukuran_diterima);
 	
@@ -268,7 +281,9 @@ char *buat_pesan_peladen(
 	
 	// Mengubah angka jadi huruf.
 	char* waktu_unix_detik_str;
-	waktu_unix_detik_str=malloc(sizeof (waktu_unix_detik_str) * BERKAS_MAX_STR+1);
+	waktu_unix_detik_str=malloc(
+		sizeof (waktu_unix_detik_str) * BERKAS_MAX_STR+1
+		);
 	memset(waktu_unix_detik_str, 0, BERKAS_MAX_STR+1);
 	sprintf(waktu_unix_detik_str, "%1$.0f", waktu_unix_detik);
 	
@@ -277,7 +292,9 @@ char *buat_pesan_peladen(
 	
 	// Mengubah angka jadi huruf.
 	char*waktu_unix_mikrodetik_str;
-	waktu_unix_mikrodetik_str=malloc(sizeof (waktu_unix_mikrodetik_str) * BERKAS_MAX_STR+1);
+	waktu_unix_mikrodetik_str=malloc(
+		sizeof (waktu_unix_mikrodetik_str) * BERKAS_MAX_STR+1
+		);
 	memset(waktu_unix_mikrodetik_str, 0, BERKAS_MAX_STR+1);
 	sprintf(waktu_unix_mikrodetik_str, "%f", waktu_unix_mikrodetik);
 	
@@ -382,9 +399,15 @@ int ambil_pesan_peladen(
 			
 			// Identifikasi.
 			panjang_tok=strlen(tok);
-			DEBUG4(_("Mendapatkan identifikasi berkas dengan panjang %1$i bita."), panjang_tok);
+			DEBUG4(
+				_("Mendapatkan identifikasi berkas dengan panjang %1$i bita."),
+				panjang_tok
+			);
 			strncpy(*identifikasi_berkas, tok, panjang_tok);
-			DEBUG4(_("Berhasil mendapatkan identifikasi berkas %i ."), strlen(*identifikasi_berkas));
+			DEBUG4(
+				_("Berhasil mendapatkan identifikasi berkas %i ."),
+				strlen(*identifikasi_berkas)
+			);
 			tok = strtok (NULL, "\r\n");
 			
 			DEBUG4(_("Memeriksa apakah kosong."), 0);
@@ -396,7 +419,10 @@ int ambil_pesan_peladen(
 				
 				// Ukuran berkas.
 				panjang_tok=strlen(tok);
-				DEBUG4(_("Mendapatkan ukuran berkas panjang %1$i bita."), panjang_tok);
+				DEBUG4(
+					_("Mendapatkan ukuran berkas panjang %1$i bita."),
+					panjang_tok
+				);
 				strncpy(*ukuran_berkas,tok,panjang_tok);
 				DEBUG4(_("Berhasil mendapatkan ukuran berkas."), 0);
 				tok = strtok (NULL, "\r\n");
@@ -410,7 +436,10 @@ int ambil_pesan_peladen(
 					
 					// Ukuran diterima.
 					panjang_tok=strlen(tok);
-					DEBUG4(_("Mendapatkan ukuran diterima panjang %1$i bita."), panjang_tok);
+					DEBUG4(
+						_("Mendapatkan ukuran diterima panjang %1$i bita."),
+						panjang_tok
+					);
 					strncpy(*ukuran_diterima,tok,panjang_tok);
 					DEBUG4(_("Berhasil mendapatkan ukuran diterima."), 0);
 					tok = strtok (NULL, "\r\n");
@@ -433,7 +462,10 @@ int ambil_pesan_peladen(
 						
 						// Waktu unix.
 						panjang_tok=strlen(tok);
-						DEBUG4(_("Mendapatkan waktu peladen panjang %1$i bita."), panjang_tok);
+						DEBUG4(
+							_("Mendapatkan waktu peladen panjang %1$i bita."),
+							panjang_tok
+						);
 						// strncpy(*unix_time,tok,panjang_tok);
 						strncpy(waktu,tok,panjang_tok);
 						
@@ -503,7 +535,7 @@ char* buat_pengepala(
 	// Memeriksa apakah nilai di antara 0-3
 	if(panji<0||panji>3){
 		FAIL ( 
-			_("Nilai %1$s (%2$i) tidak sesuai. Harap di antara %3$i hingga %4$i."),
+		_("Nilai %1$s (%2$i) tidak sesuai. Harap di antara %3$i hingga %4$i."),
 			_("panji"), panji, 0 , 3);
 		exit(EXIT_FAILURE_MESSAGES);
 	};
@@ -513,7 +545,7 @@ char* buat_pengepala(
 	// Memeriksa apakah nilai di antara 0-1
 	if(bit_paritas<0||bit_paritas>1){
 		FAIL ( 
-			_("Nilai %1$s (%2$i) tidak sesuai. Harap di antara %3$i hingga %4$i."),
+		_("Nilai %1$s (%2$i) tidak sesuai. Harap di antara %3$i hingga %4$i."),
 			_("bit paritas"), bit_paritas, 0 , 1);
 		exit(EXIT_FAILURE_MESSAGES);
 	};
@@ -523,7 +555,7 @@ char* buat_pengepala(
 	// Memeriksa apakah nilai di antara 0-1
 	if(bit_paritas<0||bit_paritas>1){
 		FAIL ( 
-			_("Nilai %1$s (%2$i) tidak sesuai. Harap di antara %3$i hingga %4$i."),
+		_("Nilai %1$s (%2$i) tidak sesuai. Harap di antara %3$i hingga %4$i."),
 			_("status gerbang"), status_gerbang, 0 , 1);
 		exit(EXIT_FAILURE_MESSAGES);
 	};
@@ -533,7 +565,7 @@ char* buat_pengepala(
 	// Memeriksa apakah nilai di antara 0-1
 	if(status_peladen<0||status_peladen>1){
 		FAIL ( 
-			_("Nilai %1$s (%2$i) tidak sesuai. Harap di antara %3$i hingga %4$i."),
+		_("Nilai %1$s (%2$i) tidak sesuai. Harap di antara %3$i hingga %4$i."),
 			_("status peladen"), status_peladen, 0 , 1);
 		exit(EXIT_FAILURE_MESSAGES);
 	};
@@ -611,7 +643,10 @@ void ambil_pengepala(
 	identifikasi_2=(unsigned int)int_tak_min(pecahan[2], 256);
 	*identifikasi=(identifikasi_2*(unsigned int)255)+identifikasi_1;
 	if(*identifikasi>(unsigned int)MAX_CHUNK_ID){
-		WARN(_("Identifikasi pengepala (%1$i) terlalu besar. Maksimal %2$i."), identifikasi, MAX_CHUNK_ID);
+		WARN(
+			_("Identifikasi pengepala (%1$i) terlalu besar. Maksimal %2$i."),
+			identifikasi, MAX_CHUNK_ID
+		);
 	};
 	
 	// Bita 4.
@@ -644,7 +679,10 @@ char *buat_pesan(
 	 * telah melampaui panjang pesan.
 	 */
 	if(identifikasi>(unsigned int)MAX_CHUNK_ID){
-		FAIL(_("Identifikasi pengepala (%1$i) terlalu besar. Maksimal %2$i."), identifikasi, MAX_CHUNK_ID);
+		FAIL(
+			_("Identifikasi pengepala (%1$i) terlalu besar. Maksimal %2$i."),
+			identifikasi, MAX_CHUNK_ID
+		);
 		exit(EXIT_FAILURE_MESSAGES);
 	};
 	
@@ -655,11 +693,10 @@ char *buat_pesan(
 		&pecahan,                 MAX_CHUNK_SIZE,
 		pesan, CHUNK_HEADER_SIZE, panjang_pecahan_pesan);
 	
-	// Hasil adalah bit paritas.
-	// printf("Paritas-MX: %i\n", check_parity(pecahan, 4, MAX_CHUNK_SIZE));
-	// printf("Paritas-PS: %i\n", check_parity(pesan, 0, panjang_pecahan_pesan));
+	// Paritas.
 	*paritas=check_parity(pesan, 0, panjang_pecahan_pesan);
-	// exit(255);
+	
+	// Hasil.
 	return pecahan;
 }
 
@@ -710,7 +747,10 @@ int pilih_gerbang(
 	
 	// Apakah basis waktu melebihi 60.
 	if(basis_waktu>60){
-		FAIL(_("Nilai basis waktu %1$i lebih besar dari nilai maksimal %2$i."), basis_waktu, 60);
+		FAIL(
+			_("Nilai basis waktu %1$i lebih besar dari nilai maksimal %2$i."),
+			basis_waktu, 60
+		);
 		return -1;
 	}
 	
@@ -718,8 +758,14 @@ int pilih_gerbang(
 	int panjang_kunci=strlen((char *)kunci);
 	
 	if(panjang_kunci>GATE_MAX_KEYSIZE){
-		WARN(_("Panjang Kunci Gerbang (%1$i) terlalu besar. Maksimal: %2$i."), panjang_kunci, GATE_MAX_KEYSIZE);
-		DEBUG1(_("Memotong sehingga memiliki panjang %1$i."), GATE_MAX_KEYSIZE);
+		WARN(
+			_("Panjang Kunci Gerbang (%1$i) terlalu besar. Maksimal: %2$i."),
+			panjang_kunci, GATE_MAX_KEYSIZE
+		);
+		DEBUG1(
+			_("Memotong sehingga memiliki panjang %1$i."),
+			GATE_MAX_KEYSIZE
+		);
 		panjang_kunci=GATE_MAX_KEYSIZE;
 	};
 	

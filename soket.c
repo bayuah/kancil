@@ -128,7 +128,7 @@ char *kirimdata(
 	int *panjang_diterima
 ){
 	// Pengaturan.
-	int     tunggu_detik=15;
+	int     tunggu_detik=5;
 	int tunggu_milidetik=0;
 	
 	// Pengaturan.
@@ -154,8 +154,8 @@ char *kirimdata(
 	// Perilaku.
 	bool ulangi=false;
 	int kali_ulang=1;
-	int ulang_maksimal=aturan.tries;
-	int ulang_tunggu=aturan.waitretry;;
+	int ulang_maksimal=3;
+	int ulang_tunggu=1;
 	int status=0;
 	int len;
 	int i, j;
@@ -224,16 +224,6 @@ char *kirimdata(
 		
 			// Mencari alamat.
 			DEBUG3(_("Mulai mencari informasi alamat '%1$s'."), hostname);
-			
-			// Bila dikunci.
-			if(alamat->kunci==true){
-				// Menunggu.
-				do{
-					DEBUG4(_("Informasi alamat terkunci."), 0);
-					sleep(1);
-				}while(alamat->kunci==true);
-				alamat->kunci=true;
-			};
 			
 			// Mencoba di tembolok.
 			for(i=1; i<INFOALAMAT_MAX_ID; i++){
@@ -353,6 +343,19 @@ char *kirimdata(
 					continue;
 				};
 				
+				
+				// Bila tembolok dikunci.
+				if(alamat->kunci==true){
+					// Menunggu.
+					do{
+						DEBUG4(_("Informasi alamat terkunci."), 0);
+						sleep(1);
+					}while(alamat->kunci==true);
+					alamat->kunci=true;
+				}else{
+					alamat->kunci=true;
+				};
+				
 				// Memasukkan ke tembolok.
 				DEBUG3(_("Mulai memasukkan informasi alamat inang '%1$s' ke tembolok."), hostname);
 				
@@ -361,10 +364,6 @@ char *kirimdata(
 				bool jangan_tanya_alamat=false;
 				int coba=1;
 				int id=1;
-				// for(i=0; i<INFOALAMAT_MAX_ID; i++)
-				// Mengunci.
-				DEBUG4(_("Mengunci informasi alamat."), 0);
-				alamat->kunci=true;
 				do{
 					// Pesan.
 					DEBUG4(_("Mencoba memasukkan ke tembolok identifikasi '%1$i'."), id);
@@ -564,7 +563,7 @@ char *kirimdata(
 			};
 			
 			// Pengaturan.
-			// Batas tunggu.
+			// Batas tunggu penerimaan.
 			DEBUG3(_("Mulai mengatur batas waktu penerimaan."), 0);
 			if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,
 				(struct timeval *)&waktu_tunggu, sizeof(struct timeval)) < 0 ){
@@ -576,7 +575,7 @@ char *kirimdata(
 			};
 			
 			// Pengaturan.
-			// Batas tunggu.
+			// Batas tunggu pengiriman.
 			DEBUG3(_("Mulai mengatur batas waktu pengiriman."), 0);
 			if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO,
 				(struct timeval *)&waktu_tunggu, sizeof(struct timeval)) < 0 ){

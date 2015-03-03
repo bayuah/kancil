@@ -54,7 +54,7 @@ int main(int argc, char *argv[]){
 	aturan.rawtransfer=true;
 	strcpy(aturan.listening,"27000");
 	aturan.rsa_padding=RSA_PKCS1_OAEP_PADDING;
-	aturan.maxconnection=20;
+	aturan.maxconnection=100;
 	
 	// Informasi versi.
 	info_versi();
@@ -77,7 +77,10 @@ int main(int argc, char *argv[]){
 		
 		// Bila gagal mengubah ukuran.
 		if(status){
-			FAIL(_("Gagal membuat berkas memori: %1$s (%2$i)."), strerror(errno), errno);
+			FAIL(
+				_("Gagal membuat berkas memori: %1$s (%2$i)."),
+				strerror(errno), errno
+			);
 			exit(EXIT_FAILURE_MEMORY);
 		};
 	#else
@@ -88,7 +91,10 @@ int main(int argc, char *argv[]){
 	
 	// Bila gagal.
 	if(shm_berkas == -1) {
-		FAIL(_("Kegagalan '%1$s': %2$s (%3$i)."), "shm_open", strerror(errno), errno);
+		FAIL(
+			_("Kegagalan '%1$s': %2$s (%3$i)."),
+			"shm_open", strerror(errno), errno
+		);
 		exit(EXIT_FAILURE_MEMORY);
 	};
 	
@@ -101,8 +107,11 @@ int main(int argc, char *argv[]){
 	// Berkas.
 	memset(berkas_mmap->identifikasi, 0, BERKAS_MAX_STR);
 	memset(berkas_mmap->nama, 0, BERKAS_MAX_STR);
-	memset(berkas_mmap->data_pesan, 0, sizeof(berkas_mmap->data_pesan[0][0])*MAX_CHUNK_ID*(CHUNK_MESSAGE_SIZE+1));
-	memset(berkas_mmap->data_terima, 0, sizeof(berkas_mmap->data_terima[0])*MAX_CHUNK_ID);
+	memset(berkas_mmap->data_pesan, 0,
+		sizeof(berkas_mmap->data_pesan[0][0])
+		*MAX_CHUNK_ID*(CHUNK_MESSAGE_SIZE+1));
+	memset(berkas_mmap->data_terima, 0,
+		sizeof(berkas_mmap->data_terima[0])*MAX_CHUNK_ID);
 	berkas_mmap->ofset=0;
 	berkas_mmap->ukuran=0;
 	berkas_mmap->diterima=0;
@@ -131,14 +140,20 @@ int main(int argc, char *argv[]){
 	int reuse_addr=1;
 	if (setsockopt((socklen_t)sockfd, SOL_SOCKET, SO_REUSEADDR,
 		&reuse_addr, sizeof(int)) == -1 ){
-		FAIL(_("Kegagalan '%1$s': %2$s (%3$i)."), "setsockopt", strerror(errno), errno);
+		FAIL(
+			_("Kegagalan '%1$s': %2$s (%3$i)."),
+			"setsockopt", strerror(errno), errno
+		);
 		exit(EXIT_FAILURE_SOCKET);
 	}
 	
 	/* Now bind the host address using bind() call.*/
 	if (bind(sockfd, (struct sockaddr *) &serv_addr,
 						  sizeof(serv_addr)) < 0){
-		FAIL(_("Kegagalan '%1$s': %2$s (%3$i)."), "bind", strerror(errno), errno);
+		FAIL(
+			_("Kegagalan '%1$s': %2$s (%3$i)."),
+			"bind", strerror(errno), errno
+		);
 		exit(EXIT_FAILURE_SOCKET);
 	}
 	
@@ -243,7 +258,7 @@ int main(int argc, char *argv[]){
 	// char port_name[6]; 
 	
 	connection=0;
-	listen(sockfd, 5);
+	listen(sockfd, max_connection);
 	clilen = sizeof(cli_addr);
 	INFO(_("Mendengarkan porta %1$i."), portno);
 	for ever{
@@ -262,14 +277,21 @@ int main(int argc, char *argv[]){
 		
 		// DEBUG3(_("Mendapatkan sambungan."));
 		// DEBUG3(_("Mencari alamat klien."));
-		// if (getnameinfo((struct sockaddr *) &cli_addr, clilen, clntName,sizeof(clntName),portName,sizeof(portName),0) == 0) {
+		// if (
+			// getnameinfo((struct sockaddr *) &cli_addr, clilen,
+				// clntName,sizeof(clntName),portName,sizeof(portName),0)
+			// == 0
+		// ) {
 			// INFO(_("Menerima klien: %1$s:%2$i."), clntName, portName);
 		// } else {
 			// WARN(_("Alamat klien tidak dikenal."), 0);
 		// };
 		
 		if (newsockfd < 0){
-			FAIL(_("Kegagalan '%1$s': %2$s (%3$i)."), "accept", strerror(errno), errno);
+			FAIL(
+				_("Kegagalan '%1$s': %2$s (%3$i)."),
+				"accept", strerror(errno), errno
+			);
 			exit(EXIT_FAILURE_SOCKET);
 		};
 		
@@ -281,12 +303,19 @@ int main(int argc, char *argv[]){
 				for (i = 0; i < max_connection; ++i) {
 					
 					DEBUG2(_("Menunggu proses %1$i (%2$i)."), i, pids[i]);
-					while (-1 == waitpid(pids[i], &pid_status, WNOHANG)){
+					while (-1 == waitpid(
+						pids[i], &pid_status, WUNTRACED | WCONTINUED
+					)){
 						sleep(1);
 						killpid(pids[i], SIGKILL);
-						WARN(_("Proses %1$i (%2$i) terlalu lama."), i, pids[i]);
+						WARN(
+							_("Proses %1$i (%2$i) terlalu lama."),
+							i, pids[i]
+						);
 					};
-					if (!WIFEXITED(pid_status) || WEXITSTATUS(pid_status) != 0) {
+					if (
+						!WIFEXITED(pid_status) || WEXITSTATUS(pid_status) != 0
+					){
 						WARN(
 							_("Proses %1$i (%2$i) tidak mati secara wajar."),
 							i, pids[i]
@@ -404,7 +433,10 @@ void stop_listening(int sock){
  */
 void signal_callback_handler(int signum){
 	printf("\r\n");
-	NOTICE(_("Menangkap sinyal %1$s (%2$i)."), kancil_signal_code(signum), signum);
+	NOTICE(
+		_("Menangkap sinyal %1$s (%2$i)."),
+		kancil_signal_code(signum), signum
+	);
 	
 	// Menutup.
 	stop_listening(sockid);
@@ -446,7 +478,10 @@ void free_shm(){
 		
 		// Status.
 		if(status && errno!=2){
-			FAIL(_("Gagal membersihkan berkas memori: %1$s (%2$i)."), strerror(errno), errno);
+			FAIL(
+				_("Gagal membersihkan berkas memori: %1$s (%2$i)."),
+				strerror(errno), errno
+			);
 			exit(EXIT_FAILURE_MEMORY);
 		};
 	#else
