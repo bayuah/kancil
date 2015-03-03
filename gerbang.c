@@ -61,7 +61,7 @@ int main(int argc, char *argv[]){
 	aturan.hostname_c=0;
 	aturan.gateid=0;
 	aturan.timebase=10;
-	aturan.timetollerance=10;
+	aturan.timetolerance=-1;
 	aturan.gateshashing=GATEHASHING_XOR;
 	aturan.maxconnection=50;
 	
@@ -87,6 +87,15 @@ int main(int argc, char *argv[]){
 		FAIL(_("Inang kosong."), 0);
 		bantuan_param_standar();
 		exit(EXIT_FAILURE_ARGS);
+	}
+	
+	// Bila toleransi kurang dari NOL,
+	// maka menggunakan jumlah gerbang detik.
+	if(aturan.timetolerance<0){
+		DEBUG1(
+_("Mengubah waktu toleransi %1$i detik ke separuh jumlah gerbang (%2$i detik)."),
+			aturan.timetolerance, (int)(aturan.gates_c/2));
+		aturan.timetolerance=(int)(aturan.gates_c/2);
 	}
 	
 	// Pengirim.
@@ -354,8 +363,8 @@ int main(int argc, char *argv[]){
 	kirim_mmap->coba=1;
 	
 	// Bila minus.
-	if(aturan.timetollerance<0)
-		aturan.timetollerance=0;
+	if(aturan.timetolerance<0)
+		aturan.timetolerance=0;
 	
 	// Pilih waktu.
 	unsigned char *kunci=(unsigned char*)aturan.salt;
@@ -366,16 +375,18 @@ int main(int argc, char *argv[]){
 	char nama_inang[INFOALAMAT_MAX_STR];
 	
 	/*
-	 * waktu_pilih
 	 * Tembolok perhitungan.
-	 * Indeks 0: Waktu Unix
-	 * Indeks 1: Pilihan peladen.
-	 * Indeks >1: Nilai gerbang berdasarkan
+	 * waktu_pilih: Waktu Unix
+	 * waktu_pilih_int
+	 * Indeks 0: Pilihan peladen.
+	 * Indeks >0: Nilai gerbang berdasarkan
 	 *            Toleransi>T<Toleransi
 	*/
-	double waktu_pilih[aturan.timetollerance+4];
-	memset(waktu_pilih, 0,
-		sizeof(waktu_pilih[0])*(aturan.timetollerance*2)+3);
+	double waktu_pilih;
+	int waktu_pilih_int[(aturan.timetolerance*2)+3];
+	waktu_pilih=0;
+	memset(waktu_pilih_int, 0,
+		sizeof(waktu_pilih_int[0])*(aturan.timetolerance*2)+3);
 	
 	// Perilaku.
 	int tunggu=0;
@@ -435,14 +446,20 @@ int main(int argc, char *argv[]){
 		// sebelum memecah proses.
 		waktu_unix=current_time(CURRENTTIME_SECONDS);
 		inang_sama=false;
-		int pilih_inang;
-		if(aturan.timetollerance<=0){
+		int pilih_inang=-1;
+		
+		// Pesan.
+		DEBUG3(_("ID Gerbang adalah %1$i."), aturan.gateid);
+		
+		// Memilih.
+		if(aturan.timetolerance<=0){
 			// Bila tanpa toleransi.
+			DEBUG3(_("Pemilihan Gerbang tanpa toleransi waktu."), 0);
 			
 			// Memeriksa tembolok.
-			if(waktu_pilih[0]==waktu_unix){
-				// Indeks 2
-				pilih_inang=waktu_pilih[2];
+			if(waktu_pilih==waktu_unix){
+				// Indeks 1
+				pilih_inang=waktu_pilih_int[1];
 			}else{
 				// Buat kembali.
 				pilih_inang=pilih_gerbang(
@@ -452,8 +469,10 @@ int main(int argc, char *argv[]){
 					waktu_unix,
 					rsapub_pilih_gerbang
 				);
+				
 				// Simpan.
-				waktu_pilih[2]=pilih_inang;
+				waktu_pilih_int[1]=pilih_inang;
+				waktu_pilih=waktu_unix;
 			};
 			
 			// Pilih.
@@ -463,20 +482,28 @@ int main(int argc, char *argv[]){
 				inang_sama=false;
 			};
 		}else{
+			// Pesan.
+			DEBUG3(
+				_("Pemilihan Gerbang dengan toleransi %1$i detik."),
+				aturan.timetolerance
+				);
+			
 			// Memeriksa setiap toleransi.
 			inang_sama=false;
-			int j=2;
-			for(
-				i=0-aturan.timetollerance;
-				i<=(aturan.timetollerance);
-				i++
-			){
-				// Pilih.
-				// Memeriksa tembolok.
-				if(waktu_pilih[0]==waktu_unix){
-					// Indeks >1
-					pilih_inang=waktu_pilih[j];
-				}else{
+			int j;
+			if(waktu_pilih!=waktu_unix){
+				// Menyimpan waktu.
+				waktu_pilih=waktu_unix;
+				
+				j=1;
+				// Menghitung.
+				for(
+					i=0-aturan.timetolerance;
+					i<=(aturan.timetolerance);
+					i++
+				){
+					// Pilih.
+					// Memasukkan tembolok.
 					pilih_inang=pilih_gerbang(
 						aturan.gates_c,
 						kunci,
@@ -484,29 +511,56 @@ int main(int argc, char *argv[]){
 						(waktu_unix+i),
 						rsapub_pilih_gerbang
 					);
-					waktu_pilih[j]=pilih_inang;
-				};
+					
+					// Pesan.
+					DEBUG4(
+					_("Memasukkan nilai Gerbang %1$i di tembolok waktu %2$i."),
+						pilih_inang, i);
+					
+					// Indeks >1
+					waktu_pilih_int[j]=pilih_inang;
+					
+					// Menaikkan j.
+					j++;
+				}
+			};
+			
+			// Memeriksa nilai.
+			j=1;
+			for(
+				i=0-aturan.timetolerance;
+				i<=(aturan.timetolerance);
+				i++
+			){
+				// Tiap nilai.
+				pilih_inang=waktu_pilih_int[j];
 				
 				// Pilih.
 				if(pilih_inang==(int)aturan.gateid){
+					DEBUG4(
+						_("Pemilih Gerbang adalah sama di tembolok waktu %1$i."),
+						i);
 					inang_sama=true;
 					break;
 				}else{
+					DEBUG4(
+					_("Pemilih Gerbang adalah %1$i di tembolok waktu %2$i."),
+						pilih_inang, i);
 					inang_sama=false;
 				};
 				
 				// Menaikkan j.
 				j++;
-			}
+			};
 		};
 		
 		// Pilih inang peladen
 		// sebelum memecah proses.
 		// Memeriksa apakah telah dihitung.
 		int pilih_inang_peladen;
-		if(waktu_pilih[0]==waktu_unix){
-			// Indeks 1;
-			pilih_inang_peladen=waktu_pilih[1];
+		if(waktu_pilih==waktu_unix){
+			// Indeks 0;
+			pilih_inang_peladen=waktu_pilih_int[0];
 		}else{
 			pilih_inang_peladen=pilih_gerbang(
 				aturan.hostname_c,
@@ -515,7 +569,8 @@ int main(int argc, char *argv[]){
 				waktu_unix,
 				rsapub_pilih_peladen
 			);
-			waktu_pilih[1]=pilih_inang_peladen;
+			waktu_pilih_int[0]=pilih_inang_peladen;
+			waktu_pilih=waktu_unix;
 		};
 		
 		// Memecah tugas.

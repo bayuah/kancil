@@ -149,7 +149,7 @@ struct GLOBAL_CONFIG {
 	unsigned char salt[MAX_STR];
 	unsigned char salt_send[MAX_STR];
 	int  timebase;
-	int  timetollerance;
+	int  timetolerance;
 	int  gateid;
 	int  gates_c;
 	

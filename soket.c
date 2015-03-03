@@ -645,7 +645,7 @@ char *kirimdata(
 				ulangi=true;
 				continue;
 			}else if(errno==104){
-				DEBUG1(_("Diputus oleh inang '%1$s' (%2$s:%3$s."), hostname, ipstr, portno);
+				DEBUG1(_("Diputus oleh inang '%1$s' (%2$s:%3$s)."), hostname, ipstr, portno);
 				close(sockfd);
 				ulangi=false;
 				return NULL;

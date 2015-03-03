@@ -129,6 +129,16 @@ void throw_error(int type, const char * file, const int line,
 	if(!boleh[type])
 		return;
 	
+	// Memeriksa apakah
+	// kekutu2 hingga 5 adalah aktif.
+	bool kekutu_dalam=false;
+	if(
+		aturan.show_debug2
+		|| aturan.show_debug3
+		|| aturan.show_debug4
+		|| aturan.show_debug5
+	) kekutu_dalam=true;
+	
 	// Aksi.
 	int penyangga_ukuran=256;
 	char penyangga[penyangga_ukuran];
@@ -223,12 +233,21 @@ void throw_error(int type, const char * file, const int line,
 				);
 		break;
 		case 5:
-			if(boleh[5])
-			printf(
-				"%s%s: %s\r\n",
-				tingkat_kekuktu,
-				_("KEKUTU 1"), penyangga
-				);
+			if(boleh[5]){
+				if(kekutu_dalam){
+					printf(
+						"%s%s: %s\r\n",
+						tingkat_kekuktu,
+						_("KEKUTU 1"), penyangga
+						);
+				}else{
+					printf(
+						"%s%s: %s\r\n",
+						tingkat_kekuktu,
+						_("KEKUTU"), penyangga
+						);
+				};
+			};
 		break;
 		case 6:
 			if(boleh[6])

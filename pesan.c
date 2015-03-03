@@ -818,6 +818,7 @@ int pilih_gerbang(
 		memcpy(tujuan_kunci, kunci, panjang_waktu);
 	};
 	
+	// Pesan.
 	DEBUG5(_("Kunci Gerbang"), tujuan_kunci, 0, panjang_waktu);
 	DEBUG5(_("Waktu UNIX"), waktu_unix_str, 0, panjang_waktu);
 	

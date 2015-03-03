@@ -99,6 +99,7 @@ void urai_argumen(int argc, char *argv[]){
 			{"gatesnum",        required_argument, 0, 'g'},
 			{"timebase",        required_argument, 0, 'B'},
 			{"tries",           required_argument, 0, 't'},
+			{"timetolerance",  required_argument, 0, 'e'},
 			{"parallel",        required_argument, 0, 'p'},
 			{"shifteof",        no_argument,       0, 'S'},
 			{"salt",            no_argument,       0, 's'},
@@ -112,7 +113,7 @@ void urai_argumen(int argc, char *argv[]){
 		
 		// Mendapatkan argumen.
 		int c = getopt_long(argc, argv,
-			"12345DEWNIA:B:Cc:D:d:g:G:H:hK:k:l:L:M:n:p:P:RrSs:vVq?",
+			"12345DEWNIA:B:Cc:D:d:e:g:G:H:hK:k:l:L:M:n:p:P:RrSs:vVq?",
 			long_options, &option_index
 		);
 		if (c == -1)
@@ -446,6 +447,14 @@ void urai_argumen(int argc, char *argv[]){
 		case 'R':
 			DEBUG1(_("Argumen: Transfer mentah."), 0);
 			aturan.rawtransfer=true;
+			break;
+		case 'e':
+			status=atoi(optarg);
+			DEBUG1(
+			_("Argumen: Waktu toleransi pemilihan Gerbang adalah %1$i detik."),
+				status
+			);
+			aturan.timetolerance=status;
 			break;
 		case 'r':
 			DEBUG1(_("Argumen: Transfer terenkripsi."), 0);
@@ -969,6 +978,13 @@ int baca_konfigurasi(){
 			strcpy(aturan.completedir, nilai);
 		}else if(!strcasecmp(kunci, "TEMPDIR")){
 			strcpy(aturan.tempdir, nilai);
+		}else if(!strcasecmp(kunci, "TIMETOLERANCE")){
+			status=atoi(nilai);
+			DEBUG1(
+			_("Argumen: Waktu toleransi pemilihan Gerbang adalah %1$i detik."),
+				status
+			);
+			aturan.timetolerance=status;
 		}else if(!strcasecmp(kunci, "LISTENING")){
 			status=atoi(nilai);
 			if(status){

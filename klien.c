@@ -432,6 +432,14 @@ int main(int argc, char *argv[]){
 		int kec_rendah_minimal=100*1024; // Bita
 		int sambungan_maksimal_kec_rendah=3; // Bita
 		
+		/*
+		 * Tembolok perhitungan.
+		 * waktu_pilih: Waktu Unix
+		 * waktu_pilih_int: Nilai gerbang
+		*/
+		double waktu_pilih=0;
+		int waktu_pilih_int=0;
+		
 		// Perulangan.
 		while(kirim_mmap->do_kirim){
 			
@@ -704,13 +712,25 @@ _("Menggunakan kecepatan rendah dengan %1$i sambungan dalam %2$.0f bita tersisa.
 			// sebelum memecah proses.
 			unsigned char *kunci=(unsigned char*)aturan.salt;
 			double waktu_unix=current_time(CURRENTTIME_SECONDS);
-			int pilih_inang=pilih_gerbang(
-				aturan.gates_c,
-				kunci,
-				aturan.timebase,
-				waktu_unix,
-				rsapub_pilih_gerbang
-			);
+			int pilih_inang;
+			if(waktu_pilih==waktu_unix){
+				// Bila sama.
+				pilih_inang=waktu_pilih_int;
+			}else{
+				
+				// Hitung.
+				pilih_inang=pilih_gerbang(
+					aturan.gates_c,
+					kunci,
+					aturan.timebase,
+					waktu_unix,
+					rsapub_pilih_gerbang
+				);
+				
+				// Simpan.
+				waktu_pilih_int=pilih_inang;
+				waktu_pilih=waktu_unix;
+			};
 			
 			// Memecah tugas.
 			// Mencabangkan proses.
