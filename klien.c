@@ -59,6 +59,7 @@ int main(int argc, char *argv[]){
 	strcpy(aturan.tempdir, "tmp");
 	strcpy(aturan.config, "kancil-klien.cfg");
 	aturan.tries=20;
+	aturan.dummy=0;
 	aturan.waitretry=15;
 	aturan.waitqueue=5;
 	aturan.parallel=1;
@@ -438,9 +439,15 @@ int main(int argc, char *argv[]){
 		 * waktu_pilih_int: Nilai gerbang
 		*/
 		double waktu_pilih=0;
+		double waktu_palsu=0;
 		int waktu_pilih_int=0;
 		
 		// Perulangan.
+		int palsu=aturan.dummy;
+		if(aturan.dummy){
+			pengawas=false;
+		};
+		
 		while(kirim_mmap->do_kirim){
 			
 			// Pengawas.
@@ -731,6 +738,31 @@ _("Menggunakan kecepatan rendah dengan %1$i sambungan dalam %2$.0f bita tersisa.
 				waktu_pilih_int=pilih_inang;
 				waktu_pilih=waktu_unix;
 			};
+			
+			// Bila pengiriman palsu.
+			if(aturan.dummy){
+				if(waktu_palsu!=waktu_unix){
+					
+					// Pesan.
+					INFO(
+						_("Memilih gerbang %1$i di waktu %2$.0f."),
+						pilih_inang, waktu_unix
+					);
+					
+					// Berkurang.
+					palsu--;
+					
+					// Bila selesai.
+					if(palsu<=0){
+						INFO(_("Selesai pengiriman palsu"), 0);
+						break;
+					};
+					
+					// Memasukkan waktu.
+					waktu_palsu=waktu_unix;
+				};
+				continue;
+			}
 			
 			// Memecah tugas.
 			// Mencabangkan proses.

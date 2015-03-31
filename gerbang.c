@@ -92,11 +92,38 @@ int main(int argc, char *argv[]){
 	// Bila toleransi kurang dari NOL,
 	// maka menggunakan jumlah gerbang detik.
 	if(aturan.timetolerance<0){
-		DEBUG1(
+		int nilai_ubah=0;
+		int nilai_gerbang=(aturan.gates_c/2);
+		
+		if(
+			nilai_gerbang<=GATE_DEAFULT_MAX_TOLERANCE
+			&& nilai_gerbang >0
+		){
+			nilai_ubah=nilai_gerbang;
+			// Pesan.
+			DEBUG1(
 _("Mengubah waktu toleransi %1$i detik ke separuh jumlah gerbang (%2$i detik)."),
-			aturan.timetolerance, (int)(aturan.gates_c/2));
-		aturan.timetolerance=(int)(aturan.gates_c/2);
-	}
+			aturan.timetolerance, nilai_ubah);
+			
+		}else if(nilai_gerbang>GATE_DEAFULT_MAX_TOLERANCE){
+			// Bila terlalu banyak,
+			// maka maksimal adalah GATE_DEAFULT_MAX_TOLERANCE
+			nilai_ubah=GATE_DEAFULT_MAX_TOLERANCE;
+			DEBUG1(
+_("Mengubah waktu toleransi %1$i detik ke %2$i detik."),
+				aturan.timetolerance, nilai_ubah);
+		}else{
+			// Bila NOL,
+			// maka maksimal adalah SATU
+			nilai_ubah=1;
+			DEBUG1(
+_("Mengubah waktu toleransi %1$i detik ke %2$i detik."),
+				aturan.timetolerance, nilai_ubah);
+		};
+		
+		// Menyimpan.
+		aturan.timetolerance=nilai_ubah;
+	};
 	
 	// Pengirim.
 	// Berbagi memori.

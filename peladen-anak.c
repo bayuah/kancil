@@ -202,6 +202,7 @@ void anak_sambungan (
 					free(berkas_nama);
 					free(berkas_ukuran);
 				}else if(panji==INTRANSFER_FLAG){
+					// Sedang dalam transfer data.
 					// Kesalahan.
 					if(
 						!strlen(berkas->nama) || berkas->ukuran <=0

@@ -99,7 +99,7 @@ void urai_argumen(int argc, char *argv[]){
 			{"gatesnum",        required_argument, 0, 'g'},
 			{"timebase",        required_argument, 0, 'B'},
 			{"tries",           required_argument, 0, 't'},
-			{"timetolerance",  required_argument, 0, 'e'},
+			{"timetolerance",   required_argument, 0, 'e'},
 			{"parallel",        required_argument, 0, 'p'},
 			{"shifteof",        no_argument,       0, 'S'},
 			{"salt",            no_argument,       0, 's'},
@@ -108,12 +108,13 @@ void urai_argumen(int argc, char *argv[]){
 			{"rsapadding",      no_argument,       0, 'P'},
 			{"version",         no_argument,       0, 'V'},
 			{"help",            no_argument,       0, 'h'},
+			{"dummy",           required_argument, 0, 'Y'},
 			{0,                 0,                 0,  0 }
 		};
 		
 		// Mendapatkan argumen.
 		int c = getopt_long(argc, argv,
-			"12345DEWNIA:B:Cc:D:d:e:g:G:H:hK:k:l:L:M:n:p:P:RrSs:vVq?",
+			"12345DEWNIA:B:Cc:D:d:e:g:G:H:hK:k:l:L:M:n:p:P:RrSs:vVqY:?",
 			long_options, &option_index
 		);
 		if (c == -1)
@@ -341,6 +342,14 @@ void urai_argumen(int argc, char *argv[]){
 			if(status){
 				DEBUG1(_("Argumen: Mendengarkan di porta %1$i."), status);
 				strcpy(aturan.listening, optarg);
+			};
+			break;
+		case 'Y':
+			status=atoi(optarg);
+			if(status>0){
+				DEBUG1(_("Argumen: Kirim palsu sebanyak %1$i kali."), status);
+				aturan.dummy=status;
+				aturan.show_debug1=true;
 			};
 			break;
 		case 'M':

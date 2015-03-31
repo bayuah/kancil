@@ -81,39 +81,105 @@ struct INFOALAMAT{
 
 // Kirim.
 struct KIRIMBERKAS{
+	/*
+	 * `identifikasi` dan `identifikasi_sebelumnya`
+	 * Memberikan informasi identifikasi dalam pengiriman berkas.
+	 * `kelompok_kirim`
+	 * Memberikan informasi kelompok pengiriman berkas.
+	 */
 	unsigned int identifikasi;
 	unsigned int identifikasi_sebelumnya;
 	unsigned int kelompok_kirim;
+	
+	/*
+	 * urut_kali.
+	 * Informasi cacah kali pengiriman berurutan. 
+	 */
 	int urut_kali;
+	
+	/*
+	 * `paksa_panji`.
+	 * Memaksa penggunaan panji. Bila diaktifkan (memberi nilai panji sahih),
+	 * maka dalam sambungan pengiriman, panji sambungan sesuai dengan nilai.
+	 */
 	int paksa_panji;
+	
+	/*
+	 * Ukuran.
+	 * Ukuran berkas dan yang telah dikirim.
+	 */
 	double ukuran_berkas;
 	double ukuran_kirim;
 	double ukuran_kirim_sebelumnya;
-	bool do_kirim;
+	
+	/*
+	 * Informasi inang dan berkas.
+	 */
 	char hostname[BERKAS_MAX_STR];
 	char portno[BERKAS_MAX_STR];
 	char berkas[BERKAS_MAX_STR];
 	char berkas_lajur[BERKAS_MAX_STR];
 	char berkas_identifikasi[BERKAS_MAX_STR];
-	int data_terkirim[MAX_CHUNK_ID];
+	
+	/*
+	 * Penghitung kecepatan.
+	 * Membantu dalam melakukan menghitung kecepatan.
+	 */
 	double waktu_terkirim;
 	double detik;
 	double kecepatan;
+	
+	/*
+	 * Status dan keadaan.
+	 */
 	int coba;
+	bool do_kirim;
 	bool kunci;
+	int data_terkirim[MAX_CHUNK_ID];
 } KIRIMBERKAS;
 
 // Berkas.
 struct TERIMABERKAS{
+	/*
+	 * Identifikasi.
+	 * Identifikasi pecahan yang diterima.
+	 */
 	char identifikasi[BERKAS_MAX_STR];
+	
+	/*
+	 * Nama berkas.
+	 */
 	char nama[BERKAS_MAX_STR];
+	
+	
+	/*
+	 * Ukuran berkas akan diterima,
+	 * telah diterima, dan ofset ukuran.
+	 */
 	double ofset;
 	double ukuran;
 	double diterima;
+	
+	/*
+	 * Identifikasi
+	 * proses penulis.
+	 */
 	pid_t pid_tulis;
+	
+	/*
+	 * Status penulisan berkas.
+	 * Bila sedang melakukan penulisan,
+	 * maka sambungan yang masuk akan ditolak.
+	 */
 	bool sedang_sibuk;
 	bool terima_berkas;
-	char data_pesan[MAX_CHUNK_ID][CHUNK_MESSAGE_SIZE+1];
+	
+	/*
+	 * Data identifikasi
+	 * pesan yang diterima.
+	 */
+	char data_pesan[MAX_CHUNK_ID]
+		[CHUNK_MESSAGE_SIZE+1];
 	bool data_terima[MAX_CHUNK_ID];
 } TERIMABERKAS;
 
@@ -123,6 +189,10 @@ struct TERIMABERKAS{
 
 // Variabel global.
 struct GLOBAL_CONFIG {
+	/*
+	 * Menampilkan
+	 * tingkatan kekutu.
+	 */
 	bool show_error;
 	bool show_warning;
 	bool show_notice;
@@ -134,20 +204,82 @@ struct GLOBAL_CONFIG {
 	bool show_debug5;
 	bool quiet;
 	int  debuglevel;
+	
+	/*
+	 * Transfer mentah.
+	 * Bernilai `false`
+	 * bila transfer terenkripsi.
+	 */
 	bool rawtransfer;
+	
+	/*
+	 * Eksperimen.
+	 * Menggeser ke awal dari
+	 * bita terakhir
+	 * dalam pembacaan berkas.
+	 */
 	bool shifteof;
+	
+	/*
+	 * Memeriksa balasan
+	 * dari Peladen.
+	 */
 	bool transferedcheck;
+	
+	/*
+	 * Menampilkan rangkuman
+	 * dari pengiriman berkas.
+	 * BELUM diterapkan.
+	 */
 	bool summary;
+	
+	/*
+	 * Kali dan tunggu
+	 * mencoba pengiriman.
+	 */
 	int  tries;
 	int  waitretry;
+	
+	/*
+	 * Waktu (detik) tunggu
+	 * sebelum melakukan
+	 * pengiriman ulang
+	 * kelompok pecahan selanjutnya.
+	 */
 	int  waitqueue;
+	
+	/*
+	 * Jumlah maksimal sambungan.
+	 * Penerimaan dan pengiriman.
+	 */
 	int  maxconnection;
 	int  parallel;
+	
+	/*
+	 * Pengaturan
+	 * berkas.
+	 */
 	char completedir[BERKAS_MAX_STR];
 	char tempdir[BERKAS_MAX_STR];
 	char config[BERKAS_MAX_STR];
+	
+	/*
+	 * Lajur Berkas dikirim.
+	*/
+	char inputfile[BERKAS_MAX_STR];
+	
+	/*
+	 * Pengaturan
+	 * garam.
+	 */
 	unsigned char salt[MAX_STR];
 	unsigned char salt_send[MAX_STR];
+	
+	
+	/*
+	 * Pengaturan
+	 * pemilihan IP.
+	 */
 	int  timebase;
 	int  timetolerance;
 	int  gateid;
@@ -160,15 +292,31 @@ struct GLOBAL_CONFIG {
 	 */
 	int  gateshashing;
 	
+	/*
+	 * Inang penerima.
+	 */
 	int  hostname_c;
 	char hostname[MAX_GATE][INFOALAMAT_MAX_STR];
+	
+	/*
+	 * Kunci publik dan privat
+	 * serta bantalan RSA
+	 */
 	int  pubkeys_c;
 	char pubkeys[MAX_GATE][BERKAS_MAX_STR];
 	char privkey[BERKAS_MAX_STR];
+	int rsa_padding;
+	
+	/*
+	 * Peladen.
+	 */
 	char listening[INFOALAMAT_MAX_STR];
 	char defaultport[INFOALAMAT_MAX_STR];
-	char inputfile[BERKAS_MAX_STR];
-	int rsa_padding;
+	
+	/*
+	 * Hanya simulasi pengiriman.
+	 */
+	int dummy;
 } GLOBAL_CONFIG;
 #define aturan GLOBAL_CONFIG
 

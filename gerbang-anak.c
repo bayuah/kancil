@@ -279,7 +279,7 @@ void anak_gerbang(
 			ambil_pengepala(
 				penyangga,
 				&r_versi,
-				&r_identifikasi,
+				&r_identifikasi,/**/
 				&r_panji,
 				&r_paritas,
 				&r_status_gerbang,

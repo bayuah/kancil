@@ -147,7 +147,9 @@ int main(int argc, char *argv[]){
 		exit(EXIT_FAILURE_SOCKET);
 	}
 	
-	/* Now bind the host address using bind() call.*/
+	/* 
+	 * Menngikat inang.
+	 */
 	if (bind(sockfd, (struct sockaddr *) &serv_addr,
 						  sizeof(serv_addr)) < 0){
 		FAIL(

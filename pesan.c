@@ -245,6 +245,8 @@ char *buat_pesan_peladen(
 ){
 	int panjang=0;
 	
+	/*Bagian Pertama*/
+	
 	// Memeriksa identifikasi.
 	panjang += strlen(identifikasi_berkas);
 	
@@ -825,10 +827,10 @@ int pilih_gerbang(
 	// Operasi XOR hasil dan waktu UNIX.
 	// Operasi mulai dari LSB.
 	int hasil=0;
-	int i, j;
+	int i;
 	DEBUG4(_("Mencari nilai XOR dari Kunci Gerbang dan Waktu UNIX."), 0);
-	for(i=(panjang_waktu-1),j=0;i>=0;i--,j++){
-		hasil+=(int)tujuan_kunci[j]^waktu_unix_str[i];
+	for(i=0;i<panjang_waktu;i++){
+		hasil+=(int)tujuan_kunci[i]^waktu_unix_str[i];
 	};
 	DEBUG4(_("Nilai operasi XOR adalah %1$i."), hasil);
 	

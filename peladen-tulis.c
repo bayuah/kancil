@@ -134,7 +134,6 @@ void anak_tulis(struct TERIMABERKAS *berkas){
 	char nama_berkas[nama_panjang];
 	memset(nama_berkas, 0, sizeof(nama_berkas[0])*(nama_panjang));
 	
-	
 	// Nama berkas.
 	strcpy(nama_berkas, berkas->identifikasi);
 	
@@ -262,6 +261,7 @@ void anak_tulis(struct TERIMABERKAS *berkas){
 					berkas->sedang_sibuk=false;
 					
 					// Keluar.
+					fclose (pberkas);
 					exit(EXIT_FAILURE_IO);
 				}else{
 					
@@ -273,6 +273,7 @@ void anak_tulis(struct TERIMABERKAS *berkas){
 					berkas->sedang_sibuk=false;
 					
 					// Keluar.
+					fclose (pberkas);
 					exit(EXIT_FAILURE_IO);
 				};
 			};

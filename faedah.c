@@ -776,6 +776,7 @@ char *unix_signal_code(int sinyal){
  * HakCipta (c) 2009 M.T. Tham
  * Berkas dimodifikasi: Jumat, 21 Agustus 2009, 06:22:02 WIB
  * Berkas diakses: Sabtu, 07 Februari 2015, 00:40:40 WIB
+ * Kode oleh Bayu Aditya H. <b@yuah.web.id>
  * @param: kecepatan (double) kecepatan sekarang;
  * @param: kecepatan_sebelumnya (double) kecepatan sebelumnya;
  * @param: penghalus (double) memiliki nilai antara NOL hingga SATU. Semakin

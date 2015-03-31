@@ -168,6 +168,9 @@
 #ifndef GATE_MAX_KEYSIZE
 	#define GATE_MAX_KEYSIZE 64
 #endif
+#ifndef GATE_DEAFULT_MAX_TOLERANCE
+	#define GATE_DEAFULT_MAX_TOLERANCE 10
+#endif
 
 // Nilai panji.
 #ifndef STOP_FLAG
