@@ -406,12 +406,22 @@ void anak_sambungan (
 						berkas->sedang_sibuk=true;
 						
 						// Pesan.
-						NOTICE(_("Menunggu penulisan berkas '%1$s' selama %2$i detik."),
+						NOTICE(_("Menunggu penulisan berkas '%1$s' maksimal selama %2$i detik."),
 							berkas->nama, detik_tunggu_penulisan);
-						// Menunggu TIGA detik.
+						
+						// Menunggu maksimal `detik_tunggu_penulisan` detik.
 						// Periksa kembali
 						// apakah masih sibuk.
-						sleep(detik_tunggu_penulisan);
+						int kali_periksa=0;
+						while (berkas->sedang_sibuk){
+							// Jeda setiap
+							// 100.000 mikrodetik/100 milidetik/0,1 detik
+							usleep(100000);
+							if (kali_periksa++<=(detik_tunggu_penulisan*10))
+								break;
+						};
+						
+						// sleep(detik_tunggu_penulisan);
 						// if(!berkas->sedang_sibuk){
 							// berkas->sedang_sibuk=false;
 							// tunggupid=true;
