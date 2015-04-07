@@ -74,8 +74,7 @@ void urai_argumen(int argc, char *argv[]){
 		// int this_option_optind = optind ? optind : 1;
 		int option_index = 0;
 		static struct option long_options[] = {
-			{"host",            required_argument, 0, 'h'},
-			{"hostnum",         required_argument, 0, 'H'},
+			{"host",            required_argument, 0, 'H'},
 			{"config",          required_argument, 0, 'c'},
 			{"logfile",         required_argument, 0, 'l'},
 			{"listening",       required_argument, 0, 'L'},
@@ -114,7 +113,7 @@ void urai_argumen(int argc, char *argv[]){
 		
 		// Mendapatkan argumen.
 		int c = getopt_long(argc, argv,
-			"12345DEWNIA:B:Cc:D:d:e:g:G:H:hK:k:l:L:M:n:p:P:RrSs:vVqY:?",
+			"12345EWNIA:B:Cc:D:d:e:g:G:H:hK:k:l:L:M:n:p:P:RrSs:vVqY:?",
 			long_options, &option_index
 		);
 		if (c == -1)
@@ -486,11 +485,13 @@ void urai_argumen(int argc, char *argv[]){
 		case 'h':
 			bantuan_param_standar();
 			bantuan();
+			info_tanya();
 			exit(EXIT_SUCCESS);
 			break;
 		case '?':
 			bantuan_param_standar();
 			bantuan();
+			info_tanya();
 			exit(EXIT_SUCCESS);
 			break;
 		case 'V':
@@ -500,6 +501,10 @@ void urai_argumen(int argc, char *argv[]){
 			break;
 		default:
 			FAIL(_("Argumen: Karakter tidak dikenal ASCII-%i"), c);
+			bantuan_param_standar();
+			bantuan();
+			info_tanya();
+			exit(EXIT_FAILURE);
 		}
 	}
 	
@@ -602,7 +607,117 @@ void bantuan_param_standar(){
 	
 }
 void bantuan(){
+	printf("\r\n");
+	printf(_("Argumen wajib untuk perintah panjang juga wajib untuk perintah pendek. Kecuali disebutkan lain, semua argumen perintah berikut ini berlaku untuk Klien, Gerbang, dan Peladen."));
+	printf("\r\n");
 	
+	printf("\r\n%s\r\n", _("Perintah Dasar:"));
+	printf("  --config=%s, -c\r\n", _("BERKAS"));
+	printf("    %s\r\n",
+		_("Lajur berkas konfigurasi."));
+	printf("  --host=INANG, -H\r\n");
+	printf("    %s\r\n",
+		_("Memberikan nama inang tujuan (Hanya Klien dan Gerbang). Multi inang tujuan dapat diberikan dengan --host=INANG1 --host=INANG2 dan seterusnya."));
+	printf("  --listening=%s, -L\r\n", _("NOMOR"));
+	printf("    %s\r\n",
+		_("Porta mendengarkan (Hanya Gerbang dan Peladen). Porta yang dibuka oleh Peladen/Gerbang sebagai porta tujuan pengiriman Klien."));
+	
+	printf("\r\n%s\r\n", _("Perintah Pengiriman:"));
+	printf("  --gatesnum=%s, -k\r\n", _("NOMOR"));
+	printf("    %s\r\n",
+		_("Jumlah Gerbang (Hanya Klien dan Gerbang)."));
+	printf("  --gateid=%s, -k\r\n", _("NOMOR"));
+	printf("    %s\r\n",
+		_("Identifikasi Gerbang (Hanya Gerbang). Nomor dimulai dari angka NOL."));
+	printf("  --timebase=%s, -B\r\n", _("NOMOR"));
+	printf("    %s\r\n",
+		_("Basis waktu pemilihan identifikasi Gerbang (Hanya Klien dan Gerbang). Nilai sahih adalah antara 1 hingga 60. Ini menentukan rentang pemilihan waktu. Misal basis 10, maka semua waktu antara detik 1 hingga detik 10 dianggap sebagai detik 1."));
+	printf("  --tries=%s, -t\r\n", _("NOMOR"));
+	printf("    %s\r\n",
+		_("Melakukan percobaan  sebanyak NOMBER kali saat terjadi kegagalan pengiriman."));
+	printf("  --timetolerance=%s, -T\r\n", _("NOMOR"));
+	printf("    %s\r\n",
+		_("Toleransi waktu pemilihan identifikasi Gerbang (Hanya Klien dan Gerbang)."));
+	printf("  --parallel=%s, -p\r\n", _("NOMOR"));
+	printf("    %s\r\n",
+		_("Melakukan pengiriman secara bersamaan sebanyak NOMOR kali (Hanya Klien)."));
+	
+	printf("\r\n%s\r\n", _("Kunci Pengiriman:"));
+	printf("  --salt=%s, -k\r\n", _("KARAKTER"));
+	printf("    %s\r\n",
+		_("Nilai garam sebagai kunci pemilihan identifikas Gerbang (Hanya Klien dan Gerbang)."));
+	printf("  --gateshashing=%s, -A\r\n", _("KARAKTER"));
+	printf("    %s\r\n",
+		_("Cara pencincangan kunci pemilihan identifikas Gerbang (Hanya Klien dan Gerbang). Nilai sahih adalah XOR dan RSA.Bila XOR maka hanya melakukan operasi XOR (cepat). Bila RSA maka melakukan pencincangan dengan menggunkan RSA dan XOR (lebih lambat)."));
+	printf("  --privkeyfile=%s, -k\r\n", _("BERKAS"));
+	printf("    %s\r\n",
+		_("Berkas kunci privat penerimaan."));
+	printf("  --rsapadding=%s, -P\r\n", _("BERKAS"));
+	printf("    %s\r\n",
+		_("Jenis bantalan RSA yang digunakan."));
+	printf("  --pubkeyfile=%s, -k\r\n", _("BERKAS"));
+	printf("    %s\r\n",
+		_("Berkas kunci publik pengiriman. Multi berkas inang dapat diberikan dengan --pubkeyfile=BERKAS_INANG1 --pubkeyfile=BERKAS_INANG2 dan seterusnya."));
+	
+	printf("\r\n%s\r\n", _("Perintah Kekutuan:"));
+	printf("  --debug=%s, -d\r\n", _("NOMOR"));
+	printf("    %s\r\n",
+		_("Menampilkan kekutu tingkat NOMOR. Nilai sahih adalah 1 hingga 5 dengan 5 adalah menampilkan keseluhan kekutu."));
+	printf("  --debug1, -1\r\n");
+	printf("    %s\r\n",
+		_("Menampilkan kekutu tingkat 1."));
+	printf("  --debug2, -2\r\n");
+	printf("    %s\r\n",
+		_("Menampilkan kekutu tingkat 2."));
+	printf("  --debug3, -3\r\n");
+	printf("    %s\r\n",
+		_("Menampilkan kekutu tingkat 3."));
+	printf("  --debug4, -4\r\n");
+	printf("     %s\r\n",
+		_("Menampilkan kekutu tingkat 4."));
+	printf("  --debug5, -5\r\n");
+	printf("    %s\r\n",
+		_("Menampilkan kekutu tingkat 5."));
+	printf("  --debuglevel=%s, -D\r\n", _("NOMOR"));
+	printf("    %s\r\n",
+		_("Menampilkan kelengkapan penampilan kekutuan."));
+	printf("  --show-error, -E\r\n");
+	printf("    %s\r\n",
+		_("Menampilkan galat."));
+	printf("  --show-warning, -W\r\n");
+	printf("    %s\r\n",
+		_("Menampilkan peringatan."));
+	printf("  --show-notice, -N\r\n");
+	printf("    %s\r\n",
+		_("Menampilkan maklumat."));
+	printf("  --show-info, -I\r\n");
+	printf("    %s\r\n",
+		_("Menampilkan informasi."));
+	printf("  --verbose, -v\r\n");
+	printf("    %s\r\n",
+		_("Menampilkan kekutu. Nilai ini sama dengan --debug1."));
+	printf("  --quiet, -q\r\n");
+	printf("    %s\r\n",
+		_("Tidak menampilkan pesan apapun.."));
+	
+	printf("\r\n%s\r\n", _("Perintah Lain:"));
+	printf("  --transferedcheck, -S\r\n");
+	printf("    %s\r\n",
+		_("Memeriksa perkembangan penerimaan berkas Peladen (Hanya Klien)."));
+	printf("  --shifteof, -S\r\n");
+	printf("    %s\r\n",
+		_("Eksperimental. Menggeser bita akhir berkas saat pembacaan berkas (Hanya Klien)."));
+	printf("  --dummy=%s, -Y\r\n", _("NOMOR"));
+	printf("    %s\r\n",
+		_("Melakukan simulasi pengiriman sebanyak NOMOR kali (hanya Klien)."));
+	printf("  --version, -V\r\n");
+	printf("    %s\r\n",
+		_("Menampilkan versi."));
+	printf("  --help, -h\r\n");
+	printf("    %s\r\n",
+		_("Menampilkan pesan bantuan."));
+	
+	printf("\r\n");
 }
 
 /*
