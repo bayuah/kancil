@@ -623,10 +623,10 @@ void bantuan(){
 		_("Porta mendengarkan (Hanya Gerbang dan Peladen). Porta yang dibuka oleh Peladen/Gerbang sebagai porta tujuan pengiriman Klien."));
 	
 	printf("\r\n%s\r\n", _("Perintah Pengiriman:"));
-	printf("  --gatesnum=%s, -k\r\n", _("NOMOR"));
+	printf("  --gatesnum=%s, -g\r\n", _("NOMOR"));
 	printf("    %s\r\n",
 		_("Jumlah Gerbang (Hanya Klien dan Gerbang)."));
-	printf("  --gateid=%s, -k\r\n", _("NOMOR"));
+	printf("  --gateid=%s, -G\r\n", _("NOMOR"));
 	printf("    %s\r\n",
 		_("Identifikasi Gerbang (Hanya Gerbang). Nomor dimulai dari angka NOL."));
 	printf("  --timebase=%s, -B\r\n", _("NOMOR"));
@@ -643,13 +643,13 @@ void bantuan(){
 		_("Melakukan pengiriman secara bersamaan sebanyak NOMOR kali (Hanya Klien)."));
 	
 	printf("\r\n%s\r\n", _("Kunci Pengiriman:"));
-	printf("  --salt=%s, -k\r\n", _("KARAKTER"));
+	printf("  --salt=%s, -s\r\n", _("KARAKTER"));
 	printf("    %s\r\n",
 		_("Nilai garam sebagai kunci pemilihan identifikas Gerbang (Hanya Klien dan Gerbang)."));
 	printf("  --gateshashing=%s, -A\r\n", _("KARAKTER"));
 	printf("    %s\r\n",
 		_("Cara pencincangan kunci pemilihan identifikas Gerbang (Hanya Klien dan Gerbang). Nilai sahih adalah XOR dan RSA.Bila XOR maka hanya melakukan operasi XOR (cepat). Bila RSA maka melakukan pencincangan dengan menggunkan RSA dan XOR (lebih lambat)."));
-	printf("  --privkeyfile=%s, -k\r\n", _("BERKAS"));
+	printf("  --privkeyfile=%s, -K\r\n", _("BERKAS"));
 	printf("    %s\r\n",
 		_("Berkas kunci privat penerimaan."));
 	printf("  --rsapadding=%s, -P\r\n", _("BERKAS"));
@@ -662,7 +662,7 @@ void bantuan(){
 	printf("\r\n%s\r\n", _("Perintah Kekutuan:"));
 	printf("  --debug=%s, -d\r\n", _("NOMOR"));
 	printf("    %s\r\n",
-		_("Menampilkan kekutu tingkat NOMOR. Nilai sahih adalah 1 hingga 5 dengan 5 adalah menampilkan keseluhan kekutu."));
+		_("Menampilkan kekutu tingkat NOMOR. Nilai sahih adalah 1 hingga 5 dengan 5 adalah menampilkan keseluruhan kekutu."));
 	printf("  --debug1, -1\r\n");
 	printf("    %s\r\n",
 		_("Menampilkan kekutu tingkat 1."));
@@ -701,7 +701,7 @@ void bantuan(){
 		_("Tidak menampilkan pesan apapun.."));
 	
 	printf("\r\n%s\r\n", _("Perintah Lain:"));
-	printf("  --transferedcheck, -S\r\n");
+	printf("  --transferedcheck, -C\r\n");
 	printf("    %s\r\n",
 		_("Memeriksa perkembangan penerimaan berkas Peladen (Hanya Klien)."));
 	printf("  --shifteof, -S\r\n");

@@ -1,3 +1,10 @@
+# makefile
+# This file to helps build Kancil
+# from its source files.
+# Author: Bayu Aditya H. <b@yuah.web.id>
+# Copyright: 2014 - 2015
+# License: See LICENCE.txt
+
 CC = cc
 CCLIBS = -lcrypto -lrt -lm
 
@@ -151,9 +158,6 @@ built-peladen:peladen.c $(UTILITY_OBJ) peladen-tulis.o peladen-anak.o
 		-D__COMPILER_MACHINE="$(CC_MACHINE)" \
 		-D__COMPILER_VERSION="$(CC_VERSION)" 
 
-coba-rsa:coba-rsa.c $(UTILITY_OBJ)
-	@$(CCF) $(UTILITY_OBJ)  $< -o $@ $(CCLIBS)
-
 klien-anak.o:klien-anak.c
 	@echo "Build $@..."
 	@$(CCF) -c klien-anak.c -o $@ $(CCLIBS)
@@ -194,7 +198,6 @@ faedah.o:faedah.c
 	@echo "Build $@..."
 	@$(CCF) -c $< -o $@ $(CCLIBS)
 	
-
 built-info:klien.c peladen.c
 ifeq ($(MAKECMDGOALS), klien)
 	@echo "VERSION_MAJOR=$(VERSION_MAJOR)"  > $(BUILT_INFO)
